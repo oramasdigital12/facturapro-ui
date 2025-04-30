@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo circular -->
+  <circle cx="16" cy="16" r="16" fill="#2563EB"/>
+  
+  <!-- Icono de documento -->
+  <path fill="white" d="M21 8H11C9.9 8 9 8.9 9 10V22C9 23.1 9.9 24 11 24H21C22.1 24 23 23.1 23 22V10C23 8.9 22.1 8 21 8ZM21 22H11V10H21V22Z"/>
+  
+  <!-- Líneas de texto -->
+  <rect x="12" y="13" width="8" height="1.5" fill="white"/>
+  <rect x="12" y="16" width="8" height="1.5" fill="white"/>
+  <rect x="12" y="19" width="5" height="1.5" fill="white"/>
+</svg> 
