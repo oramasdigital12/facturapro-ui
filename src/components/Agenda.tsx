@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import TareaItem from './TareaItem';
 import api from '../services/api';
+import { toast } from 'react-hot-toast';
 
 interface Tarea {
   id: string;
@@ -74,6 +75,16 @@ export default function Agenda() {
 
   const handleEditTarea = (tarea: Tarea) => {
     // Implementar lógica de edición
+  };
+
+  const handleEliminarTarea = async (id: number) => {
+    try {
+      await api.delete(`/api/tareas/${id}`);
+      cargarTareas();
+      toast.success('Tarea eliminada');
+    } catch (error) {
+      toast.error('Error al eliminar la tarea');
+    }
   };
 
   const tareasFiltradas = tareas
