@@ -20,13 +20,6 @@ interface FormData {
   fecha: string;
 }
 
-function formatCurrency(value: string) {
-  if (!value) return '';
-  const num = Number(value.replace(/[^\d.]/g, ''));
-  if (isNaN(num)) return '';
-  return `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
 export default function VentaModal({ open, onClose, onCreated, venta, clientes }: VentaModalProps) {
   const [form, setForm] = useState<FormData>({
     cliente_id: '',
@@ -103,8 +96,8 @@ export default function VentaModal({ open, onClose, onCreated, venta, clientes }
     return Object.keys(nuevosErrores).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!validarFormulario()) {
       toast.error('Corrige los errores antes de guardar');
       return;
@@ -199,7 +192,7 @@ export default function VentaModal({ open, onClose, onCreated, venta, clientes }
             value={form.monto}
             onChange={e => handleChange(e)}
             onBlur={handleMontoBlur}
-            onFocus={e => setForm({ ...form, monto: form.monto.replace(/[^\d.]/g, '') })}
+            onFocus={() => setForm({ ...form, monto: form.monto.replace(/[^\d.]/g, '') })}
             required
           />
           {errores.monto && <div className="text-xs text-red-600 mb-2">{errores.monto}</div>}

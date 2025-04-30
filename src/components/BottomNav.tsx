@@ -1,6 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
 import { FiHome, FiUsers, FiDollarSign, FiSettings, FiCalendar } from 'react-icons/fi';
-import { HomeIcon, UserGroupIcon, CurrencyDollarIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 
 const navItems = [
   { to: '/home', icon: <FiHome />, label: 'Inicio' },
