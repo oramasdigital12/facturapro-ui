@@ -240,7 +240,7 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
                     <input
                       type="text"
                       name="fecha_inicio"
-                      placeholder="mm/dd/yyyy"
+                      placeholder="yyyy-mm-dd"
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
                         errores.fecha ? 'border-red-500' : 'border-gray-300'
                       }`}
@@ -253,7 +253,7 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
                     <input
                       type="text"
                       name="fecha_vencimiento"
-                      placeholder="mm/dd/yyyy"
+                      placeholder="yyyy-mm-dd"
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
                         errores.fecha ? 'border-red-500' : 'border-gray-300'
                       }`}
@@ -333,7 +333,7 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
               <input
                 name="fecha_nacimiento"
                 type="text"
-                placeholder="mm/dd/yyyy"
+                placeholder="yyyy-mm-dd"
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
                   errores.fecha_nacimiento ? 'border-red-500' : 'border-gray-300'
                 }`}

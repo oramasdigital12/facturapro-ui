@@ -9,28 +9,28 @@ const menuItems = [
     description: 'Gestiona tus clientes',
     icon: UserGroupIcon,
     href: '/clientes',
-    color: 'text-violet-500'
+    color: 'text-blue-500'
   },
   {
     title: 'Ventas',
     description: 'Historial y exportación',
     icon: CurrencyDollarIcon,
     href: '/ventas',
-    color: 'text-rose-500'
+    color: 'text-emerald-500'
   },
   {
     title: 'Agenda',
     description: 'Tareas y recordatorios',
     icon: CalendarIcon,
     href: '/agenda',
-    color: 'text-cyan-500'
+    color: 'text-red-500'
   },
   {
     title: 'Configuración',
     description: 'Ajustes y cuenta',
     icon: Cog6ToothIcon,
     href: '/configuracion',
-    color: 'text-emerald-500'
+    color: 'text-gray-500'
   }
 ];
 
@@ -77,6 +77,14 @@ export default function Home() {
 
       <div className="relative flex-1 flex flex-col justify-center px-4 pb-24">
         <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <img
+              src="/logo.png"
+              alt="CRM Logo"
+              className="w-24 h-24 object-contain animate-float"
+              draggable={false}
+            />
+          </div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
             Inicio
           </h1>

@@ -30,16 +30,16 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cyan-400 to-blue-600 relative overflow-hidden">
-      {/* Onda decorativa inferior */}
-      <svg className="absolute bottom-0 left-0 w-full h-40" viewBox="0 0 1440 320" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path fill="#23253A" fillOpacity="1" d="M0,224L48,202.7C96,181,192,139,288,144C384,149,480,203,576,218.7C672,235,768,213,864,197.3C960,181,1056,171,1152,186.7C1248,203,1344,245,1392,266.7L1440,288L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
-      </svg>
+      {/* Onda decorativa inferior eliminada */}
       <form onSubmit={handleSubmit} className="relative z-10 bg-[#23253A] bg-opacity-95 p-8 rounded-2xl w-full max-w-xs flex flex-col items-center shadow-xl">
-        {/* Logo o icono */}
-        <div className="mb-6 mt-2">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center mx-auto">
-            <span className="text-white text-3xl font-extrabold">CRM</span>
-          </div>
+        {/* Logo solo animado, sin círculo de fondo */}
+        <div className="mb-8 mt-2 flex justify-center">
+          <img
+            src="/logo.png"
+            alt="CRM Logo"
+            className="w-24 h-24 object-contain animate-float"
+            draggable={false}
+          />
         </div>
         <h2 className="text-2xl font-extrabold mb-6 text-center text-white">Iniciar sesión</h2>
         {registered && (
