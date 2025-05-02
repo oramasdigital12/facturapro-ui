@@ -11,7 +11,7 @@ interface Props {
   cliente?: any | null;
 }
 
-function calcularCategoria(pendiente: boolean, desde: string, hasta: string): string {
+function calcularCategoria(pendiente: boolean, hasta: string): string {
   if (pendiente) return 'pendiente';
   if (!hasta) return '';
   const hoy = new Date();
@@ -136,7 +136,6 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
 
   const categoria = calcularCategoria(
     pendiente,
-    form.fecha_inicio,
     form.fecha_vencimiento
   );
 
