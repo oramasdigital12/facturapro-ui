@@ -1,5 +1,3 @@
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { DateTime } from 'luxon';
 import { PencilIcon, TrashIcon, CheckCircleIcon, ArrowUturnLeftIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
