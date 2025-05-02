@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 interface Cliente { id: string; nombre: string; categoria: string; }
-interface Tarea { id: string; descripcion: string; fecha_hora: string; cliente_id: string; estado: string; }
+interface Tarea { id: string; descripcion: string; fecha_hora: string; cliente_id: string; estado: string; para_venta: boolean; }
 
 export default function Agenda() {
   const [tareas, setTareas] = useState<Tarea[]>([]);
@@ -69,13 +69,15 @@ export default function Agenda() {
     fetchContadores();
   };
 
-  const tareasFiltradas = tareas.filter(tarea => {
-    if (!busqueda.trim()) return true;
-    const cliente = clientes.find(c => c.id === tarea.cliente_id);
-    if (!cliente) return false;
-    const primerNombre = cliente.nombre.trim().split(' ')[0].toLowerCase();
-    return primerNombre.startsWith(busqueda.trim().toLowerCase());
-  });
+  const tareasFiltradas = tareas
+    .filter(tarea => {
+      if (!busqueda.trim()) return true;
+      const cliente = clientes.find(c => c.id === tarea.cliente_id);
+      if (!cliente) return false;
+      const primerNombre = cliente.nombre.trim().split(' ')[0].toLowerCase();
+      return primerNombre.startsWith(busqueda.trim().toLowerCase());
+    })
+    .sort((a, b) => new Date(a.fecha_hora).getTime() - new Date(b.fecha_hora).getTime());
 
   const handleLogout = async () => {
     try {

@@ -26,6 +26,7 @@ export default function Ventas() {
   const [tipo, setTipo] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [ventaEditando, setVentaEditando] = useState<Venta | null>(null);
+  const [preselectedClienteId, setPreselectedClienteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -33,6 +34,13 @@ export default function Ventas() {
   useEffect(() => {
     fetchVentas();
     fetchClientes();
+    // Si viene de una tarea para venta, abrir modal con cliente preseleccionado
+    const clienteId = localStorage.getItem('venta_cliente_id');
+    if (clienteId) {
+      setPreselectedClienteId(clienteId);
+      setShowModal(true);
+      localStorage.removeItem('venta_cliente_id');
+    }
     // eslint-disable-next-line
   }, []);
 
@@ -408,7 +416,14 @@ export default function Ventas() {
         >
           <FiPlus />
         </button>
-        <VentaModal open={showModal} onClose={() => setShowModal(false)} onCreated={fetchVentas} venta={ventaEditando} clientes={clientes} />
+        <VentaModal
+          open={showModal}
+          onClose={() => setShowModal(false)}
+          onCreated={fetchVentas}
+          venta={ventaEditando}
+          clientes={clientes}
+          preselectedClienteId={preselectedClienteId}
+        />
       </div>
     </div>
   );

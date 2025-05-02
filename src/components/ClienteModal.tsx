@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
+import Swal from 'sweetalert2';
 
 interface Props {
   open: boolean;
@@ -12,14 +13,15 @@ interface Props {
 
 function calcularCategoria(pendiente: boolean, desde: string, hasta: string): string {
   if (pendiente) return 'pendiente';
-  if (!desde || !hasta) return '';
+  if (!hasta) return '';
   const hoy = new Date();
-  const desdeDate = new Date(desde);
+  hoy.setHours(0, 0, 0, 0);
   const hastaDate = new Date(hasta);
-  if (hastaDate < hoy) return 'Vencido';
-  if (desdeDate > hoy) return 'por_vencer';
-  if (desdeDate <= hoy && hastaDate >= hoy) return 'activo';
-  return '';
+  hastaDate.setHours(0, 0, 0, 0);
+  const diffDias = Math.ceil((hastaDate.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDias < 0) return 'Vencido';
+  if (diffDias <= 3) return 'por_vencer';
+  return 'activo';
 }
 
 function validarNombre(nombre: string) {
@@ -143,28 +145,30 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
     if (!validarNombre(form.nombre)) {
       nuevosErrores.nombre = 'El nombre debe tener al menos 2 letras y solo puede contener letras y espacios.';
     }
-    if (!validarTelefono(form.telefono)) {
+    if (form.telefono && !validarTelefono(form.telefono)) {
       nuevosErrores.telefono = 'El teléfono debe tener exactamente 10 dígitos.';
     }
-    if (!validarEmail(form.email)) {
+    if (form.email && !validarEmail(form.email)) {
       nuevosErrores.email = 'Ingresa un email válido.';
     }
-    if (!form.sexo || form.sexo.trim().length < 1) {
-      nuevosErrores.sexo = 'El sexo es obligatorio.';
+    if (form.sexo && form.sexo.trim().length > 0 && !['M', 'F'].includes(form.sexo)) {
+      nuevosErrores.sexo = 'El sexo debe ser Masculino (M) o Femenino (F).';
     }
-    if (!form.fecha_nacimiento || !esFechaValida(form.fecha_nacimiento)) {
+    if (form.fecha_nacimiento && !esFechaValida(form.fecha_nacimiento)) {
       nuevosErrores.fecha_nacimiento = 'La fecha de nacimiento debe ser válida y tener el formato YYYY-MM-DD.';
     }
-    if (!form.direccion || form.direccion.trim().length < 3) {
-      nuevosErrores.direccion = 'La dirección es obligatoria (mínimo 3 caracteres).';
+    if (form.direccion && form.direccion.trim().length > 0 && form.direccion.trim().length < 3) {
+      nuevosErrores.direccion = 'La dirección debe tener al menos 3 caracteres.';
     }
     if (!pendiente) {
-      if (!form.fecha_inicio || !form.fecha_vencimiento) {
+      if ((form.fecha_inicio && !form.fecha_vencimiento) || (!form.fecha_inicio && form.fecha_vencimiento)) {
         nuevosErrores.fecha = 'Selecciona ambas fechas.';
-      } else if (isNaN(Date.parse(form.fecha_inicio)) || isNaN(Date.parse(form.fecha_vencimiento))) {
-        nuevosErrores.fecha = 'Las fechas deben ser válidas.';
-      } else if (form.fecha_vencimiento < form.fecha_inicio) {
-        nuevosErrores.fecha = 'La fecha "Hasta" debe ser igual o posterior a la fecha "Desde".';
+      } else if (form.fecha_inicio && form.fecha_vencimiento) {
+        if (isNaN(Date.parse(form.fecha_inicio)) || isNaN(Date.parse(form.fecha_vencimiento))) {
+          nuevosErrores.fecha = 'Las fechas deben ser válidas.';
+        } else if (form.fecha_vencimiento < form.fecha_inicio) {
+          nuevosErrores.fecha = 'La fecha "Hasta" debe ser igual o posterior a la fecha "Desde".';
+        }
       }
     }
     setErrores(nuevosErrores);
@@ -181,15 +185,50 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
       toast.error('Corrige los errores antes de guardar');
       return;
     }
+
+    // Detectar campos importantes en blanco
+    const camposFaltantes: string[] = [];
+    const descripciones: string[] = [];
+    if (!form.telefono) {
+      camposFaltantes.push('Teléfono');
+      descripciones.push('<b>Teléfono:</b> No podrás llamarlo ni enviarle mensajes de WhatsApp.');
+    }
+    if (!form.email) {
+      camposFaltantes.push('Email');
+      descripciones.push('<b>Email:</b> No podrás enviarle correos electrónicos.');
+    }
+    if (!form.fecha_nacimiento) {
+      camposFaltantes.push('Fecha de nacimiento');
+      descripciones.push('<b>Fecha de nacimiento:</b> No podrás felicitarlo en su cumpleaños.');
+    }
+
+    if (camposFaltantes.length > 0) {
+      const { isConfirmed } = await Swal.fire({
+        title: '¿Estás seguro que deseas guardar el cliente sin estos campos?',
+        html: `<ul style='text-align:left;'>${camposFaltantes.map(c => `<li>• ${c}</li>`).join('')}</ul><div class='mt-2 text-sm text-gray-600'>${descripciones.join('<br>')}</div>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Guardar de todos modos',
+        cancelButtonText: 'Cancelar',
+        customClass: { htmlContainer: 'text-left' }
+      });
+      if (!isConfirmed) return;
+    }
+
     setLoading(true);
     try {
-      const data = {
-        ...form,
-        categoria,
+      // Construir el objeto data solo con los campos llenados o null
+      const data: any = {
+        nombre: form.nombre,
         user_id: user.id,
-        fecha_inicio: pendiente ? '9999-12-31' : form.fecha_inicio,
-        fecha_vencimiento: pendiente ? '9999-12-31' : form.fecha_vencimiento,
+        categoria,
+        fecha_inicio: pendiente ? '9999-12-31' : (form.fecha_inicio || null),
+        fecha_vencimiento: pendiente ? '9999-12-31' : (form.fecha_vencimiento || null),
       };
+      ['telefono', 'email', 'sexo', 'fecha_nacimiento', 'direccion', 'notas'].forEach((campo) => {
+        const valor = (form as any)[campo];
+        data[campo] = valor === undefined || valor === null || valor === '' ? null : valor;
+      });
       if (cliente && cliente.id) {
         await api.put(`/api/clientes/${cliente.id}`, data);
       } else {

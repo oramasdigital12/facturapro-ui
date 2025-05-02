@@ -11,6 +11,7 @@ interface VentaModalProps {
   onCreated: () => void;
   venta: Venta | null;
   clientes: Cliente[];
+  preselectedClienteId?: string | null;
 }
 
 interface FormData {
@@ -20,7 +21,7 @@ interface FormData {
   fecha: string;
 }
 
-export default function VentaModal({ open, onClose, onCreated, venta, clientes }: VentaModalProps) {
+export default function VentaModal({ open, onClose, onCreated, venta, clientes, preselectedClienteId }: VentaModalProps) {
   const [form, setForm] = useState<FormData>({
     cliente_id: '',
     monto: '',
@@ -43,6 +44,14 @@ export default function VentaModal({ open, onClose, onCreated, venta, clientes }
         fecha: venta.fecha || new Date().toISOString().split('T')[0]
       });
       setDate(venta.fecha ? new Date(venta.fecha) : null);
+    } else if (preselectedClienteId) {
+      setForm({
+        cliente_id: preselectedClienteId,
+        monto: '',
+        tipo: 'venta',
+        fecha: new Date().toISOString().split('T')[0]
+      });
+      setDate(null);
     } else {
       setForm({
         cliente_id: '',
@@ -53,7 +62,7 @@ export default function VentaModal({ open, onClose, onCreated, venta, clientes }
       setDate(null);
     }
     setErrores({});
-  }, [venta, open]);
+  }, [venta, open, preselectedClienteId]);
 
   useEffect(() => {
     if (!open) {

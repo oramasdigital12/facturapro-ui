@@ -13,6 +13,7 @@ import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import { showDeleteConfirmation, showSuccessMessage } from '../utils/alerts';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 interface Cliente {
   id: string;
@@ -315,14 +316,46 @@ export default function Clientes() {
 
                 <div className="flex gap-3 mt-4">
                   <button
-                    onClick={() => window.open(`tel:${cliente.telefono}`)}
+                    onClick={async () => {
+                      if (!cliente.telefono || cliente.telefono.trim() === '') {
+                        const result = await Swal.fire({
+                          title: 'Sin teléfono registrado',
+                          text: 'Este cliente no tiene un número de teléfono guardado. Por favor, regístralo para poder llamar.',
+                          icon: 'warning',
+                          showCancelButton: true,
+                          confirmButtonText: 'Editar',
+                          cancelButtonText: 'Cancelar',
+                        });
+                        if (result.isConfirmed) {
+                          setClienteEditando(cliente);
+                          setShowModal(true);
+                        }
+                        return;
+                      }
+                      window.open(`tel:${cliente.telefono}`);
+                    }}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors"
                   >
                     <PhoneIcon className="h-5 w-5" />
                     <span className="font-medium">Llamar</span>
                   </button>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
+                      if (!cliente.telefono || cliente.telefono.trim() === '') {
+                        const result = await Swal.fire({
+                          title: 'Sin teléfono registrado',
+                          text: 'Este cliente no tiene un número de teléfono guardado. Por favor, regístralo para poder enviar mensajes.',
+                          icon: 'warning',
+                          showCancelButton: true,
+                          confirmButtonText: 'Editar',
+                          cancelButtonText: 'Cancelar',
+                        });
+                        if (result.isConfirmed) {
+                          setClienteEditando(cliente);
+                          setShowModal(true);
+                        }
+                        return;
+                      }
                       setClienteParaMensaje(cliente);
                       setShowMensajeModal(true);
                     }}

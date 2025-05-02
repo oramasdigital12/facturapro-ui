@@ -16,7 +16,7 @@ export const showDeleteConfirmation = (text: string) => {
 export const showTaskConfirmation = () => {
   return Swal.fire({
     title: '¿Seguro que deseas marcar esta tarea como completada?',
-    text: 'Esta acción no se puede deshacer',
+    text: 'Puedes deshacer esta acción en cualquier momento en la sección de tareas completadas',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#3085d6',

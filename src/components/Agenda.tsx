@@ -8,6 +8,7 @@ interface Tarea {
   fecha_hora: string;
   cliente_id: string;
   estado: string;
+  para_venta: boolean;
 }
 
 interface Cliente {
@@ -43,8 +44,12 @@ export default function Agenda() {
   const cargarTareas = async () => {
     try {
       const response = await api.get('/api/tareas');
-      setTareas(response.data);
-      actualizarContadores(response.data);
+      const tareasConVenta = response.data.map((t: any) => ({
+        ...t,
+        para_venta: typeof t.para_venta === 'boolean' ? t.para_venta : false
+      }));
+      setTareas(tareasConVenta);
+      actualizarContadores(tareasConVenta);
     } catch (error) {
       console.error('Error al cargar tareas:', error);
     }

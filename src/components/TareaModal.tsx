@@ -3,6 +3,7 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { DateTime } from 'luxon';
 
 interface Cliente {
   id: string;
@@ -15,6 +16,7 @@ interface Tarea {
   fecha_hora: string;
   cliente_id: string;
   estado: string;
+  para_venta: boolean;
 }
 
 interface Props {
@@ -30,6 +32,7 @@ export default function TareaModal({ open, onClose, onCreated, tarea, clientes }
     descripcion: '',
     fecha_hora: '',
     cliente_id: '',
+    para_venta: false,
   });
   const [loading, setLoading] = useState(false);
   const [date, setDate] = useState<Date | null>(null);
@@ -45,6 +48,7 @@ export default function TareaModal({ open, onClose, onCreated, tarea, clientes }
         descripcion: tarea.descripcion || '',
         fecha_hora: tarea.fecha_hora || '',
         cliente_id: tarea.cliente_id || '',
+        para_venta: tarea.para_venta || false,
       });
       setDate(tarea.fecha_hora ? new Date(tarea.fecha_hora) : null);
     }
@@ -56,8 +60,9 @@ export default function TareaModal({ open, onClose, onCreated, tarea, clientes }
         descripcion: tarea?.descripcion || '',
         fecha_hora: tarea?.fecha_hora || '',
         cliente_id: tarea?.cliente_id || '',
+        para_venta: tarea?.para_venta || false,
       });
-      setDate(tarea?.fecha_hora ? new Date(tarea.fecha_hora) : null);
+      setDate(tarea?.fecha_hora ? DateTime.fromISO(tarea.fecha_hora, { zone: 'utc' }).setZone('America/Puerto_Rico').toJSDate() : null);
       setErrores({});
     }
   }, [open, tarea]);
@@ -70,8 +75,17 @@ export default function TareaModal({ open, onClose, onCreated, tarea, clientes }
 
   const handleDateChange = (date: Date | null) => {
     setDate(date);
-    setForm({ ...form, fecha_hora: date ? date.toISOString().slice(0, 16) : '' });
+    if (date) {
+      const dt = DateTime.fromJSDate(date, { zone: 'America/Puerto_Rico' });
+      setForm({ ...form, fecha_hora: dt.toUTC().toISO() ?? "" });
+    } else {
+      setForm({ ...form, fecha_hora: '' });
+    }
     setErrores({ ...errores, fecha_hora: '' });
+  };
+
+  const handleSwitchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, para_venta: e.target.checked });
   };
 
   const validarFormulario = () => {
@@ -85,8 +99,13 @@ export default function TareaModal({ open, onClose, onCreated, tarea, clientes }
 
     if (!form.fecha_hora) {
       nuevosErrores.fecha_hora = 'Selecciona una fecha y hora.';
-    } else if (new Date(form.fecha_hora) < new Date()) {
-      nuevosErrores.fecha_hora = 'La fecha y hora no pueden ser anteriores a la actual.';
+    } else {
+      // Convertir ambas fechas a la zona de Puerto Rico usando Luxon
+      const ahoraPR = DateTime.now().setZone('America/Puerto_Rico');
+      const fechaSeleccionadaPR = DateTime.fromISO(form.fecha_hora, { zone: 'utc' }).setZone('America/Puerto_Rico');
+      if (fechaSeleccionadaPR < ahoraPR) {
+        nuevosErrores.fecha_hora = 'La fecha y hora no pueden ser anteriores a la actual en Puerto Rico.';
+      }
     }
 
     if (!form.cliente_id) {
@@ -170,18 +189,14 @@ export default function TareaModal({ open, onClose, onCreated, tarea, clientes }
             className={`w-full px-3 py-2 border rounded focus:outline-none ${errores.fecha_hora ? 'border-red-500' : ''}`}
             calendarClassName="!z-50"
             popperPlacement="bottom"
-            onCalendarOpen={() => setShowDatePicker(true)}
-            onCalendarClose={() => setShowDatePicker(false)}
             minDate={new Date()}
             timeCaption="Hora"
-            locale="en-US"
+            locale="es"
             withPortal={typeof window !== 'undefined' && window.innerWidth < 640}
-            renderCustomHeader={(
-              { date, decreaseMonth, increaseMonth, prevMonthButtonDisabled, nextMonthButtonDisabled }
-            ) => (
+            renderCustomHeader={({ date, decreaseMonth, increaseMonth, prevMonthButtonDisabled, nextMonthButtonDisabled }) => (
               <div className="flex justify-between items-center px-2 py-1">
                 <button onClick={decreaseMonth} disabled={prevMonthButtonDisabled} type="button">‹</button>
-                <span className="font-semibold">{date.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+                <span className="font-semibold">{date.toLocaleString('es-PR', { month: 'long', year: 'numeric' })}</span>
                 <button onClick={increaseMonth} disabled={nextMonthButtonDisabled} type="button">›</button>
               </div>
             )}
@@ -198,6 +213,16 @@ export default function TareaModal({ open, onClose, onCreated, tarea, clientes }
               </button>
             </div>
           )}
+        </div>
+        <div className="mb-4 flex items-center gap-2">
+          <label htmlFor="para_venta" className="font-semibold">¿Esta tarea es para una venta?</label>
+          <input
+            id="para_venta"
+            type="checkbox"
+            checked={form.para_venta}
+            onChange={handleSwitchChange}
+            className="accent-blue-600 w-5 h-5 rounded focus:ring-2 focus:ring-blue-500"
+          />
         </div>
         <div className="mb-4 relative">
           <label className="block mb-1 font-semibold">Selecciona un cliente</label>
