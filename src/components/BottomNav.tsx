@@ -6,7 +6,7 @@ const navItems = [
   { to: '/agenda', icon: <FiCalendar />, label: 'Agenda' },
   { to: '/clientes', icon: <FiUsers />, label: 'Clientes' },
   { to: '/ventas', icon: <FiDollarSign />, label: 'Ventas' },
-  { to: '/configuracion', icon: <FiSettings />, label: 'Config.' },
+  { to: '/configuracion', icon: <FiSettings />, label: 'Info' },
 ];
 
 export default function BottomNav() {

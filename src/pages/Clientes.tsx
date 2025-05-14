@@ -14,6 +14,7 @@ import { showDeleteConfirmation, showSuccessMessage } from '../utils/alerts';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import EnviarEmailModal from '../components/EnviarEmailModal';
 
 interface Cliente {
   id: string;
@@ -46,6 +47,8 @@ export default function Clientes() {
   const [showMensajeModal, setShowMensajeModal] = useState(false);
   const [clienteParaMensaje, setClienteParaMensaje] = useState<Cliente | null>(null);
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [clienteParaEmail, setClienteParaEmail] = useState<Cliente | null>(null);
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -154,7 +157,7 @@ export default function Clientes() {
       </button>
 
       <div className="relative flex-1 flex flex-col px-4 pb-24">
-        <div className="text-center mb-8 mt-6">
+        <div className="text-center mb-8 mt-6 relative">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">Clientes</h1>
           <div className="w-24 h-1 bg-blue-500 mx-auto rounded-full"></div>
         </div>
@@ -194,6 +197,17 @@ export default function Clientes() {
               </button>
             ))}
           </div>
+          {/* Botón de email justo encima del listado de clientes */}
+          <div className="flex justify-end mb-2">
+            <button
+              onClick={() => setShowEmailModal(true)}
+              className="p-4 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors shadow-sm"
+              title="Enviar email"
+              style={{ boxShadow: '0 2px 8px rgba(59,130,246,0.10)' }}
+            >
+              <FiMail className="h-6 w-6" />
+            </button>
+          </div>
         </div>
         {loading ? (
           <div className="text-center py-8">Cargando...</div>
@@ -201,7 +215,7 @@ export default function Clientes() {
           <div className="text-center py-8 text-gray-500">No hay clientes.</div>
         ) : (
           <ul className="space-y-4">
-            {clientesMostrados.map(cliente => (
+            {clientesMostrados.map((cliente, idx) => (
               <li key={cliente.id} className="bg-white rounded-xl shadow-sm p-4 relative">
                 <div className="absolute top-4 right-4 flex gap-2">
                   <button
@@ -381,8 +395,24 @@ export default function Clientes() {
         </button>
         <ClienteModal
           open={showModal}
-          onClose={() => setShowModal(false)}
-          onCreated={handleCreated}
+          onClose={() => {
+            setShowModal(false);
+            if (clienteParaEmail) {
+              setTimeout(() => {
+                setShowEmailModal(true);
+              }, 300);
+            }
+            setClienteParaEmail(null);
+          }}
+          onCreated={() => {
+            fetchClientes();
+            if (clienteParaEmail) {
+              setTimeout(() => {
+                setShowEmailModal(true);
+              }, 300);
+            }
+            setClienteParaEmail(null);
+          }}
           cliente={clienteEditando}
         />
         <MensajeWhatsappModal
@@ -390,6 +420,19 @@ export default function Clientes() {
           onClose={() => setShowMensajeModal(false)}
           cliente={clienteParaMensaje}
         />
+        {showEmailModal && (
+          <EnviarEmailModal
+            open={showEmailModal}
+            onClose={() => setShowEmailModal(false)}
+            clientes={clientes}
+            onEditCliente={(cliente: Cliente) => {
+              setShowEmailModal(false);
+              setClienteEditando(cliente);
+              setShowModal(true);
+              setClienteParaEmail(cliente);
+            }}
+          />
+        )}
       </div>
     </div>
   );

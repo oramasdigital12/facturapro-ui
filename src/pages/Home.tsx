@@ -26,7 +26,7 @@ const menuItems = [
     color: 'text-red-500'
   },
   {
-    title: 'Configuración',
+    title: 'Información del Negocio',
     description: 'Ajustes y cuenta',
     icon: Cog6ToothIcon,
     href: '/configuracion',
