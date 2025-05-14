@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Dialog } from '@headlessui/react';
-import Swal from 'sweetalert2';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { FiCheckSquare, FiSquare } from 'react-icons/fi';
 

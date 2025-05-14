@@ -89,10 +89,6 @@ export default function Clientes() {
     return primerNombre.startsWith(busqueda.trim().toLowerCase());
   });
 
-  const handleCreated = () => {
-    fetchClientes();
-  };
-
   const handleDelete = async (id: string) => {
     const result = await showDeleteConfirmation('¿Seguro que deseas eliminar este cliente?');
     if (result.isConfirmed) {
@@ -215,7 +211,7 @@ export default function Clientes() {
           <div className="text-center py-8 text-gray-500">No hay clientes.</div>
         ) : (
           <ul className="space-y-4">
-            {clientesMostrados.map((cliente, idx) => (
+            {clientesMostrados.map((cliente) => (
               <li key={cliente.id} className="bg-white rounded-xl shadow-sm p-4 relative">
                 <div className="absolute top-4 right-4 flex gap-2">
                   <button

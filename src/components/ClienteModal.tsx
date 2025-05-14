@@ -120,27 +120,6 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
     setErrores({ ...errores, fecha: '' });
   };
 
-  const handlePendienteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setStatus(e.target.checked ? 'pendiente' : 'activo');
-    if (e.target.checked) {
-      setForm({ ...form, fecha_nacimiento: '', fecha_vencimiento: '' });
-      setErrores({ ...errores, fecha: '' });
-    } else {
-      const hoy = new Date();
-      const hoyStr = hoy.toISOString().split('T')[0];
-      setForm({
-        ...form,
-        fecha_inicio: form.fecha_inicio === '9999-12-31' ? hoyStr : form.fecha_inicio,
-        fecha_vencimiento: form.fecha_vencimiento === '9999-12-31' ? hoyStr : form.fecha_vencimiento,
-      });
-    }
-  };
-
-  const categoria = calcularCategoria(
-    status === 'pendiente',
-    form.fecha_vencimiento
-  );
-
   const validarFormulario = () => {
     const nuevosErrores: { [key: string]: string } = {};
     if (!status) {
