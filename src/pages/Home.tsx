@@ -2,6 +2,11 @@ import { Link } from 'react-router-dom';
 import { UserGroupIcon, CurrencyDollarIcon, CalendarIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/solid';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import ValidarClienteModal from '../components/ValidarClienteModal';
+import api from '../services/api';
+import { useState, useEffect } from 'react';
+import ClienteModal from '../components/ClienteModal';
+import { FiMail } from 'react-icons/fi';
 
 const menuItems = [
   {
@@ -31,12 +36,30 @@ const menuItems = [
     icon: Cog6ToothIcon,
     href: '/configuracion',
     color: 'text-gray-500'
+  },
+  {
+    title: 'Validar Cliente',
+    description: 'Enviar email a validaciones',
+    icon: FiMail,
+    href: '',
+    color: 'text-blue-400'
   }
 ];
 
 export default function Home() {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const [showValidarModal, setShowValidarModal] = useState(false);
+  const [clientes, setClientes] = useState([]);
+  const [negocio, setNegocio] = useState({ nombre_negocio: '', email: '' });
+  const [clienteEditando, setClienteEditando] = useState<any>(null);
+  const [showClienteModal, setShowClienteModal] = useState(false);
+  
+
+  useEffect(() => {
+    api.get('/api/clientes').then(res => setClientes(res.data));
+    api.get('/api/negocio-config').then(res => setNegocio(res.data));
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -93,21 +116,39 @@ export default function Home() {
 
         <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto w-full">
           {menuItems.map((item) => (
-            <Link
-              key={item.title}
-              to={item.href}
-              className="transform transition-all duration-300 hover:scale-105"
-            >
-              <div className="aspect-square bg-white rounded-3xl shadow-sm hover:shadow-md transition-shadow duration-300">
-                <div className="h-full w-full p-4">
-                  <div className="flex flex-col items-center justify-center h-full text-center">
-                    <item.icon className={`h-10 w-10 ${item.color} mb-2 transition-colors duration-300`} />
-                    <h2 className="text-base font-semibold text-gray-800 mb-0.5">{item.title}</h2>
-                    <p className="text-blue-500 text-xs leading-tight">{item.description}</p>
+            item.title === 'Validar Cliente' ? (
+              <button
+                key={item.title}
+                className="transform transition-all duration-300 hover:scale-105 w-full"
+                onClick={() => setShowValidarModal(true)}
+              >
+                <div className="aspect-square bg-white rounded-3xl shadow-sm hover:shadow-md transition-shadow duration-300">
+                  <div className="h-full w-full p-4">
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                      <item.icon className={`h-10 w-10 ${item.color} mb-2 transition-colors duration-300`} />
+                      <h2 className="text-base font-semibold text-gray-800 mb-0.5">{item.title}</h2>
+                      <p className="text-blue-500 text-xs leading-tight">{item.description}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Link>
+              </button>
+            ) : (
+              <Link
+                key={item.title}
+                to={item.href}
+                className="transform transition-all duration-300 hover:scale-105"
+              >
+                <div className="aspect-square bg-white rounded-3xl shadow-sm hover:shadow-md transition-shadow duration-300">
+                  <div className="h-full w-full p-4">
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                      <item.icon className={`h-10 w-10 ${item.color} mb-2 transition-colors duration-300`} />
+                      <h2 className="text-base font-semibold text-gray-800 mb-0.5">{item.title}</h2>
+                      <p className="text-blue-500 text-xs leading-tight">{item.description}</p>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            )
           ))}
         </div>
         {/* Sección de soporte */}
@@ -130,6 +171,32 @@ export default function Home() {
           </a>
         </div>
       </div>
+      <ValidarClienteModal
+        open={showValidarModal}
+        onClose={() => setShowValidarModal(false)}
+        clientes={clientes}
+        nombreNegocio={negocio.nombre_negocio}
+        emailNegocio={negocio.email}
+        onEditCliente={(cliente) => {
+          setShowValidarModal(false);
+          setClienteEditando(cliente);
+          setShowClienteModal(true);
+        }}
+      
+      />
+      <ClienteModal
+        open={showClienteModal}
+        onClose={() => {
+          setShowClienteModal(false);
+          setTimeout(() => setShowValidarModal(true), 300);
+        }}
+        onCreated={() => {
+          api.get('/api/clientes').then(res => setClientes(res.data));
+          setShowClienteModal(false);
+          setTimeout(() => setShowValidarModal(true), 300);
+        }}
+        cliente={clienteEditando}
+      />
     </div>
   );
 } 

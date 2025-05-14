@@ -65,6 +65,7 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
     nombre: '',
     telefono: '',
     email: '',
+    identification_number: '',
     sexo: '',
     fecha_nacimiento: '',
     fecha_inicio: '',
@@ -83,6 +84,7 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
         nombre: cliente.nombre || '',
         telefono: cliente.telefono || '',
         email: cliente.email || '',
+        identification_number: cliente.identification_number || '',
         sexo: cliente.sexo || '',
         fecha_nacimiento: cliente.fecha_nacimiento || '',
         fecha_inicio: cliente.fecha_inicio && cliente.fecha_inicio !== '9999-12-31' ? cliente.fecha_inicio : '',
@@ -97,6 +99,7 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
         nombre: '',
         telefono: '',
         email: '',
+        identification_number: '',
         sexo: '',
         fecha_nacimiento: '',
         fecha_inicio: '',
@@ -184,6 +187,10 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
       camposFaltantes.push('Fecha de nacimiento');
       descripciones.push('<b>Fecha de nacimiento:</b> No podrás felicitarlo en su cumpleaños.');
     }
+    if (!form.identification_number) {
+      camposFaltantes.push('Identificación');
+      descripciones.push('<b>Identificación:</b> Sin número de identificación no podrás enviar emails automáticos a validaciones.');
+    }
 
     if (camposFaltantes.length > 0 || !usarFechas) {
       let extra = '';
@@ -212,7 +219,7 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
         fecha_inicio: usarFechas ? (form.fecha_inicio || '9999-12-31') : '9999-12-31',
         fecha_vencimiento: usarFechas ? (form.fecha_vencimiento || '9999-12-31') : '9999-12-31',
       };
-      ['telefono', 'email', 'sexo', 'fecha_nacimiento', 'direccion', 'notas'].forEach((campo) => {
+      ['telefono', 'email', 'identification_number', 'sexo', 'fecha_nacimiento', 'direccion', 'notas'].forEach((campo) => {
         const valor = (form as any)[campo];
         data[campo] = valor === undefined || valor === null || valor === '' ? null : valor;
       });
@@ -268,44 +275,6 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
               {errores.status && <div className="text-sm text-red-600 mb-2 text-center">{errores.status}</div>}
             </div>
 
-            <div className="flex flex-col md:flex-row gap-3 mb-3 relative">
-              <div className="w-full mb-2 flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={usarFechas}
-                  onChange={e => setUsarFechas(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-400 focus:ring-2 focus:ring-blue-400"
-                  id="usarFechas"
-                />
-                <label htmlFor="usarFechas" className="text-sm text-gray-700 select-none cursor-pointer">Seleccionar fechas</label>
-              </div>
-              <div className="flex-1">
-                <label className="text-sm font-medium mb-1 text-gray-700">Fecha de Comienzo</label>
-                <input
-                  type="text"
-                  name="fecha_inicio"
-                  placeholder="yyyy-mm-dd"
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${errores.fecha ? 'border-red-500' : 'border-gray-300'}`}
-                  value={usarFechas ? form.fecha_inicio : ''}
-                  onChange={handleFechaChange}
-                  disabled={!usarFechas}
-                />
-              </div>
-              <div className="flex-1">
-                <label className="text-sm font-medium mb-1 text-gray-700">Fecha de Vencimiento</label>
-                <input
-                  type="text"
-                  name="fecha_vencimiento"
-                  placeholder="yyyy-mm-dd"
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${errores.fecha ? 'border-red-500' : 'border-gray-300'}`}
-                  value={usarFechas ? form.fecha_vencimiento : ''}
-                  onChange={handleFechaChange}
-                  disabled={!usarFechas}
-                />
-              </div>
-            </div>
-            {errores.fecha && <div className="text-sm text-red-600 mb-2 text-center">{errores.fecha}</div>}
-
             <div>
               <label className="text-sm font-medium mb-1 text-gray-700">Nombre</label>
               <input
@@ -350,6 +319,56 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
               />
               {errores.email && <div className="text-sm text-red-600 mt-1">{errores.email}</div>}
             </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1 text-gray-700">Identificación</label>
+              <input
+                name="identification_number"
+                type="text"
+                placeholder="Número de identificación"
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 border-gray-300"
+                value={form.identification_number}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-3 mb-3 relative">
+              <div className="w-full mb-2 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={usarFechas}
+                  onChange={e => setUsarFechas(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-400 focus:ring-2 focus:ring-blue-400"
+                  id="usarFechas"
+                />
+                <label htmlFor="usarFechas" className="text-sm text-gray-700 select-none cursor-pointer">Seleccionar fechas</label>
+              </div>
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-1 text-gray-700">Fecha de Comienzo</label>
+                <input
+                  type="text"
+                  name="fecha_inicio"
+                  placeholder="yyyy-mm-dd"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${errores.fecha ? 'border-red-500' : 'border-gray-300'}`}
+                  value={usarFechas ? form.fecha_inicio : ''}
+                  onChange={handleFechaChange}
+                  disabled={!usarFechas}
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-1 text-gray-700">Fecha de Vencimiento</label>
+                <input
+                  type="text"
+                  name="fecha_vencimiento"
+                  placeholder="yyyy-mm-dd"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${errores.fecha ? 'border-red-500' : 'border-gray-300'}`}
+                  value={usarFechas ? form.fecha_vencimiento : ''}
+                  onChange={handleFechaChange}
+                  disabled={!usarFechas}
+                />
+              </div>
+            </div>
+            {errores.fecha && <div className="text-sm text-red-600 mb-2 text-center">{errores.fecha}</div>}
 
             <div>
               <label className="text-sm font-medium mb-1 text-gray-700">Sexo</label>
