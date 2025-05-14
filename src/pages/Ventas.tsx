@@ -14,8 +14,9 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, useDarkMode } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
 
 export default function Ventas() {
   const [ventas, setVentas] = useState<Venta[]>([]);
@@ -30,6 +31,7 @@ export default function Ventas() {
   const [loading, setLoading] = useState(true);
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const { dark, setDark } = useDarkMode();
 
   useEffect(() => {
     fetchVentas();
@@ -40,6 +42,13 @@ export default function Ventas() {
       setPreselectedClienteId(clienteId);
       setShowModal(true);
       localStorage.removeItem('venta_cliente_id');
+    }
+    if (dark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
     // eslint-disable-next-line
   }, []);
@@ -211,7 +220,7 @@ export default function Ventas() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* Wave decoration */}
       <div className="absolute inset-x-0 top-0 -z-10">
         <svg className="w-full h-48" viewBox="0 0 1440 320" preserveAspectRatio="none">
@@ -228,19 +237,33 @@ export default function Ventas() {
         </svg>
       </div>
 
-      {/* Logout button */}
-      <button
-        type="button"
-        onClick={() => handleLogout()}
-        className="absolute top-4 right-4 p-2 rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer z-50"
-        title="Cerrar sesión"
-      >
-        <ArrowRightOnRectangleIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-500" />
-      </button>
+      {/* Logout y Dark mode button */}
+      <div className="absolute top-4 right-4 flex items-center gap-2 z-50">
+        <button
+          type="button"
+          onClick={() => setDark(!dark)}
+          className="p-2 rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer"
+          title={dark ? 'Modo claro' : 'Modo oscuro'}
+        >
+          {dark ? (
+            <SunIcon className="w-6 h-6 text-yellow-400 group-hover:text-yellow-500" />
+          ) : (
+            <MoonIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-500" />
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => handleLogout()}
+          className="p-2 rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer"
+          title="Cerrar sesión"
+        >
+          <ArrowRightOnRectangleIcon className="w-6 h-6 text-gray-400 dark:text-gray-200 group-hover:text-blue-500" />
+        </button>
+      </div>
 
       <div className="relative flex-1 flex flex-col px-4 pb-24">
         <div className="text-center mb-8 mt-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Ventas</h1>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Ventas</h1>
           <div className="w-24 h-1 bg-blue-500 mx-auto rounded-full"></div>
         </div>
         <div className="flex flex-col gap-4 mb-6">

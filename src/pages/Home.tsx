@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { UserGroupIcon, CurrencyDollarIcon, CalendarIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/solid';
-import { useAuth } from '../contexts/AuthContext';
+import { UserGroupIcon, CurrencyDollarIcon, CalendarIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon, MoonIcon, SunIcon } from '@heroicons/react/24/solid';
+import { useAuth, useDarkMode } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import ValidarClienteModal from '../components/ValidarClienteModal';
 import api from '../services/api';
@@ -54,12 +54,20 @@ export default function Home() {
   const [negocio, setNegocio] = useState({ nombre_negocio: '', email: '' });
   const [clienteEditando, setClienteEditando] = useState<any>(null);
   const [showClienteModal, setShowClienteModal] = useState(false);
+  const { dark, setDark } = useDarkMode();
   
 
   useEffect(() => {
     api.get('/api/clientes').then(res => setClientes(res.data));
     api.get('/api/negocio-config').then(res => setNegocio(res.data));
-  }, []);
+    if (dark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [dark]);
 
   const handleLogout = async () => {
     try {
@@ -71,7 +79,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* Wave decoration */}
       <div className="absolute inset-x-0 top-0 -z-10">
         <svg className="w-full h-48" viewBox="0 0 1440 320" preserveAspectRatio="none">
@@ -88,15 +96,29 @@ export default function Home() {
         </svg>
       </div>
 
-      {/* Logout button */}
-      <button
-        type="button"
-        onClick={() => handleLogout()}
-        className="absolute top-4 right-4 p-2 rounded-xl bg-white shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer z-50"
-        title="Cerrar sesión"
-      >
-        <ArrowRightOnRectangleIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-500" />
-      </button>
+      {/* Logout y Dark mode button */}
+      <div className="absolute top-4 right-4 flex items-center gap-2 z-50">
+        <button
+          type="button"
+          onClick={() => setDark(!dark)}
+          className="p-2 rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer"
+          title={dark ? 'Modo claro' : 'Modo oscuro'}
+        >
+          {dark ? (
+            <SunIcon className="w-6 h-6 text-yellow-400 group-hover:text-yellow-500" />
+          ) : (
+            <MoonIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-500" />
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => handleLogout()}
+          className="p-2 rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer"
+          title="Cerrar sesión"
+        >
+          <ArrowRightOnRectangleIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-500" />
+        </button>
+      </div>
 
       <div className="relative flex-1 flex flex-col justify-center px-4 pb-24">
         <div className="text-center mb-8">
@@ -108,7 +130,7 @@ export default function Home() {
               draggable={false}
             />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
             Inicio
           </h1>
           <div className="w-16 h-1 bg-blue-500 mx-auto rounded-full"></div>
@@ -122,12 +144,12 @@ export default function Home() {
                 className="transform transition-all duration-300 hover:scale-105 w-full"
                 onClick={() => setShowValidarModal(true)}
               >
-                <div className="aspect-square bg-white rounded-3xl shadow-sm hover:shadow-md transition-shadow duration-300">
+                <div className="aspect-square bg-white dark:bg-gray-800 rounded-3xl shadow-sm hover:shadow-md transition-shadow duration-300">
                   <div className="h-full w-full p-4">
                     <div className="flex flex-col items-center justify-center h-full text-center">
                       <item.icon className={`h-10 w-10 ${item.color} mb-2 transition-colors duration-300`} />
-                      <h2 className="text-base font-semibold text-gray-800 mb-0.5">{item.title}</h2>
-                      <p className="text-blue-500 text-xs leading-tight">{item.description}</p>
+                      <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-0.5">{item.title}</h2>
+                      <p className="text-blue-500 dark:text-blue-300 text-xs leading-tight">{item.description}</p>
                     </div>
                   </div>
                 </div>
@@ -138,12 +160,12 @@ export default function Home() {
                 to={item.href}
                 className="transform transition-all duration-300 hover:scale-105"
               >
-                <div className="aspect-square bg-white rounded-3xl shadow-sm hover:shadow-md transition-shadow duration-300">
+                <div className="aspect-square bg-white dark:bg-gray-800 rounded-3xl shadow-sm hover:shadow-md transition-shadow duration-300">
                   <div className="h-full w-full p-4">
                     <div className="flex flex-col items-center justify-center h-full text-center">
                       <item.icon className={`h-10 w-10 ${item.color} mb-2 transition-colors duration-300`} />
-                      <h2 className="text-base font-semibold text-gray-800 mb-0.5">{item.title}</h2>
-                      <p className="text-blue-500 text-xs leading-tight">{item.description}</p>
+                      <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-0.5">{item.title}</h2>
+                      <p className="text-blue-500 dark:text-blue-300 text-xs leading-tight">{item.description}</p>
                     </div>
                   </div>
                 </div>
@@ -154,7 +176,7 @@ export default function Home() {
         {/* Sección de soporte */}
         <div className="flex flex-col items-center mt-10 gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-lg font-semibold text-blue-600">¿Tienes preguntas?</span>
+            <span className="text-lg font-semibold text-blue-600 dark:text-blue-300">¿Tienes preguntas?</span>
             <span className="text-2xl">💬</span>
           </div>
           <a

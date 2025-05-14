@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Dialog } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { FiCheckSquare, FiSquare } from 'react-icons/fi';
 
@@ -139,21 +138,12 @@ export default function ValidarClienteModal({ open, onClose, clientes, nombreNeg
   if (!open) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} className="relative z-50">
-      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto max-w-md rounded-xl bg-white p-6 shadow-lg relative">
-          {/* Botón de cerrar */}
-          <button
-            onClick={onClose}
-            className="absolute top-3 right-3 p-1 rounded-full hover:bg-gray-200 focus:outline-none"
-            title="Cerrar"
-          >
-            <XMarkIcon className="h-5 w-5 text-gray-400" />
-          </button>
-          {/* Título centrado */}
-          <Dialog.Title className="text-lg font-medium mb-4 text-center">Validar Cliente</Dialog.Title>
-
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <form className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md flex flex-col max-h-[80vh] relative">
+        <h2 className="text-xl font-bold mb-4 text-center text-gray-800">
+          Validar Cliente
+        </h2>
+        <div className="flex-1 overflow-y-auto mb-2">
           {/* Buscador de clientes y checkbox Todos en la misma fila */}
           <div className="flex items-center mb-2">
             <input
@@ -316,25 +306,25 @@ export default function ValidarClienteModal({ open, onClose, clientes, nombreNeg
               placeholder="Mensaje del email"
             />
           </div>
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleEnviarEmail}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-              disabled={!destinatario || !titulo || !descripcion || seleccionados.length === 0}
-            >
-              Enviar email
-            </button>
-          </div>
-        </Dialog.Panel>
-      </div>
-    </Dialog>
+        </div>
+        <div className="bg-white flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleEnviarEmail}
+            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium"
+            disabled={!destinatario || !titulo || !descripcion || seleccionados.length === 0}
+          >
+            Enviar email
+          </button>
+        </div>
+      </form>
+    </div>
   );
 } 

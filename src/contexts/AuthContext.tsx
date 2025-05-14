@@ -62,4 +62,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext); 
+export const useAuth = () => useContext(AuthContext);
+
+// CONTEXTO GLOBAL DE DARK MODE
+interface DarkModeContextType {
+  dark: boolean;
+  setDark: React.Dispatch<React.SetStateAction<boolean>>;
+}
+const DarkModeContext = createContext<DarkModeContextType>({
+  dark: false,
+  setDark: () => {},
+});
+
+export function DarkModeProvider({ children }: { children: React.ReactNode }) {
+  const [dark, setDark] = useState(() => localStorage.getItem('theme') === 'dark');
+
+  useEffect(() => {
+    if (dark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [dark]);
+
+  return (
+    <DarkModeContext.Provider value={{ dark, setDark }}>
+      {children}
+    </DarkModeContext.Provider>
+  );
+}
+
+export function useDarkMode() {
+  return useContext(DarkModeContext);
+} 
