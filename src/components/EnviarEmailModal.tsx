@@ -15,7 +15,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   clientes: Cliente[];
-  onEditCliente: (cliente: Cliente) => void;
+  onEditCliente: (cliente: Cliente, ids: string[]) => void;
   clientesPreseleccionados?: string[]; // IDs de clientes a seleccionar tras edición
 }
 
@@ -32,15 +32,10 @@ export default function EnviarEmailModal({ open, onClose, clientes, onEditClient
   // Preselección tras edición
   useEffect(() => {
     if (clientesPreseleccionados.length > 0) {
-      const seleccion = clientes.filter(c => clientesPreseleccionados.includes(c.id) && c.email && c.email.trim() !== '');
+      const seleccion = clientes.filter(c => clientesPreseleccionados.includes(c.id));
       setSeleccionados(seleccion);
     }
   }, [clientesPreseleccionados, clientes]);
-
-  // Filtrado dinámico de clientes
-  const clientesFiltrados = clientes.filter(c =>
-    c.nombre.toLowerCase().includes(busqueda.toLowerCase())
-  );
 
   // Seleccionar todos los clientes del sistema
   const handleSeleccionarTodos = () => {
@@ -86,7 +81,9 @@ export default function EnviarEmailModal({ open, onClose, clientes, onEditClient
 
   // Editar un cliente sin email
   const handleEditarSinEmail = (cliente: Cliente) => {
-    onEditCliente(cliente);
+    setShowSinEmail(false);
+    setModalCerrar(false);
+    onEditCliente(cliente, seleccionados.map(c => c.id));
   };
 
   // Cuando se edita un cliente, si ya tiene email, añadirlo a seleccionados y quitarlo de sinEmail
@@ -123,185 +120,215 @@ export default function EnviarEmailModal({ open, onClose, clientes, onEditClient
   const todosSeleccionados = seleccionados.length === clientes.filter(c => c.email && c.email.trim() !== '').length;
 
   return (
-    <Dialog open={open} onClose={onClose} className="relative z-50">
+    <Dialog open={open} onClose={onClose} className="relative z-[100]">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto max-w-md rounded-xl bg-white p-6 shadow-lg relative">
-          {/* Botón de cerrar */}
-          <button
-            onClick={onClose}
-            className="absolute top-3 right-3 p-1 rounded-full hover:bg-gray-200 focus:outline-none"
-            title="Cerrar"
-          >
-            <XMarkIcon className="h-5 w-5 text-gray-400" />
-          </button>
-          {/* Título centrado */}
-          <Dialog.Title className="text-lg font-medium mb-4 text-center">Enviar Email</Dialog.Title>
-
-          {/* Buscador de clientes y checkbox Todos en la misma fila */}
-          <div className="flex items-center mb-2">
-            <input
-              type="text"
-              placeholder="Buscar cliente por nombre..."
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={busqueda}
-              onChange={e => setBusqueda(e.target.value)}
-            />
-            <div className="flex items-center ml-2 select-none cursor-pointer" onClick={todosSeleccionados ? handleQuitarTodos : handleSeleccionarTodos}>
-              <span className="text-sm font-medium mr-1">Todos</span>
-              {todosSeleccionados ? (
-                <FiCheckSquare className="h-5 w-5 text-blue-600" />
-              ) : (
-                <FiSquare className="h-5 w-5 text-gray-400" />
-              )}
-            </div>
-          </div>
-
-          {/* Lista de clientes para seleccionar */}
-          <ul className="mt-2 max-h-40 overflow-y-auto divide-y mb-4">
-            {clientesFiltrados.map(cliente => (
-              <li
-                key={cliente.id}
-                className={`py-2 px-2 hover:bg-blue-50 cursor-pointer ${seleccionados.some(c => c.id === cliente.id) ? 'opacity-50 pointer-events-none' : ''}`}
-                onClick={() => handleSeleccionarCliente(cliente)}
+      <div className="fixed inset-0 flex items-center justify-center p-2 sm:p-4">
+        <Dialog.Panel className="mx-auto max-w-md w-full rounded-xl bg-white p-0 shadow-lg relative flex flex-col max-h-[90vh]">
+          <form className="flex flex-col flex-1 min-h-0">
+            <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-6 pb-4">
+              {/* Botón de cerrar */}
+              <button
+                onClick={onClose}
+                className="absolute top-3 right-3 p-1 rounded-full hover:bg-gray-200 focus:outline-none"
+                title="Cerrar"
               >
-                {cliente.nombre}
-              </li>
-            ))}
-            {clientesFiltrados.length === 0 && (
-              <li className="py-2 px-2 text-gray-400">No hay clientes</li>
-            )}
-          </ul>
+                <XMarkIcon className="h-5 w-5 text-gray-400" />
+              </button>
+              {/* Título centrado */}
+              <Dialog.Title className="text-lg font-medium mb-4 text-center">Enviar Email</Dialog.Title>
 
-          {/* Emails seleccionados y botón quitar todos en sección separada */}
-          {seleccionados.length > 0 && (
-            <div className="bg-gray-50 rounded-lg p-3 mb-4 mt-2 shadow-inner">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-gray-700">Emails seleccionados</span>
-                <button
-                  onClick={handleQuitarTodos}
-                  className="px-3 py-1 rounded-full bg-red-100 text-red-600 hover:bg-red-200 text-xs font-semibold shadow-sm transition-colors"
-                >
-                  Quitar todos
-                </button>
+              {/* Label e input de búsqueda */}
+              <div className="mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Buscar cliente por nombre..."
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={busqueda}
+                    onChange={e => setBusqueda(e.target.value)}
+                  />
+                  <div className="flex items-center select-none cursor-pointer ml-2" onClick={todosSeleccionados ? handleQuitarTodos : handleSeleccionarTodos}>
+                    <span className="text-sm font-medium mr-1">Todos</span>
+                    {todosSeleccionados ? (
+                      <FiCheckSquare className="h-5 w-5 text-blue-600" />
+                    ) : (
+                      <FiSquare className="h-5 w-5 text-gray-400" />
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2 max-h-20 overflow-y-auto pr-1">
-                {seleccionados.map(cliente => (
-                  <div key={cliente.id} className="flex items-center bg-blue-100/70 text-blue-800 rounded-full px-3 py-1 text-xs font-medium">
-                    <span className="mr-2">{cliente.email}</span>
-                    <button onClick={() => handleQuitarCliente(cliente.id)} className="ml-1 text-blue-500 hover:text-blue-700">
-                      <XMarkIcon className="h-4 w-4" />
+              {/* Lista de clientes para seleccionar en un frame visual */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg shadow-inner mb-4 max-h-40 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
+                <ul className="divide-y">
+                  {/* Clientes seleccionados arriba */}
+                  {clientes
+                    .filter(c => c.nombre.toLowerCase().startsWith(busqueda.trim().toLowerCase()) && seleccionados.some(s => s.id === c.id))
+                    .map(cliente => (
+                      <li
+                        key={cliente.id}
+                        className="py-2 px-2 flex items-center gap-2 bg-blue-100/70 cursor-pointer"
+                        onClick={() => handleQuitarCliente(cliente.id)}
+                      >
+                        <span className="font-semibold">{cliente.nombre}</span>
+                        {!cliente.email || cliente.email.trim() === '' ? (
+                          <span className="ml-2 text-xs text-red-500 font-semibold">Sin email</span>
+                        ) : null}
+                        <span className="ml-auto text-xs text-blue-600">Seleccionado</span>
+                      </li>
+                    ))}
+                  {/* Clientes no seleccionados abajo */}
+                  {clientes
+                    .filter(c => c.nombre.toLowerCase().startsWith(busqueda.trim().toLowerCase()) && !seleccionados.some(s => s.id === c.id))
+                    .map(cliente => (
+                      <li
+                        key={cliente.id}
+                        className="py-2 px-2 flex items-center gap-2 hover:bg-blue-50 cursor-pointer"
+                        onClick={() => handleSeleccionarCliente(cliente)}
+                      >
+                        <span>{cliente.nombre}</span>
+                        {!cliente.email || cliente.email.trim() === '' ? (
+                          <span className="ml-2 text-xs text-red-500 font-semibold">Sin email</span>
+                        ) : null}
+                      </li>
+                    ))}
+                  {clientes.filter(c => c.nombre.toLowerCase().startsWith(busqueda.trim().toLowerCase())).length === 0 && (
+                    <li className="py-2 px-2 text-gray-400">No hay clientes</li>
+                  )}
+                </ul>
+              </div>
+
+              {/* Emails seleccionados y botón quitar todos en sección separada */}
+              {seleccionados.length > 0 && (
+                <div className="bg-gray-50 rounded-lg p-3 mb-4 mt-2 shadow-inner">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-gray-700">Clientes seleccionados</span>
+                    <button
+                      onClick={handleQuitarTodos}
+                      className="px-3 py-1 rounded-full bg-red-100 text-red-600 hover:bg-red-200 text-xs font-semibold shadow-sm transition-colors"
+                    >
+                      Quitar todos
                     </button>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Inputs de email */}
-          <div className="mb-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
-            <input
-              type="text"
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={titulo}
-              onChange={e => setTitulo(e.target.value)}
-              placeholder="Título del email"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-            <textarea
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={descripcion}
-              onChange={e => setDescripcion(e.target.value)}
-              rows={4}
-              placeholder="Escribe el mensaje del email"
-            />
-          </div>
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleEnviarEmail}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-              disabled={!titulo || !descripcion || seleccionados.length === 0}
-            >
-              Enviar email
-            </button>
-          </div>
-
-          {/* Modal/alerta para clientes sin email */}
-          {showSinEmail && sinEmail.length > 0 && (
-            <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30">
-              <div className="bg-white rounded-xl p-6 shadow-lg max-w-xs w-full relative">
-                <button
-                  onClick={() => setShowSinEmail(false)}
-                  className="absolute top-3 right-3 p-1 rounded-full hover:bg-gray-200 focus:outline-none"
-                  title="Cerrar"
-                >
-                  <XMarkIcon className="h-5 w-5 text-gray-400" />
-                </button>
-                <h3 className={`text-center font-semibold mb-3 ${modoIndividual ? 'text-orange-600' : 'text-red-600'}`}>{modoIndividual ? 'Cliente sin email' : 'Clientes sin email'}</h3>
-                <ul className="mb-4">
-                  {sinEmail.map(cliente => (
-                    <li key={cliente.id} className="flex items-center justify-between mb-2">
-                      <span>{cliente.nombre}</span>
-                      <div className="flex gap-2 items-center">
-                        <button
-                          onClick={() => handleEditarSinEmail(cliente)}
-                          className="text-blue-600 hover:underline text-xs px-2 py-1 rounded border border-blue-100 bg-blue-50"
-                        >
-                          Añadir email
-                        </button>
-                        <button
-                          onClick={() => handleQuitarSinEmail(cliente.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
+                  <div className="flex flex-wrap gap-2 max-h-20 overflow-y-auto pr-1">
+                    {seleccionados.map(cliente => (
+                      <div key={cliente.id} className="flex items-center bg-blue-100/70 text-blue-800 rounded-full px-3 py-1 text-xs font-medium">
+                        <span className="mr-2">{cliente.nombre} - {cliente.email ? cliente.email : <span className='text-red-500 font-semibold'>Sin email</span>}</span>
+                        <button onClick={() => handleQuitarCliente(cliente.id)} className="ml-1 text-blue-500 hover:text-blue-700">
                           <XMarkIcon className="h-4 w-4" />
                         </button>
                       </div>
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  onClick={handleCerrarSinEmail}
-                  className="w-full py-2 rounded bg-gray-100 text-gray-700 font-medium hover:bg-gray-200"
-                >
-                  Cerrar
-                </button>
-                {/* Modal de confirmación al cerrar */}
-                {modalCerrar && (
-                  <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40">
-                    <div className="bg-white rounded-xl p-6 shadow-lg max-w-xs w-full">
-                      <h4 className="text-center font-semibold mb-3 text-gray-700">¿Seguro que deseas cerrar?</h4>
-                      <p className="text-center text-xs text-gray-500 mb-4">Los clientes sin email no serán seleccionados para enviar email.</p>
-                      <div className="flex justify-center gap-2">
-                        <button
-                          onClick={() => setModalCerrar(false)}
-                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          onClick={confirmarCerrarSinEmail}
-                          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-                        >
-                          Sí, cerrar
-                        </button>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                )}
+                </div>
+              )}
+
+              {/* Inputs de email */}
+              <div className="mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={titulo}
+                  onChange={e => setTitulo(e.target.value)}
+                  placeholder="Título del email"
+                />
               </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                <textarea
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={descripcion}
+                  onChange={e => setDescripcion(e.target.value)}
+                  rows={4}
+                  placeholder="Escribe el mensaje del email"
+                />
+              </div>
+
+              {/* Modal/alerta para clientes sin email */}
+              {showSinEmail && sinEmail.length > 0 && (
+                <div className="fixed inset-0 flex items-center justify-center z-[101] bg-black/30">
+                  <div className="bg-white rounded-xl p-6 shadow-lg max-w-xs w-full relative">
+                    <button
+                      onClick={() => setShowSinEmail(false)}
+                      className="absolute top-3 right-3 p-1 rounded-full hover:bg-gray-200 focus:outline-none"
+                      title="Cerrar"
+                    >
+                      <XMarkIcon className="h-5 w-5 text-gray-400" />
+                    </button>
+                    <h3 className={`text-center font-semibold mb-3 ${modoIndividual ? 'text-orange-600' : 'text-red-600'}`}>{modoIndividual ? 'Cliente sin email' : 'Clientes sin email'}</h3>
+                    <ul className="mb-4">
+                      {sinEmail.map(cliente => (
+                        <li key={cliente.id} className="flex items-center justify-between mb-2">
+                          <span>{cliente.nombre}</span>
+                          <div className="flex gap-2 items-center">
+                            <button
+                              onClick={() => handleEditarSinEmail(cliente)}
+                              className="text-blue-600 hover:underline text-xs px-2 py-1 rounded border border-blue-100 bg-blue-50"
+                            >
+                              Añadir email
+                            </button>
+                            <button
+                              onClick={() => handleQuitarSinEmail(cliente.id)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <XMarkIcon className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      onClick={handleCerrarSinEmail}
+                      className="w-full py-2 rounded bg-gray-100 text-gray-700 font-medium hover:bg-gray-200"
+                    >
+                      Cerrar
+                    </button>
+                    {/* Modal de confirmación al cerrar */}
+                    {modalCerrar && (
+                      <div className="fixed inset-0 flex items-center justify-center z-[102] bg-black/40">
+                        <div className="bg-white rounded-xl p-6 shadow-lg max-w-xs w-full">
+                          <h4 className="text-center font-semibold mb-3 text-gray-700">¿Seguro que deseas cerrar?</h4>
+                          <p className="text-center text-xs text-gray-500 mb-4">Los clientes sin email no serán seleccionados para enviar email.</p>
+                          <div className="flex justify-center gap-2">
+                            <button
+                              onClick={() => setModalCerrar(false)}
+                              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              onClick={confirmarCerrarSinEmail}
+                              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                            >
+                              Sí, cerrar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+            <div className="p-4 border-t bg-white flex gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleEnviarEmail}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium"
+                disabled={!titulo || !descripcion || seleccionados.length === 0}
+              >
+                Enviar email
+              </button>
+            </div>
+          </form>
         </Dialog.Panel>
       </div>
     </Dialog>

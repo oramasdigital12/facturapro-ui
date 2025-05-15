@@ -3,6 +3,7 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import Swal from 'sweetalert2';
+import { Dialog } from '@headlessui/react';
 
 interface Props {
   open: boolean;
@@ -241,219 +242,219 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md flex flex-col max-h-[80vh] relative">
-        <h2 className="text-xl font-bold mb-4 text-center text-gray-800">
-          {cliente ? 'Editar Cliente' : 'Nuevo Cliente'}
-        </h2>
-        
-        <div className="flex-1 overflow-y-auto mb-2">
-          <div className="space-y-3 pr-2 pb-4">
-            <div className="flex flex-col items-center mb-3">
-              <div className="flex gap-6 justify-center mb-2 select-none">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    checked={status === 'pendiente'}
-                    onChange={() => setStatus('pendiente')}
-                    className="w-5 h-5 rounded-full border-2 border-green-500 focus:ring-2 focus:ring-green-400 bg-white appearance-none checked:bg-green-500 checked:border-green-600 transition-all cursor-pointer"
-                    style={{ accentColor: status === 'pendiente' ? '#22c55e' : '#d1d5db' }}
-                  />
-                  <span className={`text-lg font-semibold ${status === 'pendiente' ? 'text-yellow-600' : 'text-gray-600'}`}>Pendiente</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    checked={status === 'activo'}
-                    onChange={() => setStatus('activo')}
-                    className="w-5 h-5 rounded-full border-2 border-blue-500 focus:ring-2 focus:ring-blue-400 bg-white appearance-none checked:bg-blue-500 checked:border-blue-600 transition-all cursor-pointer"
-                    style={{ accentColor: status === 'activo' ? '#3b82f6' : '#d1d5db' }}
-                  />
-                  <span className={`text-lg font-semibold ${status === 'activo' ? 'text-blue-600' : 'text-gray-600'}`}>Activo</span>
-                </label>
-              </div>
-              {errores.status && <div className="text-sm text-red-600 mb-2 text-center">{errores.status}</div>}
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-1 text-gray-700">Nombre</label>
-              <input
-                name="nombre"
-                type="text"
-                placeholder="Nombre completo"
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                  errores.nombre ? 'border-red-500' : 'border-gray-300'
-                }`}
-                value={form.nombre}
-                onChange={handleChange}
-              />
-              {errores.nombre && <div className="text-sm text-red-600 mt-1">{errores.nombre}</div>}
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-1 text-gray-700">Teléfono</label>
-              <input
-                name="telefono"
-                type="text"
-                placeholder="10 dígitos"
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                  errores.telefono ? 'border-red-500' : 'border-gray-300'
-                }`}
-                value={form.telefono}
-                onChange={handleChange}
-              />
-              {errores.telefono && <div className="text-sm text-red-600 mt-1">{errores.telefono}</div>}
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-1 text-gray-700">Email</label>
-              <input
-                name="email"
-                type="email"
-                placeholder="correo@ejemplo.com"
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                  errores.email ? 'border-red-500' : 'border-gray-300'
-                }`}
-                value={form.email}
-                onChange={handleChange}
-              />
-              {errores.email && <div className="text-sm text-red-600 mt-1">{errores.email}</div>}
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-1 text-gray-700">Identificación</label>
-              <input
-                name="identification_number"
-                type="text"
-                placeholder="Número de identificación"
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 border-gray-300"
-                value={form.identification_number}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="flex flex-col md:flex-row gap-3 mb-3 relative">
-              <div className="w-full mb-2 flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={usarFechas}
-                  onChange={e => setUsarFechas(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-400 focus:ring-2 focus:ring-blue-400"
-                  id="usarFechas"
-                />
-                <label htmlFor="usarFechas" className="text-sm text-gray-700 select-none cursor-pointer">Seleccionar fechas</label>
-              </div>
-              <div className="flex-1">
-                <label className="text-sm font-medium mb-1 text-gray-700">Fecha de Comienzo</label>
-                <input
-                  type="text"
-                  name="fecha_inicio"
-                  placeholder="yyyy-mm-dd"
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${errores.fecha ? 'border-red-500' : 'border-gray-300'}`}
-                  value={usarFechas ? form.fecha_inicio : ''}
-                  onChange={handleFechaChange}
-                  disabled={!usarFechas}
-                />
-              </div>
-              <div className="flex-1">
-                <label className="text-sm font-medium mb-1 text-gray-700">Fecha de Vencimiento</label>
-                <input
-                  type="text"
-                  name="fecha_vencimiento"
-                  placeholder="yyyy-mm-dd"
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${errores.fecha ? 'border-red-500' : 'border-gray-300'}`}
-                  value={usarFechas ? form.fecha_vencimiento : ''}
-                  onChange={handleFechaChange}
-                  disabled={!usarFechas}
-                />
-              </div>
-            </div>
-            {errores.fecha && <div className="text-sm text-red-600 mb-2 text-center">{errores.fecha}</div>}
-
-            <div>
-              <label className="text-sm font-medium mb-1 text-gray-700">Sexo</label>
-              <select
-                name="sexo"
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                  errores.sexo ? 'border-red-500' : 'border-gray-300'
-                }`}
-                value={form.sexo}
-                onChange={handleChange}
-              >
-                <option value="">Seleccionar</option>
-                <option value="M">Masculino</option>
-                <option value="F">Femenino</option>
-              </select>
-              {errores.sexo && <div className="text-sm text-red-600 mt-1">{errores.sexo}</div>}
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-1 text-gray-700">Fecha de nacimiento</label>
-              <input
-                name="fecha_nacimiento"
-                type="text"
-                placeholder="yyyy-mm-dd"
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                  errores.fecha_nacimiento ? 'border-red-500' : 'border-gray-300'
-                }`}
-                value={form.fecha_nacimiento}
-                onChange={handleFechaChange}
-              />
-              {errores.fecha_nacimiento && (
-                <div className="text-sm text-red-600 mt-1">{errores.fecha_nacimiento}</div>
-              )}
-              {form.fecha_nacimiento && esFechaValida(form.fecha_nacimiento) && form.fecha_nacimiento !== '9999-12-31' && (
-                <div className="text-sm text-gray-600 mt-1">
-                  Edad: <span className="font-semibold">{calcularEdad(form.fecha_nacimiento)}</span>
+    <Dialog open={open} onClose={onClose} className="relative z-[200]">
+      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+      <div className="fixed inset-0 flex items-center justify-center p-2 sm:p-4">
+        <Dialog.Panel className="mx-auto max-w-md w-full rounded-xl bg-white p-0 shadow-lg relative flex flex-col max-h-[90vh]">
+          <form className="flex flex-col flex-1 min-h-0" onSubmit={handleSubmit}>
+            <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-6 pb-4">
+              <div className="space-y-3 pr-2 pb-4">
+                <div className="flex flex-col items-center mb-3">
+                  <div className="flex gap-6 justify-center mb-2 select-none">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={status === 'pendiente'}
+                        onChange={() => setStatus('pendiente')}
+                        className="w-5 h-5 rounded-full border-2 border-green-500 focus:ring-2 focus:ring-green-400 bg-white appearance-none checked:bg-green-500 checked:border-green-600 transition-all cursor-pointer"
+                        style={{ accentColor: status === 'pendiente' ? '#22c55e' : '#d1d5db' }}
+                      />
+                      <span className={`text-lg font-semibold ${status === 'pendiente' ? 'text-yellow-600' : 'text-gray-600'}`}>Pendiente</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={status === 'activo'}
+                        onChange={() => setStatus('activo')}
+                        className="w-5 h-5 rounded-full border-2 border-blue-500 focus:ring-2 focus:ring-blue-400 bg-white appearance-none checked:bg-blue-500 checked:border-blue-600 transition-all cursor-pointer"
+                        style={{ accentColor: status === 'activo' ? '#3b82f6' : '#d1d5db' }}
+                      />
+                      <span className={`text-lg font-semibold ${status === 'activo' ? 'text-blue-600' : 'text-gray-600'}`}>Activo</span>
+                    </label>
+                  </div>
+                  {errores.status && <div className="text-sm text-red-600 mb-2 text-center">{errores.status}</div>}
                 </div>
-              )}
-            </div>
 
-            <div>
-              <label className="text-sm font-medium mb-1 text-gray-700">Dirección</label>
-              <input
-                name="direccion"
-                type="text"
-                placeholder="Dirección completa"
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                  errores.direccion ? 'border-red-500' : 'border-gray-300'
-                }`}
-                value={form.direccion}
-                onChange={handleChange}
-              />
-              {errores.direccion && <div className="text-sm text-red-600 mt-1">{errores.direccion}</div>}
-            </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 text-gray-700">Nombre</label>
+                  <input
+                    name="nombre"
+                    type="text"
+                    placeholder="Nombre completo"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                      errores.nombre ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    value={form.nombre}
+                    onChange={handleChange}
+                  />
+                  {errores.nombre && <div className="text-sm text-red-600 mt-1">{errores.nombre}</div>}
+                </div>
 
-            <div>
-              <label className="text-sm font-medium mb-1 text-gray-700">Notas</label>
-              <textarea
-                name="notas"
-                placeholder="Notas adicionales"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 min-h-[80px]"
-                value={form.notas}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-        </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 text-gray-700">Teléfono</label>
+                  <input
+                    name="telefono"
+                    type="text"
+                    placeholder="10 dígitos"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                      errores.telefono ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    value={form.telefono}
+                    onChange={handleChange}
+                  />
+                  {errores.telefono && <div className="text-sm text-red-600 mt-1">{errores.telefono}</div>}
+                </div>
 
-        <div className="bg-white flex gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium"
-          >
-            {loading ? 'Guardando...' : cliente ? 'Actualizar' : 'Crear'}
-          </button>
-        </div>
-      </form>
-    </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 text-gray-700">Email</label>
+                  <input
+                    name="email"
+                    type="email"
+                    placeholder="correo@ejemplo.com"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                      errores.email ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    value={form.email}
+                    onChange={handleChange}
+                  />
+                  {errores.email && <div className="text-sm text-red-600 mt-1">{errores.email}</div>}
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 text-gray-700">Identificación</label>
+                  <input
+                    name="identification_number"
+                    type="text"
+                    placeholder="Número de identificación"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 border-gray-300"
+                    value={form.identification_number}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-3 mb-3 relative">
+                  <div className="w-full mb-2 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={usarFechas}
+                      onChange={e => setUsarFechas(e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-400 focus:ring-2 focus:ring-blue-400"
+                      id="usarFechas"
+                    />
+                    <label htmlFor="usarFechas" className="text-sm text-gray-700 select-none cursor-pointer">Seleccionar fechas</label>
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-sm font-medium mb-1 text-gray-700">Fecha de Comienzo</label>
+                    <input
+                      type="text"
+                      name="fecha_inicio"
+                      placeholder="yyyy-mm-dd"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${errores.fecha ? 'border-red-500' : 'border-gray-300'}`}
+                      value={usarFechas ? form.fecha_inicio : ''}
+                      onChange={handleFechaChange}
+                      disabled={!usarFechas}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-sm font-medium mb-1 text-gray-700">Fecha de Vencimiento</label>
+                    <input
+                      type="text"
+                      name="fecha_vencimiento"
+                      placeholder="yyyy-mm-dd"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${errores.fecha ? 'border-red-500' : 'border-gray-300'}`}
+                      value={usarFechas ? form.fecha_vencimiento : ''}
+                      onChange={handleFechaChange}
+                      disabled={!usarFechas}
+                    />
+                  </div>
+                </div>
+                {errores.fecha && <div className="text-sm text-red-600 mb-2 text-center">{errores.fecha}</div>}
+
+                <div>
+                  <label className="text-sm font-medium mb-1 text-gray-700">Sexo</label>
+                  <select
+                    name="sexo"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                      errores.sexo ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    value={form.sexo}
+                    onChange={handleChange}
+                  >
+                    <option value="">Seleccionar</option>
+                    <option value="M">Masculino</option>
+                    <option value="F">Femenino</option>
+                  </select>
+                  {errores.sexo && <div className="text-sm text-red-600 mt-1">{errores.sexo}</div>}
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 text-gray-700">Fecha de nacimiento</label>
+                  <input
+                    name="fecha_nacimiento"
+                    type="text"
+                    placeholder="yyyy-mm-dd"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                      errores.fecha_nacimiento ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    value={form.fecha_nacimiento}
+                    onChange={handleFechaChange}
+                  />
+                  {errores.fecha_nacimiento && (
+                    <div className="text-sm text-red-600 mt-1">{errores.fecha_nacimiento}</div>
+                  )}
+                  {form.fecha_nacimiento && esFechaValida(form.fecha_nacimiento) && form.fecha_nacimiento !== '9999-12-31' && (
+                    <div className="text-sm text-gray-600 mt-1">
+                      Edad: <span className="font-semibold">{calcularEdad(form.fecha_nacimiento)}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 text-gray-700">Dirección</label>
+                  <input
+                    name="direccion"
+                    type="text"
+                    placeholder="Dirección completa"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
+                      errores.direccion ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    value={form.direccion}
+                    onChange={handleChange}
+                  />
+                  {errores.direccion && <div className="text-sm text-red-600 mt-1">{errores.direccion}</div>}
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-1 text-gray-700">Notas</label>
+                  <textarea
+                    name="notas"
+                    placeholder="Notas adicionales"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 min-h-[80px]"
+                    value={form.notas}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="p-4 border-t bg-white flex gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium"
+              >
+                {loading ? 'Guardando...' : cliente ? 'Actualizar' : 'Crear'}
+              </button>
+            </div>
+          </form>
+        </Dialog.Panel>
+      </div>
+    </Dialog>
   );
 } 

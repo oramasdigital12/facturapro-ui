@@ -7,6 +7,7 @@ import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
 import { FiSearch } from 'react-icons/fi';
 import { useAuth, useDarkMode } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import BotonCrear from '../components/BotonCrear';
 
 interface Cliente { id: string; nombre: string; categoria: string; }
 interface Tarea { id: string; descripcion: string; fecha_hora: string; cliente_id: string; estado: string; para_venta: boolean; }
@@ -186,6 +187,13 @@ export default function Agenda() {
             </button>
           </div>
         </div>
+        {/* Botón crear tarea arriba de la lista */}
+        <div className="flex justify-start mb-4">
+          <BotonCrear
+            onClick={() => { setTareaEditando(null); setShowModal(true); }}
+            label="Nueva Tarea"
+          />
+        </div>
         {loading ? (
           <div className="text-center py-8">Cargando...</div>
         ) : tareasFiltradas.length === 0 ? (
@@ -197,13 +205,6 @@ export default function Agenda() {
             ))}
           </ul>
         )}
-        <button
-          className="fixed bottom-32 right-4 bg-blue-600 text-white rounded-full w-14 h-14 flex items-center justify-center text-3xl shadow-lg hover:bg-blue-700 transition z-50"
-          onClick={() => { setTareaEditando(null); setShowModal(true); }}
-          aria-label="Añadir tarea"
-        >
-          +
-        </button>
         <TareaModal open={showModal} onClose={() => setShowModal(false)} onCreated={handleCreated} tarea={tareaEditando} clientes={clientes} />
       </div>
     </div>

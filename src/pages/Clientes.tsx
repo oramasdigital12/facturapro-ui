@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import EnviarEmailModal from '../components/EnviarEmailModal';
 import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
+import BotonCrear from '../components/BotonCrear';
 
 interface Cliente {
   id: string;
@@ -50,6 +51,7 @@ export default function Clientes() {
   const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [clienteParaEmail, setClienteParaEmail] = useState<Cliente | null>(null);
+  const [clientesPreseleccionados, setClientesPreseleccionados] = useState<string[] | undefined>(undefined);
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { dark, setDark } = useDarkMode();
@@ -134,7 +136,7 @@ export default function Clientes() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col md:items-center md:justify-center md:max-w-3xl md:mx-auto md:px-8 md:pl-28">
       {/* Wave decoration */}
       <div className="absolute inset-x-0 top-0 -z-10">
         <svg className="w-full h-48" viewBox="0 0 1440 320" preserveAspectRatio="none">
@@ -216,8 +218,15 @@ export default function Clientes() {
               </button>
             ))}
           </div>
-          {/* Botón de email justo encima del listado de clientes */}
-          <div className="flex justify-end mb-2">
+          {/* Botón de email y crear cliente justo encima del listado de clientes */}
+          <div className="flex justify-between items-center mb-2 gap-2">
+            <BotonCrear
+              onClick={() => {
+                setClienteEditando(null);
+                setShowModal(true);
+              }}
+              label="Nuevo Cliente"
+            />
             <button
               onClick={() => setShowEmailModal(true)}
               className="p-4 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors shadow-sm"
@@ -402,16 +411,6 @@ export default function Clientes() {
             ))}
           </ul>
         )}
-        <button
-          className="fixed bottom-32 right-4 bg-blue-600 text-white rounded-full w-14 h-14 flex items-center justify-center text-3xl shadow-lg hover:bg-blue-700 transition z-50"
-          onClick={() => {
-            setClienteEditando(null);
-            setShowModal(true);
-          }}
-          aria-label="Añadir cliente"
-        >
-          +
-        </button>
         <ClienteModal
           open={showModal}
           onClose={() => {
@@ -444,12 +443,19 @@ export default function Clientes() {
             open={showEmailModal}
             onClose={() => setShowEmailModal(false)}
             clientes={clientes}
-            onEditCliente={(cliente: Cliente) => {
+            onEditCliente={(cliente: Cliente, ids: string[]) => {
               setShowEmailModal(false);
               setClienteEditando(cliente);
               setShowModal(true);
               setClienteParaEmail(cliente);
+              setTimeout(() => {
+                setShowEmailModal(true);
+              }, 300);
+              setTimeout(() => {
+                setClientesPreseleccionados(ids);
+              }, 350);
             }}
+            clientesPreseleccionados={clientesPreseleccionados}
           />
         )}
       </div>

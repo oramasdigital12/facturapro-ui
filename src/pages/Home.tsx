@@ -120,7 +120,7 @@ export default function Home() {
         </button>
       </div>
 
-      <div className="relative flex-1 flex flex-col justify-center px-4 pb-24">
+      <div className="relative flex-1 flex flex-col justify-center px-4 pb-24 md:pl-28">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <img
@@ -136,7 +136,7 @@ export default function Home() {
           <div className="w-16 h-1 bg-blue-500 mx-auto rounded-full"></div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto w-full">
+        <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto w-full md:max-w-lg md:gap-8 md:mt-8">
           {menuItems.map((item) => (
             item.title === 'Validar Cliente' ? (
               <button
@@ -174,7 +174,7 @@ export default function Home() {
           ))}
         </div>
         {/* Sección de soporte */}
-        <div className="flex flex-col items-center mt-10 gap-3">
+        <div className="flex flex-col items-center mt-10 gap-3 md:max-w-md md:mx-auto">
           <div className="flex items-center gap-2">
             <span className="text-lg font-semibold text-blue-600 dark:text-blue-300">¿Tienes preguntas?</span>
             <span className="text-2xl">💬</span>
@@ -200,22 +200,20 @@ export default function Home() {
         nombreNegocio={negocio.nombre_negocio}
         emailNegocio={negocio.email}
         onEditCliente={(cliente) => {
-          setShowValidarModal(false);
           setClienteEditando(cliente);
           setShowClienteModal(true);
         }}
-      
       />
       <ClienteModal
         open={showClienteModal}
         onClose={() => {
           setShowClienteModal(false);
-          setTimeout(() => setShowValidarModal(true), 300);
+          setShowValidarModal(true);
         }}
         onCreated={() => {
           api.get('/api/clientes').then(res => setClientes(res.data));
           setShowClienteModal(false);
-          setTimeout(() => setShowValidarModal(true), 300);
+          setShowValidarModal(true);
         }}
         cliente={clienteEditando}
       />

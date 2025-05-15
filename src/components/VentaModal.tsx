@@ -14,18 +14,11 @@ interface VentaModalProps {
   preselectedClienteId?: string | null;
 }
 
-interface FormData {
-  cliente_id: string;
-  monto: string;
-  tipo: 'venta' | 'mensual';
-  fecha: string;
-}
-
 export default function VentaModal({ open, onClose, onCreated, venta, clientes, preselectedClienteId }: VentaModalProps) {
-  const [form, setForm] = useState<FormData>({
+  const [form, setForm] = useState({
     cliente_id: '',
     monto: '',
-    tipo: 'venta',
+    tipo: '',
     fecha: new Date().toISOString().split('T')[0]
   });
   const [date, setDate] = useState<Date | null>(null);
@@ -40,7 +33,7 @@ export default function VentaModal({ open, onClose, onCreated, venta, clientes, 
       setForm({
         cliente_id: venta.cliente_id || '',
         monto: venta.monto ? String(venta.monto) : '',
-        tipo: venta.tipo || 'venta',
+        tipo: venta.tipo || '',
         fecha: venta.fecha || new Date().toISOString().split('T')[0]
       });
       setDate(venta.fecha ? new Date(venta.fecha) : null);
@@ -48,7 +41,7 @@ export default function VentaModal({ open, onClose, onCreated, venta, clientes, 
       setForm({
         cliente_id: preselectedClienteId,
         monto: '',
-        tipo: 'venta',
+        tipo: '',
         fecha: new Date().toISOString().split('T')[0]
       });
       setDate(null);
@@ -56,7 +49,7 @@ export default function VentaModal({ open, onClose, onCreated, venta, clientes, 
       setForm({
         cliente_id: '',
         monto: '',
-        tipo: 'venta',
+        tipo: '',
         fecha: new Date().toISOString().split('T')[0]
       });
       setDate(null);
@@ -207,21 +200,19 @@ export default function VentaModal({ open, onClose, onCreated, venta, clientes, 
           {errores.monto && <div className="text-xs text-red-600 mb-2">{errores.monto}</div>}
         </div>
 
-        <div className="flex gap-2 mb-4">
-          <button
-            type="button"
-            className={`flex-1 py-2 rounded ${form.tipo === 'venta' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'} font-semibold`}
-            onClick={() => setForm({ ...form, tipo: 'venta' })}
+        <div className="mb-4">
+          <label className="block mb-1 font-semibold">Tipo de venta</label>
+          <select
+            name="tipo"
+            value={form.tipo}
+            onChange={e => setForm({ ...form, tipo: e.target.value })}
+            className="w-full px-3 py-2 border rounded focus:outline-none bg-white text-gray-900 text-base font-medium shadow-sm transition"
+            required
           >
-            Venta única
-          </button>
-          <button
-            type="button"
-            className={`flex-1 py-2 rounded ${form.tipo === 'mensual' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'} font-semibold`}
-            onClick={() => setForm({ ...form, tipo: 'mensual' })}
-          >
-            Mensualidad
-          </button>
+            <option value="">Selecciona el tipo de venta</option>
+            <option value="venta">Venta única</option>
+            <option value="mensual">Mensualidad</option>
+          </select>
         </div>
 
         <div className="mb-4">

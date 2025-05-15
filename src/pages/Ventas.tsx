@@ -17,6 +17,7 @@ import { saveAs } from 'file-saver';
 import { useAuth, useDarkMode } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
+import BotonCrear from '../components/BotonCrear';
 
 export default function Ventas() {
   const [ventas, setVentas] = useState<Venta[]>([]);
@@ -220,7 +221,7 @@ export default function Ventas() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col md:items-center md:justify-center md:max-w-3xl md:mx-auto md:px-8 md:pl-28">
       {/* Wave decoration */}
       <div className="absolute inset-x-0 top-0 -z-10">
         <svg className="w-full h-48" viewBox="0 0 1440 320" preserveAspectRatio="none">
@@ -384,6 +385,14 @@ export default function Ventas() {
           </div>
         )}
 
+        {/* Botón crear venta arriba de la lista */}
+        <div className="flex justify-start mb-4">
+          <BotonCrear
+            onClick={() => { setVentaEditando(null); setShowModal(true); }}
+            label="Nueva Venta"
+          />
+        </div>
+
         {loading ? (
           <div className="text-center py-8">Cargando...</div>
         ) : ventasFiltradas.length === 0 ? (
@@ -432,13 +441,6 @@ export default function Ventas() {
             })}
           </ul>
         )}
-        <button
-          className="fixed bottom-32 right-4 bg-blue-600 text-white rounded-full w-14 h-14 flex items-center justify-center text-3xl shadow-lg hover:bg-blue-700 transition z-50"
-          onClick={() => { setVentaEditando(null); setShowModal(true); }}
-          aria-label="Añadir venta"
-        >
-          <FiPlus />
-        </button>
         <VentaModal
           open={showModal}
           onClose={() => setShowModal(false)}
