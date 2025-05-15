@@ -44,10 +44,14 @@ export default function TareaItem({ tarea, onEdit, onChange, clientes }: Props) 
           const response = await api.patch(`/api/tareas/${tarea.id}/estado`, {
             estado: 'completada'
           });
-          
           if (response.data) {
             if (tarea.para_venta) {
               const cliente = clientes.find(c => c.id === tarea.cliente_id);
+              if (cliente && cliente.categoria === 'pendiente') {
+                // Obtener datos completos del cliente antes de actualizar
+                const { data: clienteCompleto } = await api.get(`/api/clientes/${cliente.id}`);
+                await api.put(`/api/clientes/${cliente.id}`, { ...clienteCompleto, categoria: 'activo' });
+              }
               await showSuccessMessage(`¡Tarea completada! Ahora podrás registrar la venta para ${cliente?.nombre || 'el cliente'}`);
               localStorage.setItem('venta_cliente_id', tarea.cliente_id);
               navigate('/ventas');
@@ -71,14 +75,24 @@ export default function TareaItem({ tarea, onEdit, onChange, clientes }: Props) 
 
   const handleUndoComplete = async () => {
     try {
-      const result = await showDeleteConfirmation('¿Deseas volver la tarea a pendiente?');
+      const result = await showDeleteConfirmation('¿Seguro que deseas volver la tarea a pendiente?');
       if (result.isConfirmed) {
         const response = await api.patch(`/api/tareas/${tarea.id}/estado`, {
           estado: 'pendiente'
         });
         if (response.data) {
+          // Si la tarea es para venta y el cliente está activo, revertir a pendiente
+          if (tarea.para_venta) {
+            const cliente = clientes.find(c => c.id === tarea.cliente_id);
+            if (cliente && cliente.categoria === 'activo') {
+              const { data: clienteCompleto } = await api.get(`/api/clientes/${cliente.id}`);
+              await api.put(`/api/clientes/${cliente.id}`, { ...clienteCompleto, categoria: 'pendiente' });
+            }
+          }
           showSuccessMessage('Tarea marcada como pendiente');
           onChange();
+          // Cambiar el filtro a pendiente
+          window.location.href = '/agenda?filtro=pendiente';
         } else {
           toast.error('No se pudo deshacer la tarea');
         }

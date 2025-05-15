@@ -6,11 +6,11 @@ import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
 import { FiSearch } from 'react-icons/fi';
 import { useAuth, useDarkMode } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import BotonCrear from '../components/BotonCrear';
 
 interface Cliente { id: string; nombre: string; categoria: string; }
-interface Tarea { id: string; descripcion: string; fecha_hora: string; cliente_id: string; estado: string; para_venta: boolean; }
+interface Tarea { id: string; descripcion: string; fecha_hora: string; cliente_id: string; estado: string; para_venta: boolean; updated_at: string; }
 
 export default function Agenda() {
   const [tareas, setTareas] = useState<Tarea[]>([]);
@@ -23,7 +23,17 @@ export default function Agenda() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { dark, setDark } = useDarkMode();
+
+  useEffect(() => {
+    // Leer el parámetro de filtro de la URL
+    const params = new URLSearchParams(location.search);
+    const filtroFromUrl = params.get('filtro');
+    if (filtroFromUrl) {
+      setFiltro(filtroFromUrl);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     fetchTareas();
@@ -87,7 +97,12 @@ export default function Agenda() {
       const primerNombre = cliente.nombre.trim().split(' ')[0].toLowerCase();
       return primerNombre.startsWith(busqueda.trim().toLowerCase());
     })
-    .sort((a, b) => new Date(a.fecha_hora).getTime() - new Date(b.fecha_hora).getTime());
+    .sort((a, b) => {
+      if (filtro === 'completada') {
+        return new Date(b.fecha_hora).getTime() - new Date(a.fecha_hora).getTime();
+      }
+      return new Date(a.fecha_hora).getTime() - new Date(b.fecha_hora).getTime();
+    });
 
   const handleLogout = async () => {
     try {
