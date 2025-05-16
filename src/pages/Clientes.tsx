@@ -220,21 +220,36 @@ export default function Clientes() {
           </div>
           {/* Botón de email y crear cliente justo encima del listado de clientes */}
           <div className="flex justify-between items-center mb-2 gap-2">
-            <BotonCrear
-              onClick={() => {
-                setClienteEditando(null);
-                setShowModal(true);
-              }}
-              label="Nuevo Cliente"
-            />
-            <button
-              onClick={() => setShowEmailModal(true)}
-              className="p-4 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors shadow-sm"
-              title="Enviar email"
-              style={{ boxShadow: '0 2px 8px rgba(59,130,246,0.10)' }}
-            >
-              <FiMail className="h-6 w-6" />
-            </button>
+            <div className="flex gap-2 items-center w-full justify-end">
+              <div className="hidden md:block">
+                <BotonCrear
+                  onClick={() => {
+                    setClienteEditando(null);
+                    setShowModal(true);
+                  }}
+                  label="Nuevo Cliente"
+                />
+              </div>
+              <button
+                onClick={() => setShowEmailModal(true)}
+                className="p-4 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors shadow-sm"
+                title="Enviar email"
+                style={{ boxShadow: '0 2px 8px rgba(59,130,246,0.10)' }}
+              >
+                <FiMail className="h-6 w-6" />
+              </button>
+            </div>
+            {/* Botón flotante solo en móvil */}
+            <div className="fixed top-1/2 -translate-y-1/2 right-6 z-50 md:hidden">
+              <BotonCrear
+                onClick={() => {
+                  setClienteEditando(null);
+                  setShowModal(true);
+                }}
+                label=""
+                className="rounded-full p-0 w-16 h-16 flex items-center justify-center shadow-xl bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-5xl"
+              />
+            </div>
           </div>
         </div>
         {loading ? (
@@ -245,31 +260,33 @@ export default function Clientes() {
           <ul className="space-y-4">
             {clientesMostrados.map((cliente) => (
               <li key={cliente.id} className="bg-white rounded-xl shadow-sm p-4 relative">
-                <div className="absolute top-4 right-4 flex gap-2">
-                  <button
-                    onClick={() => {
-                      setClienteEditando(cliente);
-                      setShowModal(true);
-                    }}
-                    className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                  >
-                    <PencilIcon className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(cliente.id)}
-                    className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
+                <div className="flex gap-2 mb-1 items-start">
+                  <UserIcon className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start">
+                      <h3 className="font-medium text-gray-900 leading-snug flex-1 min-w-0 break-words whitespace-pre-line">{cliente.nombre}</h3>
+                      <div className="flex gap-2 flex-shrink-0 ml-2">
+                        <button
+                          onClick={() => {
+                            setClienteEditando(cliente);
+                            setShowModal(true);
+                          }}
+                          className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          <PencilIcon className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(cliente.id)}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <TrashIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="mb-3">
-                  {/* Información principal */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <UserIcon className="h-5 w-5 text-gray-400" />
-                    <h3 className="font-medium text-gray-900">{cliente.nombre}</h3>
-                  </div>
-
                   {/* Información de contacto */}
                   <div className="space-y-2 mb-3">
                     <div className="flex items-center gap-2">

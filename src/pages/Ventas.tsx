@@ -300,30 +300,30 @@ export default function Ventas() {
           </div>
           <div className="flex flex-wrap gap-2 mb-2 justify-center">
             <button
-              className={`flex-1 min-w-[140px] max-w-[200px] flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 border-blue-400 text-blue-700 font-semibold bg-white shadow-sm transition-all
-                ${tipo === 'mensual' ? 'bg-blue-50 border-blue-600 text-blue-800' : ''}
+              className={`flex-1 min-w-[140px] max-w-[220px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 font-semibold shadow-sm transition-all overflow-hidden
+                ${tipo === 'mensual' ? 'bg-blue-100/80 border-blue-600 text-blue-900' : 'bg-white border-blue-400 text-blue-700'}
               `}
               onClick={() => setTipo(tipo === 'mensual' ? '' : 'mensual')}
             >
-              <span className="text-lg">💵</span>
-              <span>Mensual</span>
-              <span className="ml-2 font-bold text-blue-800">${(tipo === 'mensual' ? totalMensualFiltrado : totalMensual).toFixed(2)}</span>
+              <span className="text-lg flex-shrink-0">💵</span>
+              <span className="flex-shrink-0">Mensual</span>
+              <span className="ml-2 font-bold text-blue-800 break-words">${(tipo === 'mensual' ? totalMensualFiltrado : totalMensual).toFixed(2)}</span>
             </button>
             <button
-              className={`flex-1 min-w-[140px] max-w-[200px] flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 border-green-400 text-green-700 font-semibold bg-white shadow-sm transition-all
-                ${tipo === 'venta' ? 'bg-green-50 border-green-600 text-green-800' : ''}
+              className={`flex-1 min-w-[140px] max-w-[220px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 font-semibold shadow-sm transition-all overflow-hidden
+                ${tipo === 'venta' ? 'bg-blue-100/80 border-blue-600 text-blue-900' : 'bg-white border-green-400 text-green-700'}
               `}
               onClick={() => setTipo(tipo === 'venta' ? '' : 'venta')}
             >
-              <span className="text-lg">🪙</span>
-              <span>Venta</span>
-              <span className="ml-2 font-bold text-green-800">${(tipo === 'venta' ? totalVentaFiltrado : totalVenta).toFixed(2)}</span>
+              <span className="text-lg flex-shrink-0">🪙</span>
+              <span className="flex-shrink-0">Venta</span>
+              <span className="ml-2 font-bold text-green-800 break-words">${(tipo === 'venta' ? totalVentaFiltrado : totalVenta).toFixed(2)}</span>
             </button>
           </div>
           <div className="flex justify-center mb-4">
             <button
               className={`flex items-center justify-center gap-2 px-5 py-2 rounded-full border-2 font-semibold shadow-sm transition-all
-                ${tipo === '' ? 'bg-blue-100 border-blue-400 text-blue-800' : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'}
+                ${tipo === '' ? 'bg-blue-100/80 border-blue-600 text-blue-900' : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'}
               `}
               style={{ minWidth: 120 }}
               onClick={() => setTipo('')}
@@ -386,10 +386,18 @@ export default function Ventas() {
         )}
 
         {/* Botón crear venta arriba de la lista */}
-        <div className="flex justify-start mb-4">
+        <div className="flex justify-start mb-4 hidden md:flex">
           <BotonCrear
             onClick={() => { setVentaEditando(null); setShowModal(true); }}
             label="Nueva Venta"
+          />
+        </div>
+        {/* Botón flotante solo en móvil */}
+        <div className="fixed top-1/2 -translate-y-1/2 right-6 z-50 md:hidden">
+          <BotonCrear
+            onClick={() => { setVentaEditando(null); setShowModal(true); }}
+            label=""
+            className="rounded-full p-0 w-16 h-16 flex items-center justify-center shadow-xl bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-5xl"
           />
         </div>
 

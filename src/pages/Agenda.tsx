@@ -203,10 +203,18 @@ export default function Agenda() {
           </div>
         </div>
         {/* Botón crear tarea arriba de la lista */}
-        <div className="flex justify-start mb-4">
+        <div className="flex justify-start mb-4 hidden md:flex">
           <BotonCrear
             onClick={() => { setTareaEditando(null); setShowModal(true); }}
             label="Nueva Tarea"
+          />
+        </div>
+        {/* Botón flotante solo en móvil */}
+        <div className="fixed top-1/2 -translate-y-1/2 right-6 z-50 md:hidden">
+          <BotonCrear
+            onClick={() => { setTareaEditando(null); setShowModal(true); }}
+            label=""
+            className="rounded-full p-0 w-16 h-16 flex items-center justify-center shadow-xl bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-5xl"
           />
         </div>
         {loading ? (
