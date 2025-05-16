@@ -134,9 +134,6 @@ export default function Home() {
             Inicio
           </h1>
           <div className="w-16 h-1 bg-blue-500 mx-auto rounded-full"></div>
-          <div className="mt-4 text-2xl font-bold text-red-600 bg-yellow-100 rounded-lg p-2">
-            TEST DEPLOY - SI VES ESTE TEXTO, EL DEPLOY FUNCIONA
-          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto w-full md:max-w-lg md:gap-8 md:mt-8">
