@@ -32,8 +32,22 @@ export default function EnviarEmailModal({ open, onClose, clientes, onEditClient
   // Preselección tras edición
   useEffect(() => {
     if (clientesPreseleccionados.length > 0) {
-      const seleccion = clientes.filter(c => clientesPreseleccionados.includes(c.id));
+      const seleccion = clientes.filter(c => 
+        clientesPreseleccionados.includes(c.id) && 
+        c.email && 
+        c.email.trim() !== ''
+      );
       setSeleccionados(seleccion);
+      // Si hay clientes sin email, los mostramos en el modal de alerta
+      const sinEmailNuevos = clientes.filter(c => 
+        clientesPreseleccionados.includes(c.id) && 
+        (!c.email || c.email.trim() === '')
+      );
+      if (sinEmailNuevos.length > 0) {
+        setSinEmail(sinEmailNuevos);
+        setShowSinEmail(true);
+        setModoIndividual(sinEmailNuevos.length === 1);
+      }
     }
   }, [clientesPreseleccionados, clientes]);
 
@@ -81,9 +95,8 @@ export default function EnviarEmailModal({ open, onClose, clientes, onEditClient
 
   // Editar un cliente sin email
   const handleEditarSinEmail = (cliente: Cliente) => {
-    setShowSinEmail(false);
-    setModalCerrar(false);
     onEditCliente(cliente, seleccionados.map(c => c.id));
+    setShowSinEmail(false); // Cerramos el modal de alerta mientras se edita
   };
 
   // Cuando se edita un cliente, si ya tiene email, añadirlo a seleccionados y quitarlo de sinEmail
@@ -93,6 +106,10 @@ export default function EnviarEmailModal({ open, onClose, clientes, onEditClient
       if (actualizados.length > 0) {
         setSeleccionados(prev => [...prev, ...actualizados]);
         setSinEmail(prev => prev.filter(c => !actualizados.some(a => a.id === c.id)));
+        // Si quedan clientes sin email, volvemos a mostrar el modal de alerta
+        if (sinEmail.filter(c => !actualizados.some(a => a.id === c.id)).length > 0) {
+          setShowSinEmail(true);
+        }
       }
     }
   }, [clientes]);
@@ -106,18 +123,14 @@ export default function EnviarEmailModal({ open, onClose, clientes, onEditClient
     onClose();
   };
 
-  // Confirmación al cerrar modal de clientes sin email
-  const handleCerrarSinEmail = () => {
-    setModalCerrar(true);
-  };
-  const confirmarCerrarSinEmail = () => {
-    setShowSinEmail(false);
-    setModalCerrar(false);
-    setSinEmail([]);
-  };
-
   // Checkbox visual para "Todos"
   const todosSeleccionados = seleccionados.length === clientes.filter(c => c.email && c.email.trim() !== '').length;
+
+  // Filtrado dinámico de clientes (mostrar todos, sin email primero)
+  const clientesFiltrados = [
+    ...clientes.filter(c => c.nombre.toLowerCase().includes(busqueda.toLowerCase()) && (!c.email || c.email.trim() === '')),
+    ...clientes.filter(c => c.nombre.toLowerCase().includes(busqueda.toLowerCase()) && c.email && c.email.trim() !== '')
+  ];
 
   return (
     <Dialog open={open} onClose={onClose} className="relative z-[100]">
@@ -128,6 +141,7 @@ export default function EnviarEmailModal({ open, onClose, clientes, onEditClient
             <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-6 pb-4">
               {/* Botón de cerrar */}
               <button
+                type="button"
                 onClick={onClose}
                 className="absolute top-3 right-3 p-1 rounded-full hover:bg-gray-200 focus:outline-none"
                 title="Cerrar"
@@ -161,38 +175,39 @@ export default function EnviarEmailModal({ open, onClose, clientes, onEditClient
               {/* Lista de clientes para seleccionar en un frame visual */}
               <div className="bg-gray-50 border border-gray-200 rounded-lg shadow-inner mb-4 max-h-40 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
                 <ul className="divide-y">
-                  {/* Clientes seleccionados arriba */}
-                  {clientes
-                    .filter(c => c.nombre.toLowerCase().startsWith(busqueda.trim().toLowerCase()) && seleccionados.some(s => s.id === c.id))
-                    .map(cliente => (
-                      <li
-                        key={cliente.id}
-                        className="py-2 px-2 flex items-center gap-2 bg-blue-100/70 cursor-pointer"
-                        onClick={() => handleQuitarCliente(cliente.id)}
-                      >
-                        <span className="font-semibold">{cliente.nombre}</span>
-                        {!cliente.email || cliente.email.trim() === '' ? (
-                          <span className="ml-2 text-xs text-red-500 font-semibold">Sin email</span>
-                        ) : null}
-                        <span className="ml-auto text-xs text-blue-600">Seleccionado</span>
-                      </li>
-                    ))}
-                  {/* Clientes no seleccionados abajo */}
-                  {clientes
-                    .filter(c => c.nombre.toLowerCase().startsWith(busqueda.trim().toLowerCase()) && !seleccionados.some(s => s.id === c.id))
-                    .map(cliente => (
-                      <li
-                        key={cliente.id}
-                        className="py-2 px-2 flex items-center gap-2 hover:bg-blue-50 cursor-pointer"
-                        onClick={() => handleSeleccionarCliente(cliente)}
-                      >
-                        <span>{cliente.nombre}</span>
-                        {!cliente.email || cliente.email.trim() === '' ? (
-                          <span className="ml-2 text-xs text-red-500 font-semibold">Sin email</span>
-                        ) : null}
-                      </li>
-                    ))}
-                  {clientes.filter(c => c.nombre.toLowerCase().startsWith(busqueda.trim().toLowerCase())).length === 0 && (
+                  {/* Clientes sin email primero (no seleccionados) */}
+                  {clientesFiltrados.filter(c => (!c.email || c.email.trim() === '') && !seleccionados.some(s => s.id === c.id)).map(cliente => (
+                    <li
+                      key={cliente.id}
+                      className="py-2 px-2 flex items-center gap-2 hover:bg-blue-50 cursor-pointer"
+                      onClick={() => handleSeleccionarCliente(cliente)}
+                    >
+                      <span>{cliente.nombre}</span>
+                      <span className="ml-2 text-xs text-red-500 font-semibold">Sin email</span>
+                    </li>
+                  ))}
+                  {/* Clientes con email pero no seleccionados */}
+                  {clientesFiltrados.filter(c => c.email && c.email.trim() !== '' && !seleccionados.some(s => s.id === c.id)).map(cliente => (
+                    <li
+                      key={cliente.id}
+                      className="py-2 px-2 flex items-center gap-2 hover:bg-blue-50 cursor-pointer"
+                      onClick={() => handleSeleccionarCliente(cliente)}
+                    >
+                      <span>{cliente.nombre}</span>
+                    </li>
+                  ))}
+                  {/* Clientes seleccionados con email */}
+                  {clientesFiltrados.filter(c => seleccionados.some(s => s.id === c.id)).map(cliente => (
+                    <li
+                      key={cliente.id}
+                      className="py-2 px-2 flex items-center gap-2 bg-blue-100/70 cursor-pointer"
+                      onClick={() => handleQuitarCliente(cliente.id)}
+                    >
+                      <span className="font-semibold">{cliente.nombre}</span>
+                      <span className="ml-auto text-xs text-blue-600">Seleccionado</span>
+                    </li>
+                  ))}
+                  {clientesFiltrados.length === 0 && (
                     <li className="py-2 px-2 text-gray-400">No hay clientes</li>
                   )}
                 </ul>
@@ -249,13 +264,6 @@ export default function EnviarEmailModal({ open, onClose, clientes, onEditClient
               {showSinEmail && sinEmail.length > 0 && (
                 <div className="fixed inset-0 flex items-center justify-center z-[101] bg-black/30">
                   <div className="bg-white rounded-xl p-6 shadow-lg max-w-xs w-full relative">
-                    <button
-                      onClick={() => setShowSinEmail(false)}
-                      className="absolute top-3 right-3 p-1 rounded-full hover:bg-gray-200 focus:outline-none"
-                      title="Cerrar"
-                    >
-                      <XMarkIcon className="h-5 w-5 text-gray-400" />
-                    </button>
                     <h3 className={`text-center font-semibold mb-3 ${modoIndividual ? 'text-orange-600' : 'text-red-600'}`}>{modoIndividual ? 'Cliente sin email' : 'Clientes sin email'}</h3>
                     <ul className="mb-4">
                       {sinEmail.map(cliente => (
@@ -279,34 +287,12 @@ export default function EnviarEmailModal({ open, onClose, clientes, onEditClient
                       ))}
                     </ul>
                     <button
-                      onClick={handleCerrarSinEmail}
-                      className="w-full py-2 rounded bg-gray-100 text-gray-700 font-medium hover:bg-gray-200"
+                      type="button"
+                      onClick={() => setShowSinEmail(false)}
+                      className="w-full py-2 rounded bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 mt-2"
                     >
                       Cerrar
                     </button>
-                    {/* Modal de confirmación al cerrar */}
-                    {modalCerrar && (
-                      <div className="fixed inset-0 flex items-center justify-center z-[102] bg-black/40">
-                        <div className="bg-white rounded-xl p-6 shadow-lg max-w-xs w-full">
-                          <h4 className="text-center font-semibold mb-3 text-gray-700">¿Seguro que deseas cerrar?</h4>
-                          <p className="text-center text-xs text-gray-500 mb-4">Los clientes sin email no serán seleccionados para enviar email.</p>
-                          <div className="flex justify-center gap-2">
-                            <button
-                              onClick={() => setModalCerrar(false)}
-                              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-                            >
-                              Cancelar
-                            </button>
-                            <button
-                              onClick={confirmarCerrarSinEmail}
-                              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-                            >
-                              Sí, cerrar
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
