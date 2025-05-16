@@ -26,7 +26,6 @@ export default function EnviarEmailModal({ open, onClose, clientes, onEditClient
   const [descripcion, setDescripcion] = useState('');
   const [showSinEmail, setShowSinEmail] = useState(false);
   const [sinEmail, setSinEmail] = useState<Cliente[]>([]);
-  const [modalCerrar, setModalCerrar] = useState(false);
   const [modoIndividual, setModoIndividual] = useState(false);
 
   // Preselección tras edición

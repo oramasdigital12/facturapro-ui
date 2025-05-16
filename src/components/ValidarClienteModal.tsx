@@ -28,7 +28,6 @@ export default function ValidarClienteModal({ open, onClose, clientes, nombreNeg
   const [destinatario, setDestinatario] = useState('');
   const [showSinId, setShowSinId] = useState(false);
   const [sinId, setSinId] = useState<Cliente[]>([]);
-  const [modalCerrar, setModalCerrar] = useState(false);
   const [modoIndividual, setModoIndividual] = useState(false);
 
   // Preselección tras edición
