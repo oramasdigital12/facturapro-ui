@@ -148,14 +148,15 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
       nuevosErrores.direccion = 'La dirección debe tener al menos 3 caracteres.';
     }
     if (usarFechas) {
-      if ((form.fecha_inicio && !form.fecha_vencimiento) || (!form.fecha_inicio && form.fecha_vencimiento)) {
-        nuevosErrores.fecha = 'Si vas a ingresar fechas, selecciona ambas.';
-      } else if (form.fecha_inicio && form.fecha_vencimiento) {
-        if (isNaN(Date.parse(form.fecha_inicio)) || isNaN(Date.parse(form.fecha_vencimiento))) {
-          nuevosErrores.fecha = 'Las fechas deben ser válidas.';
-        } else if (form.fecha_vencimiento < form.fecha_inicio) {
-          nuevosErrores.fecha = 'La fecha "Hasta" debe ser igual o posterior a la fecha "Desde".';
-        }
+      // Solo validar formato si alguna está presente
+      if (form.fecha_inicio && isNaN(Date.parse(form.fecha_inicio))) {
+        nuevosErrores.fecha = 'La fecha de comienzo debe ser válida.';
+      }
+      if (form.fecha_vencimiento && isNaN(Date.parse(form.fecha_vencimiento))) {
+        nuevosErrores.fecha = 'La fecha de vencimiento debe ser válida.';
+      }
+      if (form.fecha_inicio && form.fecha_vencimiento && form.fecha_vencimiento < form.fecha_inicio) {
+        nuevosErrores.fecha = 'La fecha "Hasta" debe ser igual o posterior a la fecha "Desde".';
       }
     }
     setErrores(nuevosErrores);
