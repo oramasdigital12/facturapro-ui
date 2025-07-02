@@ -1,6 +1,5 @@
 import { Dialog } from '@headlessui/react';
 import { useEffect, useState } from 'react';
-import api from '../services/api';
 import toast from 'react-hot-toast';
 import { getNegocioConfig, updateNegocioConfig, uploadNegocioLogo } from '../services/api';
 import { NegocioConfig } from '../types';
@@ -30,7 +29,6 @@ export default function InfoNegocioModal({ open, onClose }: InfoNegocioModalProp
     terminos_condiciones: '',
   });
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [loadingLogo, setLoadingLogo] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errores, setErrores] = useState<{ [key: string]: string }>({});
@@ -60,7 +58,6 @@ export default function InfoNegocioModal({ open, onClose }: InfoNegocioModalProp
       toast.error('El logo no debe superar 1MB');
       return;
     }
-    setLogoFile(file);
     setLogoPreview(URL.createObjectURL(file));
     setLoadingLogo(true);
     try {
