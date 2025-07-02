@@ -4,7 +4,7 @@ import { FiHome, FiUsers, FiDollarSign, FiSettings, FiCalendar } from 'react-ico
 const navItems = [
   { to: '/home', icon: <FiHome />, label: 'Inicio' },
   { to: '/clientes', icon: <FiUsers />, label: 'Clientes' },
-  { to: '/agenda', icon: <FiCalendar />, label: 'Agenda' },
+  { to: '/agenda', icon: <FiCalendar />, label: 'Tareas' },
   { to: '/ventas', icon: <FiDollarSign />, label: 'Ventas' },
   { to: '/configuracion', icon: <FiSettings />, label: 'Info' },
 ];

@@ -2,6 +2,8 @@ import { Dialog } from '@headlessui/react';
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import { getNegocioConfig, updateNegocioConfig, uploadNegocioLogo } from '../services/api';
+import { NegocioConfig } from '../types';
 
 interface InfoNegocioModalProps {
   open: boolean;
@@ -16,23 +18,73 @@ function validarEmail(email: string) {
 }
 
 export default function InfoNegocioModal({ open, onClose }: InfoNegocioModalProps) {
-  const [negocioForm, setNegocioForm] = useState({
+  const [negocioForm, setNegocioForm] = useState<NegocioConfig>({
     nombre_negocio: '',
     tipo_negocio: '',
     telefono: '',
     email: '',
-    direccion: ''
+    direccion: '',
+    logo_url: '',
+    color_personalizado: '#2563eb',
+    nota_factura: '',
+    terminos_condiciones: '',
   });
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [loadingLogo, setLoadingLogo] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errores, setErrores] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
     if (open) {
-      api.get('/api/negocio-config').then(res => setNegocioForm(res.data)).catch(() => {});
+      getNegocioConfig().then(res => {
+        setNegocioForm({
+          ...negocioForm,
+          ...res.data,
+          color_personalizado: res.data.color_personalizado || '#2563eb',
+        });
+        setLogoPreview(res.data.logo_url || null);
+      }).catch(() => {});
     }
+    // eslint-disable-next-line
   }, [open]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+      toast.error('Solo se permiten imágenes PNG o JPG');
+      return;
+    }
+    if (file.size > 1024 * 1024) {
+      toast.error('El logo no debe superar 1MB');
+      return;
+    }
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+    setLoadingLogo(true);
+    try {
+      const res = await uploadNegocioLogo(file);
+      setNegocioForm({ ...negocioForm, logo_url: res.data.url });
+      toast.success('Logo subido correctamente');
+    } catch {
+      toast.error('Error al subir el logo');
+    } finally {
+      setLoadingLogo(false);
+    }
+  };
+
+  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNegocioForm({ ...negocioForm, color_personalizado: e.target.value });
+  };
+
+  const handleHexInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+    if (!value.startsWith('#')) value = '#' + value;
+    setNegocioForm({ ...negocioForm, color_personalizado: value });
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setNegocioForm({ ...negocioForm, [name]: value });
     setErrores({ ...errores, [name]: '' });
@@ -77,7 +129,7 @@ export default function InfoNegocioModal({ open, onClose }: InfoNegocioModalProp
     }
     setLoading(true);
     try {
-      await api.post('/api/negocio-config', negocioForm);
+      await updateNegocioConfig(negocioForm);
       toast.success('Configuración de negocio guardada');
       onClose();
     } catch (error) {
@@ -93,11 +145,58 @@ export default function InfoNegocioModal({ open, onClose }: InfoNegocioModalProp
     <Dialog open={open} onClose={onClose} className="relative z-[100]">
       <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-2 sm:p-4">
-        <Dialog.Panel className="mx-auto max-w-md w-full rounded-2xl bg-white p-0 shadow-lg relative flex flex-col max-h-[90vh]">
+        <Dialog.Panel className="mx-auto max-w-lg w-full rounded-2xl bg-white p-0 shadow-lg relative flex flex-col max-h-[90vh]">
           <form className="flex flex-col flex-1 min-h-0" onSubmit={handleSubmit}>
             <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-6 pb-4 bg-white">
               <h2 className="text-xl font-bold mb-4 text-center text-gray-800">Información del Negocio</h2>
               <div className="space-y-4">
+                <div>
+                  <label className="block mb-1 font-semibold">Logo del negocio</label>
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden border">
+                      {logoPreview ? (
+                        <img src={logoPreview} alt="Logo" className="object-contain w-full h-full" />
+                      ) : (
+                        <span className="text-gray-400 text-xs">Sin logo</span>
+                      )}
+                    </div>
+                    <label className="px-3 py-2 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition text-sm font-medium">
+                      {loadingLogo ? 'Subiendo...' : 'Subir logo'}
+                      <input type="file" accept="image/png,image/jpeg,image/jpg" className="hidden" onChange={handleLogoChange} disabled={loadingLogo} />
+                    </label>
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">PNG/JPG, máx 1MB</div>
+                </div>
+                <div>
+                  <label className="block mb-1 font-semibold">Color principal</label>
+                  <div className="flex items-center gap-3">
+                    <input type="color" value={negocioForm.color_personalizado || '#2563eb'} onChange={handleColorChange} className="w-10 h-10 rounded-lg border" />
+                    <input type="text" value={negocioForm.color_personalizado || ''} onChange={handleHexInput} className="w-28 px-2 py-1 border rounded focus:outline-none" maxLength={7} />
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">Ejemplo: #2563eb</div>
+                </div>
+                <div>
+                  <label className="block mb-1 font-semibold">Nota para factura</label>
+                  <textarea
+                    name="nota_factura"
+                    placeholder="Ejemplo: Gracias por su compra"
+                    className="w-full px-3 py-2 border rounded focus:outline-none bg-white text-gray-900 min-h-[48px]"
+                    value={negocioForm.nota_factura || ''}
+                    onChange={handleChange}
+                  />
+                  <div className="text-xs text-gray-400 mt-1">Esta nota aparecerá en las facturas.</div>
+                </div>
+                <div>
+                  <label className="block mb-1 font-semibold">Términos y condiciones</label>
+                  <textarea
+                    name="terminos_condiciones"
+                    placeholder="Términos y condiciones del negocio"
+                    className="w-full px-3 py-2 border rounded focus:outline-none bg-white text-gray-900 min-h-[64px]"
+                    value={negocioForm.terminos_condiciones || ''}
+                    onChange={handleChange}
+                  />
+                  <div className="text-xs text-gray-400 mt-1">Opcional. Puedes dejarlo vacío.</div>
+                </div>
                 <div>
                   <label className="block mb-1 font-semibold">Nombre del negocio</label>
                   <input

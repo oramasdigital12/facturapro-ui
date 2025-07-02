@@ -51,7 +51,7 @@ export default function Home() {
   const navigate = useNavigate();
   const [showValidarModal, setShowValidarModal] = useState(false);
   const [clientes, setClientes] = useState([]);
-  const [negocio, setNegocio] = useState({ nombre_negocio: '', email: '' });
+  const [negocio, setNegocio] = useState({ nombre_negocio: '', email: '', logo_url: '' });
   const [clienteEditando, setClienteEditando] = useState<any>(null);
   const [showClienteModal, setShowClienteModal] = useState(false);
   const { dark, setDark } = useDarkMode();
@@ -124,9 +124,9 @@ export default function Home() {
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <img
-              src="/logo.png"
+              src={negocio.logo_url ? negocio.logo_url : '/logo.png'}
               alt="CRM Logo"
-              className="w-24 h-24 object-contain animate-float"
+              className="w-24 h-24 object-contain animate-float rounded-2xl border bg-white dark:bg-gray-800"
               draggable={false}
             />
           </div>

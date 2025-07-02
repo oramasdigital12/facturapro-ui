@@ -1,5 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { FiUsers, FiDollarSign, FiSettings, FiCalendar, FiMail } from 'react-icons/fi';
+import { useEffect, useState } from 'react';
+import api from '../services/api';
 
 interface SidebarNavProps {
   className?: string;
@@ -8,13 +10,19 @@ interface SidebarNavProps {
 
 const navItems = [
   { to: '/clientes', icon: <FiUsers />, label: 'Clientes', color: 'text-blue-500', desc: 'Gestiona tus clientes' },
-  { to: '/agenda', icon: <FiCalendar />, label: 'Agenda', color: 'text-red-500', desc: 'Tareas y recordatorios' },
+  { to: '/agenda', icon: <FiCalendar />, label: 'Tareas', color: 'text-red-500', desc: 'Tareas y recordatorios' },
   { to: '/ventas', icon: <FiDollarSign />, label: 'Ventas', color: 'text-emerald-500', desc: 'Historial y exportación' },
   { to: '/configuracion', icon: <FiSettings />, label: 'Información del Negocio', color: 'text-gray-500', desc: 'Ajustes y cuenta' },
 ];
 
 export default function SidebarNav({ className = '', onValidarClienteClick }: SidebarNavProps) {
   const location = useLocation();
+  const [negocio, setNegocio] = useState({ logo_url: '' });
+
+  useEffect(() => {
+    api.get('/api/negocio-config').then(res => setNegocio(res.data));
+  }, []);
+
   return (
     <aside
       className={`hidden md:flex flex-col min-h-screen py-10 px-4 w-80 z-40 relative ${className}`}
@@ -37,7 +45,12 @@ export default function SidebarNav({ className = '', onValidarClienteClick }: Si
       {/* Línea blanca sutil en light mode (usando Tailwind para light) */}
       <div className="absolute top-0 right-0 h-full w-px z-50 bg-white/60 dark:hidden" />
       <div className="flex flex-col gap-8 items-center relative z-10">
-        <img src="/logo.png" alt="Logo" className="w-24 h-24 mb-2 drop-shadow-xl" draggable={false} />
+        <img
+          src={negocio.logo_url ? negocio.logo_url : '/logo.png'}
+          alt="Logo"
+          className="w-24 h-24 mb-2 drop-shadow-xl rounded-2xl border bg-white dark:bg-gray-800"
+          draggable={false}
+        />
         <div className="grid grid-cols-2 gap-4 w-full">
           {navItems.map(item => (
             <Link

@@ -157,7 +157,7 @@ export default function Agenda() {
 
       <div className="relative flex-1 flex flex-col px-4 pb-24">
         <div className="text-center mb-8 mt-6">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Agenda</h1>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Tareas</h1>
           <div className="w-24 h-1 bg-blue-500 mx-auto rounded-full"></div>
         </div>
         <div className="flex flex-col gap-4 mb-6">

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRightOnRectangleIcon, MoonIcon, SunIcon } from '@heroicons/react/24/outline';
 import { useDarkMode } from '../contexts/AuthContext';
-import { FiSettings } from 'react-icons/fi';
+import { FiSettings, FiLayers } from 'react-icons/fi';
 import InfoNegocioModal from '../components/InfoNegocioModal';
+import GestionCategoriasServiciosModal from '../components/GestionCategoriasServiciosModal';
 
 const Configuracion: React.FC = () => {
   const { dark, setDark } = useDarkMode();
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showGestionModal, setShowGestionModal] = useState(false);
 
   useEffect(() => {
     if (dark) {
@@ -48,7 +50,7 @@ const Configuracion: React.FC = () => {
           </button>
         </div>
       </div>
-      <div className="flex flex-col items-center justify-center flex-1 gap-8 py-8">
+      <div className="flex flex-col md:flex-row items-center justify-center flex-1 gap-8 py-8 w-full">
         {/* Card tipo Home para Info Negocio */}
         <button
           onClick={() => setShowInfoModal(true)}
@@ -58,9 +60,18 @@ const Configuracion: React.FC = () => {
           <span className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">Info. Negocio</span>
           <span className="text-xs text-blue-500 dark:text-blue-300">Editar datos del negocio</span>
         </button>
-        {/* Aquí se pueden agregar más cards en el futuro */}
+        {/* Card para Categorías y Servicios */}
+        <button
+          onClick={() => setShowGestionModal(true)}
+          className="aspect-square bg-white dark:bg-gray-800 rounded-3xl shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center justify-center w-48 h-48 text-center border-2 border-transparent hover:border-blue-400 group"
+        >
+          <FiLayers className="h-12 w-12 text-gray-400 group-hover:text-blue-500 mb-2 transition-colors duration-300" />
+          <span className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">Categorías y Servicios</span>
+          <span className="text-xs text-blue-500 dark:text-blue-300">Gestionar categorías y servicios</span>
+        </button>
       </div>
       <InfoNegocioModal open={showInfoModal} onClose={() => setShowInfoModal(false)} />
+      <GestionCategoriasServiciosModal open={showGestionModal} onClose={() => setShowGestionModal(false)} />
     </div>
   );
 };
