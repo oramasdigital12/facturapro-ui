@@ -13,6 +13,9 @@ import {
   deleteServicioNegocio,
 } from '../services/api';
 import { CategoriaNegocio, ServicioNegocio } from '../types';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import Modal from './Modal';
+import Swal from 'sweetalert2';
 
 interface Props {
   open: boolean;
@@ -24,13 +27,13 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
   const [loadingCategorias, setLoadingCategorias] = useState(false);
   const [editCategoria, setEditCategoria] = useState<CategoriaNegocio | null>(null);
   const [formCategoria, setFormCategoria] = useState({ nombre: '', orden: '' });
-  const [showCategoriaForm, setShowCategoriaForm] = useState(false);
+  const [showCategoriaModal, setShowCategoriaModal] = useState(false);
   const [servicios, setServicios] = useState<ServicioNegocio[]>([]);
   const [loadingServicios, setLoadingServicios] = useState(false);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<CategoriaNegocio | null>(null);
   const [editServicio, setEditServicio] = useState<ServicioNegocio | null>(null);
   const [formServicio, setFormServicio] = useState({ nombre: '', precio: '' });
-  const [showServicioForm, setShowServicioForm] = useState(false);
+  const [showServicioModal, setShowServicioModal] = useState(false);
 
   // Cargar categorías al abrir
   useEffect(() => {
@@ -95,7 +98,7 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
       }
       setFormCategoria({ nombre: '', orden: '' });
       setEditCategoria(null);
-      setShowCategoriaForm(false);
+      setShowCategoriaModal(false);
       cargarCategorias();
     } catch {
       toast.error('Error al guardar la categoría');
@@ -104,10 +107,18 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
   const handleEditCategoria = (cat: CategoriaNegocio) => {
     setEditCategoria(cat);
     setFormCategoria({ nombre: cat.nombre, orden: cat.orden?.toString() || '' });
-    setShowCategoriaForm(true);
+    setShowCategoriaModal(true);
   };
   const handleDeleteCategoria = async (cat: CategoriaNegocio) => {
-    if (!window.confirm('¿Eliminar esta categoría?')) return;
+    const result = await Swal.fire({
+      title: '¿Eliminar categoría?',
+      text: 'Esta acción no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!result.isConfirmed) return;
     try {
       await deleteCategoriaNegocio(cat.id);
       toast.success('Categoría eliminada');
@@ -115,6 +126,26 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
       cargarCategorias();
     } catch {
       toast.error('Error al eliminar');
+    }
+  };
+
+  // Drag & Drop para categorías
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination) return;
+    const reordered = Array.from(categorias);
+    const [removed] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, removed);
+    setCategorias(reordered);
+    // Actualizar el orden en el backend
+    try {
+      await Promise.all(
+        reordered.map((cat, idx) =>
+          updateCategoriaNegocio(cat.id, { nombre: cat.nombre, orden: idx + 1 })
+        )
+      );
+      cargarCategorias();
+    } catch {
+      toast.error('Error al actualizar el orden');
     }
   };
 
@@ -150,7 +181,7 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
       }
       setFormServicio({ nombre: '', precio: '' });
       setEditServicio(null);
-      setShowServicioForm(false);
+      setShowServicioModal(false);
       cargarServicios(categoriaSeleccionada!.id);
     } catch {
       toast.error('Error al guardar el servicio');
@@ -159,10 +190,18 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
   const handleEditServicio = (serv: ServicioNegocio) => {
     setEditServicio(serv);
     setFormServicio({ nombre: serv.nombre, precio: serv.precio.toString() });
-    setShowServicioForm(true);
+    setShowServicioModal(true);
   };
   const handleDeleteServicio = async (serv: ServicioNegocio) => {
-    if (!window.confirm('¿Eliminar este servicio?')) return;
+    const result = await Swal.fire({
+      title: '¿Eliminar servicio?',
+      text: 'Esta acción no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!result.isConfirmed) return;
     try {
       await deleteServicioNegocio(serv.id);
       toast.success('Servicio eliminado');
@@ -191,85 +230,101 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
                 <h3 className="font-semibold text-lg text-gray-700">Categorías</h3>
                 <button
                   className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
-                  onClick={() => {
-                    setShowCategoriaForm(true);
-                    setEditCategoria(null);
-                    setFormCategoria({ nombre: '', orden: '' });
-                  }}
+                  onClick={() => setShowCategoriaModal(true)}
                 >
                   <PlusIcon className="h-4 w-4" /> Nueva categoría
                 </button>
               </div>
-              {showCategoriaForm && (
-                <form onSubmit={handleSubmitCategoria} className="flex flex-col md:flex-row gap-2 mb-4">
+              <DragDropContext onDragEnd={handleDragEnd}>
+                <Droppable droppableId="categorias-droppable">
+                  {(provided) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className="overflow-x-auto rounded-xl border"
+                    >
+                      <table className="min-w-full text-sm">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="px-2 py-2 w-8"></th>
+                            <th className="px-4 py-2 text-left font-semibold">Nombre</th>
+                            <th className="px-4 py-2 text-center font-semibold">Acciones</th>
+                          </tr>
+                        </thead>
+                        <Droppable droppableId="categorias-droppable">
+                          {(provided) => (
+                            <tbody
+                              ref={provided.innerRef}
+                              {...provided.droppableProps}
+                            >
+                              {loadingCategorias ? (
+                                <tr><td colSpan={3} className="text-center py-4">Cargando...</td></tr>
+                              ) : categorias.length === 0 ? (
+                                <tr><td colSpan={3} className="text-center py-4 text-gray-400">Sin categorías</td></tr>
+                              ) : (
+                                categorias.map((cat, idx) => (
+                                  <Draggable key={cat.id} draggableId={cat.id} index={idx}>
+                                    {(provided) => (
+                                      <tr
+                                        ref={provided.innerRef}
+                                        {...provided.draggableProps}
+                                        className={categoriaSeleccionada?.id === cat.id ? 'bg-blue-50' : ''}
+                                      >
+                                        <td className="px-2 py-2 cursor-grab" {...provided.dragHandleProps}>
+                                          <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><circle cx="5" cy="6" r="1.5" fill="#888"/><circle cx="5" cy="12" r="1.5" fill="#888"/><circle cx="5" cy="18" r="1.5" fill="#888"/><circle cx="12" cy="6" r="1.5" fill="#888"/><circle cx="12" cy="12" r="1.5" fill="#888"/><circle cx="12" cy="18" r="1.5" fill="#888"/></svg>
+                                        </td>
+                                        <td className="px-4 py-2 cursor-pointer" onClick={() => setCategoriaSeleccionada(cat)}>{cat.nombre}</td>
+                                        <td className="px-4 py-2 text-center flex gap-2 justify-center">
+                                          <button onClick={() => handleEditCategoria(cat)} className="p-1 rounded hover:bg-blue-100"><PencilIcon className="h-4 w-4 text-blue-600" /></button>
+                                          <button onClick={() => handleDeleteCategoria(cat)} className="p-1 rounded hover:bg-red-100"><TrashIcon className="h-4 w-4 text-red-600" /></button>
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </Draggable>
+                                ))
+                              )}
+                              {provided.placeholder}
+                            </tbody>
+                          )}
+                        </Droppable>
+                      </table>
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
+            </div>
+            {/* Modal para nueva categoría */}
+            {showCategoriaModal && (
+              <Modal open={showCategoriaModal} onClose={() => { setShowCategoriaModal(false); setEditCategoria(null); }}>
+                <form onSubmit={handleSubmitCategoria} className="flex flex-col gap-4 p-6 w-full max-w-xs mx-auto">
+                  <h3 className="font-semibold text-lg mb-2">{editCategoria ? 'Editar categoría' : 'Nueva categoría'}</h3>
                   <input
                     name="nombre"
                     type="text"
                     placeholder="Nombre"
-                    className="flex-1 px-3 py-2 border rounded focus:outline-none"
+                    className="px-3 py-2 border rounded focus:outline-none"
                     value={formCategoria.nombre}
                     onChange={handleCategoriaForm}
                     required
                   />
-                  <input
-                    name="orden"
-                    type="number"
-                    placeholder="Orden (opcional)"
-                    className="w-32 px-3 py-2 border rounded focus:outline-none"
-                    value={formCategoria.orden}
-                    onChange={handleCategoriaForm}
-                  />
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mt-2">
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
                     >
                       {editCategoria ? 'Actualizar' : 'Crear'}
                     </button>
                     <button
                       type="button"
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium"
-                      onClick={() => {
-                        setShowCategoriaForm(false);
-                        setEditCategoria(null);
-                        setFormCategoria({ nombre: '', orden: '' });
-                      }}
+                      className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium"
+                      onClick={() => { setShowCategoriaModal(false); setEditCategoria(null); }}
                     >
                       Cancelar
                     </button>
                   </div>
                 </form>
-              )}
-              <div className="overflow-x-auto rounded-xl border">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      <th className="px-4 py-2 text-left font-semibold">Nombre</th>
-                      <th className="px-4 py-2 text-left font-semibold">Orden</th>
-                      <th className="px-4 py-2 text-center font-semibold">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loadingCategorias ? (
-                      <tr><td colSpan={3} className="text-center py-4">Cargando...</td></tr>
-                    ) : categorias.length === 0 ? (
-                      <tr><td colSpan={3} className="text-center py-4 text-gray-400">Sin categorías</td></tr>
-                    ) : (
-                      categorias.map(cat => (
-                        <tr key={cat.id} className={categoriaSeleccionada?.id === cat.id ? 'bg-blue-50' : ''}>
-                          <td className="px-4 py-2 cursor-pointer" onClick={() => setCategoriaSeleccionada(cat)}>{cat.nombre}</td>
-                          <td className="px-4 py-2">{cat.orden ?? '-'}</td>
-                          <td className="px-4 py-2 text-center flex gap-2 justify-center">
-                            <button onClick={() => handleEditCategoria(cat)} className="p-1 rounded hover:bg-blue-100"><PencilIcon className="h-4 w-4 text-blue-600" /></button>
-                            <button onClick={() => handleDeleteCategoria(cat)} className="p-1 rounded hover:bg-red-100"><TrashIcon className="h-4 w-4 text-red-600" /></button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+              </Modal>
+            )}
             {/* Servicios */}
             {categoriaSeleccionada && (
               <div>
@@ -278,7 +333,7 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
                   <button
                     className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
                     onClick={() => {
-                      setShowServicioForm(true);
+                      setShowServicioModal(true);
                       setEditServicio(null);
                       setFormServicio({ nombre: '', precio: '' });
                     }}
@@ -286,48 +341,6 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
                     <PlusIcon className="h-4 w-4" /> Nuevo servicio
                   </button>
                 </div>
-                {showServicioForm && (
-                  <form onSubmit={handleSubmitServicio} className="flex flex-col md:flex-row gap-2 mb-4">
-                    <input
-                      name="nombre"
-                      type="text"
-                      placeholder="Nombre"
-                      className="flex-1 px-3 py-2 border rounded focus:outline-none"
-                      value={formServicio.nombre}
-                      onChange={handleServicioForm}
-                      required
-                    />
-                    <input
-                      name="precio"
-                      type="number"
-                      step="0.01"
-                      placeholder="Precio"
-                      className="w-32 px-3 py-2 border rounded focus:outline-none"
-                      value={formServicio.precio}
-                      onChange={handleServicioForm}
-                      required
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        type="submit"
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-                      >
-                        {editServicio ? 'Actualizar' : 'Crear'}
-                      </button>
-                      <button
-                        type="button"
-                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium"
-                        onClick={() => {
-                          setShowServicioForm(false);
-                          setEditServicio(null);
-                          setFormServicio({ nombre: '', precio: '' });
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </form>
-                )}
                 <div className="overflow-x-auto rounded-xl border">
                   <table className="min-w-full text-sm">
                     <thead>
@@ -358,6 +371,48 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
                   </table>
                 </div>
               </div>
+            )}
+            {/* Modal para nuevo servicio */}
+            {showServicioModal && (
+              <Modal open={showServicioModal} onClose={() => { setShowServicioModal(false); setEditServicio(null); setFormServicio({ nombre: '', precio: '' }); }}>
+                <form onSubmit={handleSubmitServicio} className="flex flex-col gap-4 p-6 w-full max-w-xs mx-auto">
+                  <h3 className="font-semibold text-lg mb-2">{editServicio ? 'Editar servicio' : 'Nuevo servicio'}</h3>
+                  <input
+                    name="nombre"
+                    type="text"
+                    placeholder="Nombre"
+                    className="px-3 py-2 border rounded focus:outline-none"
+                    value={formServicio.nombre}
+                    onChange={handleServicioForm}
+                    required
+                  />
+                  <input
+                    name="precio"
+                    type="number"
+                    step="0.01"
+                    placeholder="Precio"
+                    className="px-3 py-2 border rounded focus:outline-none"
+                    value={formServicio.precio}
+                    onChange={handleServicioForm}
+                    required
+                  />
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      type="submit"
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                    >
+                      {editServicio ? 'Actualizar' : 'Crear'}
+                    </button>
+                    <button
+                      type="button"
+                      className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium"
+                      onClick={() => { setShowServicioModal(false); setEditServicio(null); setFormServicio({ nombre: '', precio: '' }); }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              </Modal>
             )}
           </div>
         </Dialog.Panel>
