@@ -34,6 +34,16 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
   const [editServicio, setEditServicio] = useState<ServicioNegocio | null>(null);
   const [formServicio, setFormServicio] = useState({ nombre: '', precio: '' });
   const [showServicioModal, setShowServicioModal] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      const timer = setTimeout(() => setReady(true), 30); // pequeño delay para asegurar el DOM
+      return () => clearTimeout(timer);
+    } else {
+      setReady(false);
+    }
+  }, [open]);
 
   // Cargar categorías al abrir
   useEffect(() => {
@@ -235,63 +245,55 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
                   <PlusIcon className="h-4 w-4" /> Nueva categoría
                 </button>
               </div>
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="categorias-droppable">
-                  {(provided: DroppableProvided) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className="overflow-x-auto rounded-xl border"
-                    >
-                      <table className="min-w-full text-sm">
-                        <thead>
-                          <tr className="bg-gray-50">
-                            <th className="px-2 py-2 w-8"></th>
-                            <th className="px-4 py-2 text-left font-semibold">Nombre</th>
-                            <th className="px-4 py-2 text-center font-semibold">Acciones</th>
-                          </tr>
-                        </thead>
-                        <Droppable droppableId="categorias-droppable">
-                          {(provided: DroppableProvided) => (
-                            <tbody
-                              ref={provided.innerRef}
-                              {...provided.droppableProps}
-                            >
-                              {loadingCategorias ? (
-                                <tr><td colSpan={3} className="text-center py-4">Cargando...</td></tr>
-                              ) : categorias.length === 0 ? (
-                                <tr><td colSpan={3} className="text-center py-4 text-gray-400">Sin categorías</td></tr>
-                              ) : (
-                                categorias.map((cat, idx) => (
-                                  <Draggable key={cat.id} draggableId={cat.id} index={idx}>
-                                    {(provided: DraggableProvided) => (
-                                      <tr
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        className={categoriaSeleccionada?.id === cat.id ? 'bg-blue-50' : ''}
-                                      >
-                                        <td className="px-2 py-2 cursor-grab" {...provided.dragHandleProps}>
-                                          <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><circle cx="5" cy="6" r="1.5" fill="#888"/><circle cx="5" cy="12" r="1.5" fill="#888"/><circle cx="5" cy="18" r="1.5" fill="#888"/><circle cx="12" cy="6" r="1.5" fill="#888"/><circle cx="12" cy="12" r="1.5" fill="#888"/><circle cx="12" cy="18" r="1.5" fill="#888"/></svg>
-                                        </td>
-                                        <td className="px-4 py-2 cursor-pointer" onClick={() => setCategoriaSeleccionada(cat)}>{cat.nombre}</td>
-                                        <td className="px-4 py-2 text-center flex gap-2 justify-center">
-                                          <button onClick={() => handleEditCategoria(cat)} className="p-1 rounded hover:bg-blue-100"><PencilIcon className="h-4 w-4 text-blue-600" /></button>
-                                          <button onClick={() => handleDeleteCategoria(cat)} className="p-1 rounded hover:bg-red-100"><TrashIcon className="h-4 w-4 text-red-600" /></button>
-                                        </td>
-                                      </tr>
-                                    )}
-                                  </Draggable>
-                                ))
-                              )}
-                              {provided.placeholder}
-                            </tbody>
-                          )}
-                        </Droppable>
-                      </table>
-                    </div>
-                  )}
-                </Droppable>
-              </DragDropContext>
+              {ready && (
+                <DragDropContext onDragEnd={handleDragEnd}>
+                  <Droppable droppableId="categorias-droppable">
+                    {(provided: DroppableProvided) => (
+                      <div ref={provided.innerRef} {...provided.droppableProps} className="overflow-x-auto rounded-xl border">
+                        <table className="min-w-full text-sm">
+                          <thead>
+                            <tr className="bg-gray-50">
+                              <th className="px-2 py-2 w-8"></th>
+                              <th className="px-4 py-2 text-left font-semibold">Nombre</th>
+                              <th className="px-4 py-2 text-center font-semibold">Acciones</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {loadingCategorias ? (
+                              <tr><td colSpan={3} className="text-center py-4">Cargando...</td></tr>
+                            ) : categorias.length === 0 ? (
+                              <tr><td colSpan={3} className="text-center py-4 text-gray-400">Sin categorías</td></tr>
+                            ) : (
+                              categorias.map((cat, idx) => (
+                                <Draggable key={cat.id} draggableId={cat.id} index={idx}>
+                                  {(provided: DraggableProvided) => (
+                                    <tr
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      {...provided.dragHandleProps}
+                                      className={categoriaSeleccionada?.id === cat.id ? 'bg-blue-50' : ''}
+                                    >
+                                      <td className="px-2 py-2 cursor-grab">
+                                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><circle cx="5" cy="6" r="1.5" fill="#888"/><circle cx="5" cy="12" r="1.5" fill="#888"/><circle cx="5" cy="18" r="1.5" fill="#888"/><circle cx="12" cy="6" r="1.5" fill="#888"/><circle cx="12" cy="12" r="1.5" fill="#888"/><circle cx="12" cy="18" r="1.5" fill="#888"/></svg>
+                                      </td>
+                                      <td className="px-4 py-2 cursor-pointer" onClick={() => setCategoriaSeleccionada(cat)}>{cat.nombre}</td>
+                                      <td className="px-4 py-2 text-center flex gap-2 justify-center">
+                                        <button onClick={() => handleEditCategoria(cat)} className="p-1 rounded hover:bg-blue-100"><PencilIcon className="h-4 w-4 text-blue-600" /></button>
+                                        <button onClick={() => handleDeleteCategoria(cat)} className="p-1 rounded hover:bg-red-100"><TrashIcon className="h-4 w-4 text-red-600" /></button>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </Draggable>
+                              ))
+                            )}
+                            {provided.placeholder}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
+              )}
             </div>
             {/* Modal para nueva categoría */}
             {showCategoriaModal && (

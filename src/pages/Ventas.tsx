@@ -15,7 +15,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { useAuth, useDarkMode } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
 import BotonCrear from '../components/BotonCrear';
 
@@ -33,6 +33,9 @@ export default function Ventas() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { dark, setDark } = useDarkMode();
+  const outletContext = useOutletContext() as { color_personalizado?: string } | null;
+  const color_personalizado = outletContext?.color_personalizado || '#2563eb';
+  console.log('color_personalizado VENTAS', color_personalizado);
 
   useEffect(() => {
     fetchVentas();
@@ -238,34 +241,10 @@ export default function Ventas() {
         </svg>
       </div>
 
-      {/* Logout y Dark mode button */}
-      <div className="absolute top-4 right-4 flex items-center gap-2 z-50">
-        <button
-          type="button"
-          onClick={() => setDark(!dark)}
-          className="p-2 rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer"
-          title={dark ? 'Modo claro' : 'Modo oscuro'}
-        >
-          {dark ? (
-            <SunIcon className="w-6 h-6 text-yellow-400 group-hover:text-yellow-500" />
-          ) : (
-            <MoonIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-500" />
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => handleLogout()}
-          className="p-2 rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer"
-          title="Cerrar sesión"
-        >
-          <ArrowRightOnRectangleIcon className="w-6 h-6 text-gray-400 dark:text-gray-200 group-hover:text-blue-500" />
-        </button>
-      </div>
-
       <div className="relative flex-1 flex flex-col px-4 pb-24">
-        <div className="text-center mb-8 mt-6">
+        <div className="text-center mb-8 mt-8">
           <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Ventas</h1>
-          <div className="w-24 h-1 bg-blue-500 mx-auto rounded-full"></div>
+          <div className="w-16 h-1 mx-auto rounded-full" style={{ background: `${color_personalizado} !important` }}></div>
         </div>
         <div className="flex flex-col gap-4 mb-6">
           <div className="relative">
@@ -390,6 +369,9 @@ export default function Ventas() {
           <BotonCrear
             onClick={() => { setVentaEditando(null); setShowModal(true); }}
             label="Nueva Venta"
+            color_personalizado={color_personalizado}
+            size="md"
+            className=""
           />
         </div>
         {/* Botón flotante solo en móvil */}
@@ -397,7 +379,9 @@ export default function Ventas() {
           <BotonCrear
             onClick={() => { setVentaEditando(null); setShowModal(true); }}
             label=""
-            className="rounded-full p-0 w-16 h-16 flex items-center justify-center shadow-xl bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-5xl"
+            color_personalizado={color_personalizado}
+            size="fab"
+            className=""
           />
         </div>
 

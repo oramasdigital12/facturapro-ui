@@ -129,6 +129,7 @@ export default function InfoNegocioModal({ open, onClose }: InfoNegocioModalProp
       await updateNegocioConfig(negocioForm);
       toast.success('Configuración de negocio guardada');
       onClose();
+      window.location.reload();
     } catch (error) {
       toast.error('Error al guardar la configuración');
     } finally {

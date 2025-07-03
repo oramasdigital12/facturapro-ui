@@ -1,80 +1,97 @@
-import { Link, useLocation } from 'react-router-dom';
-import { FiUsers, FiDollarSign, FiSettings, FiCalendar, FiMail } from 'react-icons/fi';
-import { useEffect, useState } from 'react';
-import api from '../services/api';
+import React from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { HiOutlineHome, HiOutlineUserGroup, HiOutlineClipboardList, HiOutlineCurrencyDollar, HiOutlineCog, HiOutlineMail } from "react-icons/hi";
 
 interface SidebarNavProps {
+  logo_url?: string;
+  nombre_negocio?: string;
   className?: string;
-  onValidarClienteClick: () => void;
+  color_personalizado?: string;
 }
 
 const navItems = [
-  { to: '/clientes', icon: <FiUsers />, label: 'Clientes', color: 'text-blue-500', desc: 'Gestiona tus clientes' },
-  { to: '/agenda', icon: <FiCalendar />, label: 'Tareas', color: 'text-red-500', desc: 'Tareas y recordatorios' },
-  { to: '/ventas', icon: <FiDollarSign />, label: 'Ventas', color: 'text-emerald-500', desc: 'Historial y exportación' },
-  { to: '/configuracion', icon: <FiSettings />, label: 'Información del Negocio', color: 'text-gray-500', desc: 'Ajustes y cuenta' },
+  {
+    label: "Inicio",
+    to: "/",
+    icon: <HiOutlineHome size={22} />,
+  },
+  {
+    label: "Clientes",
+    to: "/clientes",
+    icon: <HiOutlineUserGroup size={22} />,
+  },
+  {
+    label: "Tareas",
+    to: "/agenda",
+    icon: <HiOutlineClipboardList size={22} />,
+  },
+  {
+    label: "Ventas",
+    to: "/ventas",
+    icon: <HiOutlineCurrencyDollar size={22} />,
+  },
+  {
+    label: "Información del Negocio",
+    to: "/configuracion",
+    icon: <HiOutlineCog size={22} />,
+  },
+  {
+    label: "Validar Cliente",
+    to: "/validar-cliente",
+    icon: <HiOutlineMail size={22} />,
+  },
 ];
 
-export default function SidebarNav({ className = '', onValidarClienteClick }: SidebarNavProps) {
+const SidebarNav: React.FC<SidebarNavProps> = ({ logo_url, nombre_negocio, className, color_personalizado = '#2563eb' }) => {
   const location = useLocation();
-  const [negocio, setNegocio] = useState({ logo_url: '' });
-
-  useEffect(() => {
-    api.get('/api/negocio-config').then(res => setNegocio(res.data));
-  }, []);
-
+  // Utilidad para color transparente
+  const transparent = color_personalizado + '22'; // #RRGGBBAA (AA=22 ~ 13% opacity)
   return (
     <aside
-      className={`hidden md:flex flex-col min-h-screen py-10 px-4 w-80 z-40 relative ${className}`}
-      style={{
-        background: 'linear-gradient(135deg, #182237 60%, #22304a 100%)',
-        boxShadow: '4px 0 24px 0 rgba(0,0,0,0.10)',
-        borderRight: 'none',
-      }}
+      className={`h-screen w-64 bg-slate-50 dark:bg-slate-800 shadow-lg flex flex-col items-center py-8 px-4 transition-colors duration-300 hidden md:flex ${className || ''}`}
     >
-      {/* Línea de separación moderna: gradiente azul-cyan en dark, blanca en light */}
-      <div
-        className="absolute top-0 right-0 h-full w-1 z-50"
-        style={{
-          background: 'linear-gradient(to bottom, #3b82f6 0%, #06b6d4 100%)',
-          opacity: 0.25,
-          borderRadius: '0 8px 8px 0',
-          boxShadow: '0 0 0 0 transparent',
-        }}
-      />
-      {/* Línea blanca sutil en light mode (usando Tailwind para light) */}
-      <div className="absolute top-0 right-0 h-full w-px z-50 bg-white/60 dark:hidden" />
-      <div className="flex flex-col gap-8 items-center relative z-10">
+      {/* Logo y nombre dinámicos */}
+      <div className="mb-10 flex flex-col items-center">
         <img
-          src={negocio.logo_url ? negocio.logo_url : '/logo.png'}
+          src={logo_url && logo_url.trim() !== '' ? logo_url : "/crm-icon.svg"}
           alt="Logo"
-          className="w-24 h-24 mb-2 drop-shadow-xl rounded-2xl border bg-white dark:bg-gray-800"
-          draggable={false}
+          className="w-16 h-16 rounded-xl bg-white dark:bg-slate-700 p-2 shadow-md mb-2 object-contain"
         />
-        <div className="grid grid-cols-2 gap-4 w-full">
-          {navItems.map(item => (
-            <Link
+        <span className="text-lg font-bold text-slate-700 dark:text-slate-200 tracking-tight text-center w-full truncate max-w-[12rem]">
+          {nombre_negocio && nombre_negocio.trim() !== '' ? nombre_negocio : 'VendedorPro'}
+        </span>
+      </div>
+      {/* Navegación */}
+      <nav className="flex flex-col gap-2 w-full">
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to));
+          return (
+            <NavLink
               key={item.to}
               to={item.to}
-              className={`flex flex-col items-center justify-center aspect-square rounded-3xl shadow-sm transition-all duration-200 w-full text-center px-2 py-4 cursor-pointer border-2
-                ${location.pathname === item.to ? 'border-blue-500 bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 scale-105' : 'border-transparent bg-white/0 dark:bg-gray-900/0 text-gray-300 dark:text-gray-200 hover:border-blue-300 hover:bg-blue-50/30 dark:hover:bg-blue-900/30'}`}
+              className={({ isActive: navActive }) =>
+                [
+                  "flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 relative",
+                  `hover:bg-[${transparent}] hover:text-[${color_personalizado}]`,
+                  (isActive || navActive)
+                    ? `bg-[${transparent}] text-[${color_personalizado}] shadow-sm`
+                    : "text-slate-700 dark:text-slate-200 bg-transparent"
+                ].join(" ")
+              }
+              style={isActive ? { borderLeft: `4px solid ${color_personalizado}` } : {}}
+              end={item.to === "/"}
             >
-              <span className={`text-3xl mb-2 ${item.color}`}>{item.icon}</span>
-              <span className="font-semibold text-base mb-0.5">{item.label}</span>
-              <span className={`text-xs ${item.color}`}>{item.desc}</span>
-            </Link>
-          ))}
-          <button
-            type="button"
-            onClick={onValidarClienteClick}
-            className="flex flex-col items-center justify-center aspect-square rounded-3xl shadow-sm transition-all duration-200 w-full text-center px-2 py-4 cursor-pointer border-2 border-transparent bg-white/0 dark:bg-gray-900/0 text-blue-400 hover:border-blue-300 hover:bg-blue-50/30 dark:hover:bg-blue-900/30"
-          >
-            <span className="text-3xl mb-2 text-blue-400"><FiMail /></span>
-            <span className="font-semibold text-base mb-0.5">Validar Cliente</span>
-            <span className="text-xs text-blue-400">Enviar email a validaciones</span>
-          </button>
-        </div>
-      </div>
+              {React.cloneElement(item.icon, { color: isActive ? color_personalizado : undefined })}
+              <span className="truncate">{item.label}</span>
+              {isActive && (
+                <span className="absolute left-0 bottom-0 w-full h-1 rounded-full" style={{ background: color_personalizado, opacity: 0.18 }} />
+              )}
+            </NavLink>
+          );
+        })}
+      </nav>
     </aside>
   );
-} 
+};
+
+export default SidebarNav; 

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { UserGroupIcon, CurrencyDollarIcon, CalendarIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon, MoonIcon, SunIcon } from '@heroicons/react/24/solid';
 import { useAuth, useDarkMode } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import ValidarClienteModal from '../components/ValidarClienteModal';
 import api from '../services/api';
 import { useState, useEffect } from 'react';
@@ -55,6 +55,8 @@ export default function Home() {
   const [clienteEditando, setClienteEditando] = useState<any>(null);
   const [showClienteModal, setShowClienteModal] = useState(false);
   const { dark, setDark } = useDarkMode();
+  const outletContext = useOutletContext() as { color_personalizado?: string } | null;
+  const color_personalizado = outletContext?.color_personalizado || '#2563eb';
   
 
   useEffect(() => {
@@ -96,44 +98,20 @@ export default function Home() {
         </svg>
       </div>
 
-      {/* Logout y Dark mode button */}
-      <div className="absolute top-4 right-4 flex items-center gap-2 z-50">
-        <button
-          type="button"
-          onClick={() => setDark(!dark)}
-          className="p-2 rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer"
-          title={dark ? 'Modo claro' : 'Modo oscuro'}
-        >
-          {dark ? (
-            <SunIcon className="w-6 h-6 text-yellow-400 group-hover:text-yellow-500" />
-          ) : (
-            <MoonIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-500" />
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={() => handleLogout()}
-          className="p-2 rounded-xl bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all duration-300 group cursor-pointer"
-          title="Cerrar sesión"
-        >
-          <ArrowRightOnRectangleIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-500" />
-        </button>
-      </div>
-
       <div className="relative flex-1 flex flex-col justify-center px-4 pb-24 md:pl-28">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <img
               src={negocio.logo_url ? negocio.logo_url : '/logo.png'}
               alt="CRM Logo"
-              className="w-24 h-24 object-contain animate-float rounded-2xl border bg-white dark:bg-gray-800"
+              className="w-16 h-16 object-contain rounded-xl bg-white dark:bg-slate-700 p-2 shadow-md mb-2"
               draggable={false}
             />
           </div>
           <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
             Inicio
           </h1>
-          <div className="w-16 h-1 bg-blue-500 mx-auto rounded-full"></div>
+          <div className="w-16 h-1 mx-auto rounded-full" style={{ background: color_personalizado }}></div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto w-full md:max-w-lg md:gap-8 md:mt-8">
@@ -147,9 +125,9 @@ export default function Home() {
                 <div className="aspect-square bg-white dark:bg-gray-800 rounded-3xl shadow-sm hover:shadow-md transition-shadow duration-300">
                   <div className="h-full w-full p-4">
                     <div className="flex flex-col items-center justify-center h-full text-center">
-                      <item.icon className={`h-10 w-10 ${item.color} mb-2 transition-colors duration-300`} />
+                      <item.icon className={`h-10 w-10 mb-2 transition-colors duration-300 ${item.color}`} />
                       <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-0.5">{item.title}</h2>
-                      <p className="text-blue-500 dark:text-blue-300 text-xs leading-tight">{item.description}</p>
+                      <p className="text-xs leading-tight" style={{ color: color_personalizado }}>{item.description}</p>
                     </div>
                   </div>
                 </div>
@@ -163,9 +141,9 @@ export default function Home() {
                 <div className="aspect-square bg-white dark:bg-gray-800 rounded-3xl shadow-sm hover:shadow-md transition-shadow duration-300">
                   <div className="h-full w-full p-4">
                     <div className="flex flex-col items-center justify-center h-full text-center">
-                      <item.icon className={`h-10 w-10 ${item.color} mb-2 transition-colors duration-300`} />
+                      <item.icon className={`h-10 w-10 mb-2 transition-colors duration-300 ${item.color}`} />
                       <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-0.5">{item.title}</h2>
-                      <p className="text-blue-500 dark:text-blue-300 text-xs leading-tight">{item.description}</p>
+                      <p className="text-xs leading-tight" style={{ color: color_personalizado }}>{item.description}</p>
                     </div>
                   </div>
                 </div>
