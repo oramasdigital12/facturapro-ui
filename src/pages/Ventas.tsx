@@ -7,7 +7,6 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { Venta, Cliente } from '../types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import { showDeleteConfirmation, showSuccessMessage } from '../utils/alerts';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import jsPDF from 'jspdf';
@@ -16,7 +15,6 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { useAuth, useDarkMode } from '../contexts/AuthContext';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
 import BotonCrear from '../components/BotonCrear';
 
 export default function Ventas() {
@@ -32,7 +30,7 @@ export default function Ventas() {
   const [loading, setLoading] = useState(true);
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const { dark, setDark } = useDarkMode();
+  const { dark } = useDarkMode();
   const outletContext = useOutletContext() as { color_personalizado?: string } | null;
   const color_personalizado = outletContext?.color_personalizado || '#2563eb';
   console.log('color_personalizado VENTAS', color_personalizado);
@@ -121,15 +119,6 @@ export default function Ventas() {
   // Totales filtrados (para mostrar si hay filtro de tipo)
   const totalMensualFiltrado = ventasFiltradas.filter((v: Venta) => v.tipo === 'mensual').reduce((acc, v) => acc + parseFloat(v.monto), 0);
   const totalVentaFiltrado = ventasFiltradas.filter((v: Venta) => v.tipo === 'venta').reduce((acc, v) => acc + parseFloat(v.monto), 0);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-    }
-  };
 
   // Exportar a PDF
   const exportarPDF = () => {

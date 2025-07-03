@@ -9,13 +9,11 @@ import { PencilIcon } from '@heroicons/react/24/outline';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import { UserIcon } from '@heroicons/react/24/outline';
 import MensajeWhatsappModal from '../components/MensajeWhatsappModal';
-import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import { showDeleteConfirmation, showSuccessMessage } from '../utils/alerts';
 import { useAuth, useDarkMode } from '../contexts/AuthContext';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import EnviarEmailModal from '../components/EnviarEmailModal';
-import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
 import BotonCrear from '../components/BotonCrear';
 
 interface Cliente {
@@ -54,7 +52,7 @@ export default function Clientes() {
   const [clientesPreseleccionados, setClientesPreseleccionados] = useState<string[] | undefined>(undefined);
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const { dark, setDark } = useDarkMode();
+  const { dark } = useDarkMode();
   const outletContext = useOutletContext() as { color_personalizado?: string } | null;
   const color_personalizado = outletContext?.color_personalizado || '#2563eb';
   console.log('color_personalizado CLIENTES', color_personalizado);
@@ -113,15 +111,6 @@ export default function Clientes() {
       } catch (error) {
         console.error('Error al eliminar el cliente:', error);
       }
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
     }
   };
 

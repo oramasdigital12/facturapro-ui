@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRightOnRectangleIcon, MoonIcon, SunIcon } from '@heroicons/react/24/outline';
-import { useDarkMode } from '../contexts/AuthContext';
 import { FiSettings, FiLayers } from 'react-icons/fi';
 import InfoNegocioModal from '../components/InfoNegocioModal';
 import GestionCategoriasServiciosModal from '../components/GestionCategoriasServiciosModal';
 import { useOutletContext } from 'react-router-dom';
+import { useDarkMode } from '../contexts/AuthContext';
 
 const Configuracion: React.FC = () => {
-  const { dark, setDark } = useDarkMode();
+  const { dark } = useDarkMode();
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showGestionModal, setShowGestionModal] = useState(false);
   const outletContext = useOutletContext() as { color_personalizado?: string } | null;
@@ -22,10 +21,6 @@ const Configuracion: React.FC = () => {
       localStorage.setItem('theme', 'light');
     }
   }, [dark]);
-
-  const handleLogout = () => {
-    window.location.href = '/login';
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">

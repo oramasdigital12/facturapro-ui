@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import api from '../services/api';
 import TareaModal from '../components/TareaModal';
 import TareaItem from '../components/TareaItem';
-import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
-import { MoonIcon, SunIcon } from '@heroicons/react/24/solid';
 import { FiSearch } from 'react-icons/fi';
 import { useAuth, useDarkMode } from '../contexts/AuthContext';
 import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
@@ -24,7 +22,7 @@ export default function Agenda() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { dark, setDark } = useDarkMode();
+  const { dark } = useDarkMode();
   const outletContext = useOutletContext() as { color_personalizado?: string } | null;
   const color_personalizado = outletContext?.color_personalizado || '#2563eb';
   console.log('color_personalizado AGENDA', color_personalizado);
@@ -106,15 +104,6 @@ export default function Agenda() {
       }
       return new Date(a.fecha_hora).getTime() - new Date(b.fecha_hora).getTime();
     });
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">

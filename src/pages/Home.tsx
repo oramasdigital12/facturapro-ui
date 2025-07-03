@@ -54,7 +54,7 @@ export default function Home() {
   const [negocio, setNegocio] = useState({ nombre_negocio: '', email: '', logo_url: '' });
   const [clienteEditando, setClienteEditando] = useState<any>(null);
   const [showClienteModal, setShowClienteModal] = useState(false);
-  const { dark, setDark } = useDarkMode();
+  const { dark } = useDarkMode();
   const outletContext = useOutletContext() as { color_personalizado?: string } | null;
   const color_personalizado = outletContext?.color_personalizado || '#2563eb';
   
@@ -70,15 +70,6 @@ export default function Home() {
       localStorage.setItem('theme', 'light');
     }
   }, [dark]);
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
