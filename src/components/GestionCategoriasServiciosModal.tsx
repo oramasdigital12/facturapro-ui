@@ -13,7 +13,7 @@ import {
   deleteServicioNegocio,
 } from '../services/api';
 import { CategoriaNegocio, ServicioNegocio } from '../types';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable, DropResult, DroppableProvided, DraggableProvided } from 'react-beautiful-dnd';
 import Modal from './Modal';
 import Swal from 'sweetalert2';
 
@@ -237,7 +237,7 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
               </div>
               <DragDropContext onDragEnd={handleDragEnd}>
                 <Droppable droppableId="categorias-droppable">
-                  {(provided) => (
+                  {(provided: DroppableProvided) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
@@ -252,7 +252,7 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
                           </tr>
                         </thead>
                         <Droppable droppableId="categorias-droppable">
-                          {(provided) => (
+                          {(provided: DroppableProvided) => (
                             <tbody
                               ref={provided.innerRef}
                               {...provided.droppableProps}
@@ -264,7 +264,7 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
                               ) : (
                                 categorias.map((cat, idx) => (
                                   <Draggable key={cat.id} draggableId={cat.id} index={idx}>
-                                    {(provided) => (
+                                    {(provided: DraggableProvided) => (
                                       <tr
                                         ref={provided.innerRef}
                                         {...provided.draggableProps}
