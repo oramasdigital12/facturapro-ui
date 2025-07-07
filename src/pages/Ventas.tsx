@@ -13,8 +13,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { useAuth, useDarkMode } from '../contexts/AuthContext';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useDarkMode } from '../contexts/AuthContext';
+import { useOutletContext } from 'react-router-dom';
 import BotonCrear from '../components/BotonCrear';
 
 export default function Ventas() {
@@ -28,8 +28,6 @@ export default function Ventas() {
   const [ventaEditando, setVentaEditando] = useState<Venta | null>(null);
   const [preselectedClienteId, setPreselectedClienteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const { logout } = useAuth();
-  const navigate = useNavigate();
   const { dark } = useDarkMode();
   const outletContext = useOutletContext() as { color_personalizado?: string } | null;
   const color_personalizado = outletContext?.color_personalizado || '#2563eb';

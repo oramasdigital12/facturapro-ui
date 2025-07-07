@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
-import { UserGroupIcon, CurrencyDollarIcon, CalendarIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon, MoonIcon, SunIcon } from '@heroicons/react/24/solid';
+import { UserGroupIcon, CurrencyDollarIcon, CalendarIcon, Cog6ToothIcon } from '@heroicons/react/24/solid';
 import { useAuth, useDarkMode } from '../contexts/AuthContext';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useOutletContext } from 'react-router-dom';
 import ValidarClienteModal from '../components/ValidarClienteModal';
 import api from '../services/api';
 import { useState, useEffect } from 'react';
@@ -47,8 +47,7 @@ const menuItems = [
 ];
 
 export default function Home() {
-  const { logout, user } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [showValidarModal, setShowValidarModal] = useState(false);
   const [clientes, setClientes] = useState([]);
   const [negocio, setNegocio] = useState({ nombre_negocio: '', email: '', logo_url: '' });

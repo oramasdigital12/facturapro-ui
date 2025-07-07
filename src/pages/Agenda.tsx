@@ -3,8 +3,8 @@ import api from '../services/api';
 import TareaModal from '../components/TareaModal';
 import TareaItem from '../components/TareaItem';
 import { FiSearch } from 'react-icons/fi';
-import { useAuth, useDarkMode } from '../contexts/AuthContext';
-import { useNavigate, useLocation, useOutletContext } from 'react-router-dom';
+import { useDarkMode } from '../contexts/AuthContext';
+import { useLocation, useOutletContext } from 'react-router-dom';
 import BotonCrear from '../components/BotonCrear';
 
 interface Cliente { id: string; nombre: string; categoria: string; }
@@ -19,8 +19,6 @@ export default function Agenda() {
   const [showModal, setShowModal] = useState<boolean>(false);
   const [tareaEditando, setTareaEditando] = useState<Tarea | null>(null);
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const { logout } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const { dark } = useDarkMode();
   const outletContext = useOutletContext() as { color_personalizado?: string } | null;
