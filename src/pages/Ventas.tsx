@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import VentaModal from '../components/VentaModal';
-import { FiSearch } from 'react-icons/fi';
+import { FiSearch, FiCalendar, FiX } from 'react-icons/fi';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Venta, Cliente } from '../types';
@@ -16,6 +16,8 @@ import { saveAs } from 'file-saver';
 import { useDarkMode } from '../contexts/AuthContext';
 import { useOutletContext } from 'react-router-dom';
 import BotonCrear from '../components/BotonCrear';
+import React from 'react';
+import type { LegacyRef, ForwardRefRenderFunction } from 'react';
 
 export default function Ventas() {
   const [ventas, setVentas] = useState<Venta[]>([]);
@@ -210,6 +212,48 @@ export default function Ventas() {
     saveAs(new Blob([excelBuffer], { type: 'application/octet-stream' }), 'historial_ventas.xlsx');
   };
 
+  // Componente input personalizado para DatePicker
+  interface DateInputWithIconProps {
+    value?: string;
+    onClick?: () => void;
+    placeholder?: string;
+    onClear?: () => void;
+    hasValue?: boolean;
+    color_personalizado?: string;
+  }
+  const DateInputWithIcon: ForwardRefRenderFunction<HTMLInputElement, DateInputWithIconProps> = (
+    { value, onClick, placeholder, onClear, hasValue, color_personalizado, ...props }, ref
+  ) => (
+    <div className="flex-1 min-w-[90px] max-w-[180px] flex items-center gap-2 px-2 py-2 rounded-xl border-2 font-semibold shadow-sm transition-all overflow-hidden bg-white border-blue-400 text-blue-700 relative">
+      <span className="text-gray-300 flex-shrink-0">
+        <FiCalendar size={20} />
+      </span>
+      <input
+        ref={ref as LegacyRef<HTMLInputElement>}
+        readOnly
+        value={value || ''}
+        onClick={onClick}
+        placeholder={placeholder}
+        className="flex-1 bg-transparent outline-none border-none text-sm font-semibold placeholder-gray-400 px-0 min-w-0"
+        style={{ minHeight: '24px' }}
+        {...props}
+      />
+      {hasValue && (
+        <button
+          type="button"
+          className="ml-2 text-gray-300 hover:text-red-500 focus:outline-none"
+          onClick={onClear}
+          tabIndex={-1}
+          title="Limpiar fecha"
+          style={{ zIndex: 2 }}
+        >
+          <FiX size={16} />
+        </button>
+      )}
+    </div>
+  );
+  const DateInputWithIconForward = React.forwardRef(DateInputWithIcon);
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col md:items-center md:justify-center md:max-w-3xl md:mx-auto md:px-8 md:pl-28">
       {/* Wave decoration */}
@@ -244,27 +288,46 @@ export default function Ventas() {
               onChange={e => setBusqueda(e.target.value)}
             />
           </div>
-          <div className="flex gap-2 items-center justify-between">
+          {/* Ajusta el grupo de filtros para que esté siempre en fila y responsivo */}
+          {/* Fila de inputs de fecha */}
+          <div className="flex flex-row gap-3 w-full mb-2">
             <DatePicker
               selected={desde}
               onChange={(date: Date | null) => setDesde(date)}
               dateFormat="yyyy-MM-dd"
-              placeholderText="Desde"
-              className="px-4 py-3 border rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholderText="Fecha desde"
+              customInput={
+                <DateInputWithIconForward
+                  placeholder="Fecha desde"
+                  onClear={() => setDesde(null)}
+                  hasValue={!!desde}
+                  color_personalizado={color_personalizado}
+                />
+              }
               maxDate={hasta || undefined}
               isClearable
+              title="Filtra las ventas desde esta fecha"
             />
             <DatePicker
               selected={hasta}
               onChange={(date: Date | null) => setHasta(date)}
               dateFormat="yyyy-MM-dd"
-              placeholderText="Hasta"
-              className="px-4 py-3 border rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholderText="Fecha hasta"
+              customInput={
+                <DateInputWithIconForward
+                  placeholder="Fecha hasta"
+                  onClear={() => setHasta(null)}
+                  hasValue={!!hasta}
+                  color_personalizado={color_personalizado}
+                />
+              }
               minDate={desde || undefined}
               isClearable
+              title="Filtra las ventas hasta esta fecha"
             />
           </div>
-          <div className="flex flex-wrap gap-2 mb-2 justify-center">
+          {/* Fila de botones de filtro */}
+          <div className="flex flex-row gap-3 w-full mb-2 justify-center">
             <button
               className={`flex-1 min-w-[140px] max-w-[220px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 font-semibold shadow-sm transition-all overflow-hidden
                 ${tipo === 'mensual' ? 'bg-blue-100/80 border-blue-600 text-blue-900' : 'bg-white border-blue-400 text-blue-700'}
@@ -286,7 +349,8 @@ export default function Ventas() {
               <span className="ml-2 font-bold text-green-800 break-words">${(tipo === 'venta' ? totalVentaFiltrado : totalVenta).toFixed(2)}</span>
             </button>
           </div>
-          <div className="flex justify-center mb-4">
+          {/* Botón Ambos debajo, centrado */}
+          <div className="flex justify-center mb-2">
             <button
               className={`flex items-center justify-center gap-2 px-5 py-2 rounded-full border-2 font-semibold shadow-sm transition-all
                 ${tipo === '' ? 'bg-blue-100/80 border-blue-600 text-blue-900' : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'}
