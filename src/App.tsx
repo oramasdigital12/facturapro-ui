@@ -21,56 +21,13 @@ function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route
-                path="/home"
-                element={
-                  <PrivateRoute>
-                    <Layout>
-                      <Home />
-                    </Layout>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/clientes"
-                element={
-                  <PrivateRoute>
-                    <Layout>
-                      <Clientes />
-                    </Layout>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/configuracion"
-                element={
-                  <PrivateRoute>
-                    <Layout>
-                      <Configuracion />
-                    </Layout>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/agenda"
-                element={
-                  <PrivateRoute>
-                    <Layout>
-                      <Agenda />
-                    </Layout>
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/ventas"
-                element={
-                  <PrivateRoute>
-                    <Layout>
-                      <Ventas />
-                    </Layout>
-                  </PrivateRoute>
-                }
-              />
+              <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
+                <Route path="/home" element={<Home />} />
+                <Route path="/clientes" element={<Clientes />} />
+                <Route path="/configuracion" element={<Configuracion />} />
+                <Route path="/agenda" element={<Agenda />} />
+                <Route path="/ventas" element={<Ventas />} />
+              </Route>
               <Route path="*" element={<Navigate to="/home" />} />
             </Routes>
           </div>

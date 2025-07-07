@@ -231,7 +231,7 @@ export default function Ventas() {
       <div className="relative flex-1 flex flex-col px-4 pb-24">
         <div className="text-center mb-8 mt-8">
           <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Ventas</h1>
-          <div className="w-16 h-1 mx-auto rounded-full" style={{ background: `${color_personalizado} !important` }}></div>
+          <div className="w-16 h-1 mx-auto rounded-full" style={{ background: color_personalizado }}></div>
         </div>
         <div className="flex flex-col gap-4 mb-6">
           <div className="relative">

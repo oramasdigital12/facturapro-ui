@@ -1,6 +1,6 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import BottomNav from './BottomNav';
-import { ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import SidebarNav from './SidebarNav';
 import ValidarClienteModal from '../components/ValidarClienteModal';
 import api from '../services/api';
@@ -8,11 +8,7 @@ import MobileHeader from './MobileHeader';
 import { ArrowRightOnRectangleIcon, MoonIcon, SunIcon } from '@heroicons/react/24/solid';
 import { useDarkMode } from '../contexts/AuthContext';
 
-interface LayoutProps {
-  children?: ReactNode;
-}
-
-export default function Layout({ children }: LayoutProps) {
+export default function Layout() {
   const [showValidarModal, setShowValidarModal] = useState(false);
   const [clientes, setClientes] = useState([]);
   const [negocio, setNegocio] = useState({ nombre_negocio: '', email: '', logo_url: '', color_personalizado: '#2563eb' });
@@ -22,6 +18,12 @@ export default function Layout({ children }: LayoutProps) {
     api.get('/api/clientes').then(res => setClientes(res.data));
     api.get('/api/negocio-config').then(res => setNegocio(res.data));
   }, []);
+
+  // Escuchar cambios en el color personalizado (cuando se vuelve de /configuracion)
+  const location = useLocation();
+  useEffect(() => {
+    api.get('/api/negocio-config').then(res => setNegocio(res.data));
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
@@ -85,7 +87,7 @@ export default function Layout({ children }: LayoutProps) {
             <ArrowRightOnRectangleIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-500" />
           </button>
         </MobileHeader>
-        {children || <Outlet context={{ color_personalizado: negocio.color_personalizado }} />}
+        <Outlet context={{ color_personalizado: negocio.color_personalizado }} />
       </main>
       <div className="md:hidden">
         <BottomNav color_personalizado={negocio.color_personalizado} />
