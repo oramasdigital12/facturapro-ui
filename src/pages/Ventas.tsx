@@ -224,9 +224,9 @@ export default function Ventas() {
   const DateInputWithIcon: ForwardRefRenderFunction<HTMLInputElement, DateInputWithIconProps> = (
     { value, onClick, placeholder, onClear, hasValue, color_personalizado, ...props }, ref
   ) => (
-    <div className="flex-1 min-w-[90px] max-w-[180px] flex items-center gap-2 px-2 py-2 rounded-xl border-2 font-semibold shadow-sm transition-all overflow-hidden bg-white border-blue-400 text-blue-700 relative">
+    <div className="flex-1 min-w-[70px] max-w-[120px] md:min-w-[140px] md:max-w-[220px] flex items-center gap-2 px-4 py-3 rounded-xl border-2 font-semibold shadow-sm transition-all overflow-hidden bg-white border-blue-400 text-blue-700 relative">
       <span className="text-gray-300 flex-shrink-0">
-        <FiCalendar size={20} />
+        <FiCalendar size={18} />
       </span>
       <input
         ref={ref as LegacyRef<HTMLInputElement>}
@@ -234,7 +234,7 @@ export default function Ventas() {
         value={value || ''}
         onClick={onClick}
         placeholder={placeholder}
-        className="flex-1 bg-transparent outline-none border-none text-sm font-semibold placeholder-gray-400 px-0 min-w-0"
+        className="flex-1 bg-transparent outline-none border-none text-xs font-semibold placeholder-gray-400 px-0 min-w-0 truncate"
         style={{ minHeight: '24px' }}
         {...props}
       />
@@ -247,7 +247,7 @@ export default function Ventas() {
           title="Limpiar fecha"
           style={{ zIndex: 2 }}
         >
-          <FiX size={16} />
+          <FiX size={14} />
         </button>
       )}
     </div>
@@ -290,15 +290,15 @@ export default function Ventas() {
           </div>
           {/* Ajusta el grupo de filtros para que esté siempre en fila y responsivo */}
           {/* Fila de inputs de fecha */}
-          <div className="flex flex-row gap-3 w-full mb-2">
+          <div className="flex flex-row flex-wrap gap-3 w-full mb-2 px-4">
             <DatePicker
               selected={desde}
               onChange={(date: Date | null) => setDesde(date)}
               dateFormat="yyyy-MM-dd"
-              placeholderText="Fecha desde"
+              placeholderText="Desde"
               customInput={
                 <DateInputWithIconForward
-                  placeholder="Fecha desde"
+                  placeholder="Desde"
                   onClear={() => setDesde(null)}
                   hasValue={!!desde}
                   color_personalizado={color_personalizado}
@@ -312,10 +312,10 @@ export default function Ventas() {
               selected={hasta}
               onChange={(date: Date | null) => setHasta(date)}
               dateFormat="yyyy-MM-dd"
-              placeholderText="Fecha hasta"
+              placeholderText="Hasta"
               customInput={
                 <DateInputWithIconForward
-                  placeholder="Fecha hasta"
+                  placeholder="Hasta"
                   onClear={() => setHasta(null)}
                   hasValue={!!hasta}
                   color_personalizado={color_personalizado}
@@ -327,26 +327,26 @@ export default function Ventas() {
             />
           </div>
           {/* Fila de botones de filtro */}
-          <div className="flex flex-row gap-3 w-full mb-2 justify-center">
+          <div className="flex flex-row flex-wrap gap-3 w-full mb-2 px-4 justify-center">
             <button
-              className={`flex-1 min-w-[140px] max-w-[220px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 font-semibold shadow-sm transition-all overflow-hidden
+              className={`flex-1 min-w-[90px] max-w-[160px] md:min-w-[140px] md:max-w-[220px] flex items-center justify-center gap-1 px-2 py-2 rounded-xl border-2 font-semibold shadow-sm transition-all overflow-hidden text-xs md:text-sm
                 ${tipo === 'mensual' ? 'bg-blue-100/80 border-blue-600 text-blue-900' : 'bg-white border-blue-400 text-blue-700'}
               `}
               onClick={() => setTipo(tipo === 'mensual' ? '' : 'mensual')}
             >
-              <span className="text-lg flex-shrink-0">💵</span>
+              <span className="text-base flex-shrink-0">💵</span>
               <span className="flex-shrink-0">Mensual</span>
-              <span className="ml-2 font-bold text-blue-800 break-words">${(tipo === 'mensual' ? totalMensualFiltrado : totalMensual).toFixed(2)}</span>
+              <span className="ml-1 font-bold text-blue-800 break-words text-xs md:text-sm whitespace-normal">${(tipo === 'mensual' ? totalMensualFiltrado : totalMensual).toFixed(2)}</span>
             </button>
             <button
-              className={`flex-1 min-w-[140px] max-w-[220px] flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 font-semibold shadow-sm transition-all overflow-hidden
+              className={`flex-1 min-w-[90px] max-w-[160px] md:min-w-[140px] md:max-w-[220px] flex items-center justify-center gap-1 px-2 py-2 rounded-xl border-2 font-semibold shadow-sm transition-all overflow-hidden text-xs md:text-sm
                 ${tipo === 'venta' ? 'bg-blue-100/80 border-blue-600 text-blue-900' : 'bg-white border-green-400 text-green-700'}
               `}
               onClick={() => setTipo(tipo === 'venta' ? '' : 'venta')}
             >
-              <span className="text-lg flex-shrink-0">🪙</span>
+              <span className="text-base flex-shrink-0">🪙</span>
               <span className="flex-shrink-0">Venta</span>
-              <span className="ml-2 font-bold text-green-800 break-words">${(tipo === 'venta' ? totalVentaFiltrado : totalVenta).toFixed(2)}</span>
+              <span className="ml-1 font-bold text-green-800 break-words text-xs md:text-sm whitespace-normal">${(tipo === 'venta' ? totalVentaFiltrado : totalVenta).toFixed(2)}</span>
             </button>
           </div>
           {/* Botón Ambos debajo, centrado */}

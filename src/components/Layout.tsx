@@ -64,7 +64,7 @@ export default function Layout() {
           <ArrowRightOnRectangleIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-500" />
         </button>
       </div>
-      <main className="pb-16 flex flex-col items-center justify-center min-h-screen max-w-2xl mx-auto px-4 md:px-8 flex-1 w-full overflow-y-auto">
+      <main className="pb-16 flex flex-col items-center justify-center min-h-screen w-full px-0 md:px-4 flex-1 overflow-y-auto">
         <MobileHeader logo_url={negocio.logo_url} color_personalizado={negocio.color_personalizado}>
           <button
             type="button"
