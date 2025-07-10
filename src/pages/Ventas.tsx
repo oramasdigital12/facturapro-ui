@@ -34,6 +34,7 @@ export default function Ventas() {
   const outletContext = useOutletContext() as { color_personalizado?: string } | null;
   const color_personalizado = outletContext?.color_personalizado || '#2563eb';
   console.log('color_personalizado VENTAS', color_personalizado);
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
   useEffect(() => {
     fetchVentas();
@@ -277,91 +278,100 @@ export default function Ventas() {
           <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Ventas</h1>
           <div className="w-16 h-1 mx-auto rounded-full" style={{ background: color_personalizado }}></div>
         </div>
+        {/* Botón Filtro y panel de filtros */}
         <div className="flex flex-col gap-4 mb-6">
-          <div className="relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar por cliente..."
-              className="w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
-              value={busqueda}
-              onChange={e => setBusqueda(e.target.value)}
-            />
-          </div>
-          {/* Ajusta el grupo de filtros para que esté siempre en fila y responsivo */}
-          {/* Fila de inputs de fecha */}
-          <div className="flex flex-row flex-wrap gap-3 w-full mb-2 px-4">
-            <DatePicker
-              selected={desde}
-              onChange={(date: Date | null) => setDesde(date)}
-              dateFormat="yyyy-MM-dd"
-              placeholderText="Desde"
-              customInput={
-                <DateInputWithIconForward
-                  placeholder="Desde"
-                  onClear={() => setDesde(null)}
-                  hasValue={!!desde}
-                  color_personalizado={color_personalizado}
+          <button
+            className="w-full md:w-auto px-4 py-2 rounded-xl font-semibold shadow bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 flex items-center justify-center gap-2 transition-all duration-150 mb-2 md:mb-0"
+            style={{ borderColor: color_personalizado, color: color_personalizado }}
+            onClick={() => setMostrarFiltros(v => !v)}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6.414 6.414A1 1 0 0013 13.414V19a1 1 0 01-1.447.894l-4-2A1 1 0 017 17v-3.586a1 1 0 00-.293-.707L3.293 6.707A1 1 0 013 6V4z" /></svg>
+            Filtro
+          </button>
+          {(mostrarFiltros || window.innerWidth >= 768) && (
+            <>
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar por cliente..."
+                  className="w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
+                  value={busqueda}
+                  onChange={e => setBusqueda(e.target.value)}
                 />
-              }
-              maxDate={hasta || undefined}
-              isClearable
-              title="Filtra las ventas desde esta fecha"
-            />
-            <DatePicker
-              selected={hasta}
-              onChange={(date: Date | null) => setHasta(date)}
-              dateFormat="yyyy-MM-dd"
-              placeholderText="Hasta"
-              customInput={
-                <DateInputWithIconForward
-                  placeholder="Hasta"
-                  onClear={() => setHasta(null)}
-                  hasValue={!!hasta}
-                  color_personalizado={color_personalizado}
+              </div>
+              <div className="flex flex-row flex-wrap gap-3 w-full mb-2 px-4">
+                <DatePicker
+                  selected={desde}
+                  onChange={(date: Date | null) => setDesde(date)}
+                  dateFormat="yyyy-MM-dd"
+                  placeholderText="Desde"
+                  customInput={
+                    <DateInputWithIconForward
+                      placeholder="Desde"
+                      onClear={() => setDesde(null)}
+                      hasValue={!!desde}
+                      color_personalizado={color_personalizado}
+                    />
+                  }
+                  maxDate={hasta || undefined}
+                  isClearable
+                  title="Filtra las ventas desde esta fecha"
                 />
-              }
-              minDate={desde || undefined}
-              isClearable
-              title="Filtra las ventas hasta esta fecha"
-            />
-          </div>
-          {/* Fila de botones de filtro */}
-          <div className="flex flex-row flex-wrap gap-3 w-full mb-2 px-4 justify-center">
-            <button
-              className={`flex-1 min-w-[90px] max-w-[160px] md:min-w-[140px] md:max-w-[220px] flex items-center justify-center gap-1 px-2 py-2 rounded-xl border-2 font-semibold shadow-sm transition-all overflow-hidden text-xs md:text-sm
-                ${tipo === 'mensual' ? 'bg-blue-100/80 border-blue-600 text-blue-900' : 'bg-white border-blue-400 text-blue-700'}
-              `}
-              onClick={() => setTipo(tipo === 'mensual' ? '' : 'mensual')}
-            >
-              <span className="text-base flex-shrink-0">💵</span>
-              <span className="flex-shrink-0">Mensual</span>
-              <span className="ml-1 font-bold text-blue-800 break-words text-xs md:text-sm whitespace-normal">${(tipo === 'mensual' ? totalMensualFiltrado : totalMensual).toFixed(2)}</span>
-            </button>
-            <button
-              className={`flex-1 min-w-[90px] max-w-[160px] md:min-w-[140px] md:max-w-[220px] flex items-center justify-center gap-1 px-2 py-2 rounded-xl border-2 font-semibold shadow-sm transition-all overflow-hidden text-xs md:text-sm
-                ${tipo === 'venta' ? 'bg-blue-100/80 border-blue-600 text-blue-900' : 'bg-white border-green-400 text-green-700'}
-              `}
-              onClick={() => setTipo(tipo === 'venta' ? '' : 'venta')}
-            >
-              <span className="text-base flex-shrink-0">🪙</span>
-              <span className="flex-shrink-0">Venta</span>
-              <span className="ml-1 font-bold text-green-800 break-words text-xs md:text-sm whitespace-normal">${(tipo === 'venta' ? totalVentaFiltrado : totalVenta).toFixed(2)}</span>
-            </button>
-          </div>
-          {/* Botón Ambos debajo, centrado */}
-          <div className="flex justify-center mb-2">
-            <button
-              className={`flex items-center justify-center gap-2 px-5 py-2 rounded-full border-2 font-semibold shadow-sm transition-all
-                ${tipo === '' ? 'bg-blue-100/80 border-blue-600 text-blue-900' : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'}
-              `}
-              style={{ minWidth: 120 }}
-              onClick={() => setTipo('')}
-            >
-              <span className="text-lg">📋</span>
-              <span>Ambos</span>
-            </button>
-          </div>
+                <DatePicker
+                  selected={hasta}
+                  onChange={(date: Date | null) => setHasta(date)}
+                  dateFormat="yyyy-MM-dd"
+                  placeholderText="Hasta"
+                  customInput={
+                    <DateInputWithIconForward
+                      placeholder="Hasta"
+                      onClear={() => setHasta(null)}
+                      hasValue={!!hasta}
+                      color_personalizado={color_personalizado}
+                    />
+                  }
+                  minDate={desde || undefined}
+                  isClearable
+                  title="Filtra las ventas hasta esta fecha"
+                />
+              </div>
+              <div className="flex flex-row flex-wrap gap-3 w-full mb-2 px-4 justify-center">
+                <button
+                  className={`flex-1 min-w-[90px] max-w-[160px] md:min-w-[140px] md:max-w-[220px] flex items-center justify-center gap-1 px-2 py-2 rounded-xl border-2 font-semibold shadow-sm transition-all overflow-hidden text-xs md:text-sm
+                    ${tipo === 'mensual' ? 'bg-blue-100/80 border-blue-600 text-blue-900' : 'bg-white border-blue-400 text-blue-700'}
+                  `}
+                  onClick={() => setTipo(tipo === 'mensual' ? '' : 'mensual')}
+                >
+                  <span className="text-base flex-shrink-0">💵</span>
+                  <span className="flex-shrink-0">Mensual</span>
+                  <span className="ml-1 font-bold text-blue-800 break-words text-xs md:text-sm whitespace-normal">${(tipo === 'mensual' ? totalMensualFiltrado : totalMensual).toFixed(2)}</span>
+                </button>
+                <button
+                  className={`flex-1 min-w-[90px] max-w-[160px] md:min-w-[140px] md:max-w-[220px] flex items-center justify-center gap-1 px-2 py-2 rounded-xl border-2 font-semibold shadow-sm transition-all overflow-hidden text-xs md:text-sm
+                    ${tipo === 'venta' ? 'bg-blue-100/80 border-blue-600 text-blue-900' : 'bg-white border-green-400 text-green-700'}
+                  `}
+                  onClick={() => setTipo(tipo === 'venta' ? '' : 'venta')}
+                >
+                  <span className="text-base flex-shrink-0">🪙</span>
+                  <span className="flex-shrink-0">Venta</span>
+                  <span className="ml-1 font-bold text-green-800 break-words text-xs md:text-sm whitespace-normal">${(tipo === 'venta' ? totalVentaFiltrado : totalVenta).toFixed(2)}</span>
+                </button>
+              </div>
+              <div className="flex justify-center mb-2">
+                <button
+                  className={`flex items-center justify-center gap-2 px-5 py-2 rounded-full border-2 font-semibold shadow-sm transition-all
+                    ${tipo === '' ? 'bg-blue-100/80 border-blue-600 text-blue-900' : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'}
+                  `}
+                  style={{ minWidth: 120 }}
+                  onClick={() => setTipo('')}
+                >
+                  <span className="text-lg">📋</span>
+                  <span>Ambos</span>
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         {tipo && tipo !== '' && (

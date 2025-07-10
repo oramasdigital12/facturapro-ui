@@ -1,12 +1,13 @@
 import { Link, useLocation } from 'react-router-dom';
-import { FiHome, FiUsers, FiDollarSign, FiSettings, FiCalendar } from 'react-icons/fi';
+import { FiHome, FiUsers, FiDollarSign, FiCalendar, FiFileText } from 'react-icons/fi';
 
 const navItems = [
   { to: '/home', icon: <FiHome />, label: 'Inicio' },
   { to: '/clientes', icon: <FiUsers />, label: 'Clientes' },
   { to: '/agenda', icon: <FiCalendar />, label: 'Tareas' },
+   { to: '/facturas', icon: <FiFileText />, label: 'Facturas' },
   { to: '/ventas', icon: <FiDollarSign />, label: 'Ventas' },
-  { to: '/configuracion', icon: <FiSettings />, label: 'Info' },
+ 
 ];
 
 interface BottomNavProps {

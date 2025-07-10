@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { UserGroupIcon, CurrencyDollarIcon, CalendarIcon, Cog6ToothIcon } from '@heroicons/react/24/solid';
+import { UserGroupIcon, CurrencyDollarIcon, CalendarIcon, Cog6ToothIcon, DocumentTextIcon } from '@heroicons/react/24/solid';
 import { useAuth, useDarkMode } from '../contexts/AuthContext';
 import { useOutletContext } from 'react-router-dom';
 import ValidarClienteModal from '../components/ValidarClienteModal';
@@ -22,6 +22,13 @@ const menuItems = [
     icon: CurrencyDollarIcon,
     href: '/ventas',
     color: 'text-emerald-500'
+  },
+  {
+    title: 'Facturas',
+    description: 'Facturación profesional',
+    icon: DocumentTextIcon,
+    href: '/facturas',
+    color: 'text-indigo-500'
   },
   {
     title: 'Agenda',

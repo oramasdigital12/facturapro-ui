@@ -1,6 +1,7 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { HiOutlineHome, HiOutlineUserGroup, HiOutlineClipboardList, HiOutlineCurrencyDollar, HiOutlineCog, HiOutlineMail } from "react-icons/hi";
+import { DocumentTextIcon } from '@heroicons/react/24/outline';
 
 interface SidebarNavProps {
   logo_url?: string;
@@ -24,6 +25,11 @@ const navItems = [
     label: "Tareas",
     to: "/agenda",
     icon: <HiOutlineClipboardList size={22} />,
+  },
+  {
+    label: "Facturas",
+    to: "/facturas",
+    icon: <DocumentTextIcon className='w-6 h-6' />,
   },
   {
     label: "Ventas",

@@ -58,4 +58,15 @@ export const createServicioNegocio = (data: { nombre: string; precio: number; ca
 export const updateServicioNegocio = (id: string, data: { nombre: string; precio: number; categoria_id: string }) => api.put(`/api/servicios-negocio/${id}`, data);
 export const deleteServicioNegocio = (id: string) => api.delete(`/api/servicios-negocio/${id}`);
 
+// --- Facturas ---
+export const getFacturas = (params?: any) => api.get('/api/facturas', { params });
+export const getFacturaById = (id: string) => api.get(`/api/facturas/${id}`);
+export const createFactura = (data: any) => api.post('/api/facturas', data);
+export const updateFactura = (id: string, data: any) => api.put(`/api/facturas/${id}`, data);
+export const deleteFactura = (id: string) => api.delete(`/api/facturas/${id}`);
+export const getUltimaFactura = () => api.get('/api/facturas?limit=1&order=numero_factura.desc');
+
+// --- Clientes ---
+export const getClientes = () => api.get('/api/clientes');
+
 export default api; 
