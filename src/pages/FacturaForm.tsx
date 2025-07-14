@@ -299,8 +299,10 @@ export default function FacturaForm() {
     ? servicios.filter(s => s.nombre.toLowerCase().includes(servicioSearch.toLowerCase()))
     : servicios;
 
+  const [showPreviewMobile, setShowPreviewMobile] = useState(false);
+
   return (
-    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col w-full md:items-center md:justify-center md:max-w-3xl md:mx-auto md:px-8 md:pl-28">
+    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col w-full max-w-full md:items-center md:justify-center md:max-w-3xl md:mx-auto md:px-8 md:pl-28">
       {/* Botón cerrar (solo desktop) */}
       <button
         type="button"
@@ -310,32 +312,32 @@ export default function FacturaForm() {
       >
         &times;
       </button>
-      <form className="w-full mx-0 p-0 bg-white md:rounded-xl md:shadow md:max-w-2xl md:mx-auto md:p-4" onSubmit={handleSubmit}>
-        <div className="flex items-center mb-4">
+      <form className="w-full max-w-full md:max-w-2xl mx-auto bg-white md:rounded-xl md:shadow md:p-8 p-4 flex flex-col gap-4 pb-8" onSubmit={handleSubmit}>
+        <div className="flex items-center mb-2 md:mb-4">
           {/* Flecha back solo en móvil/tablet */}
           <button
             type="button"
-            className="md:hidden mr-2 p-1 rounded hover:bg-gray-100"
+            className="md:hidden mr-2 p-2 rounded-full bg-gray-100 hover:bg-gray-200 shadow"
             onClick={() => navigate('/facturas')}
             aria-label="Volver a facturas"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
             </svg>
           </button>
-          <h2 className="text-xl md:text-2xl font-bold text-center w-full">{editMode ? 'Editar Factura' : 'Nueva Factura'}</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-center w-full">{editMode ? 'Editar Factura' : 'Nueva Factura'}</h2>
         </div>
-        {error && <div className="text-red-500 text-center mb-2">{error}</div>}
-        {success && <div className="text-green-600 text-center mb-2">{success}</div>}
+        {error && <div className="text-red-500 text-center mb-2 text-base">{error}</div>}
+        {success && <div className="text-green-600 text-center mb-2 text-base">{success}</div>}
         {editMode && facturaEstado === 'pagada' && (
           <div className="text-center text-yellow-700 bg-yellow-100 rounded p-2 mb-4 font-semibold">Esta factura está pagada y no puede ser editada.</div>
         )}
-        {/* Selección de cliente con autocomplete */}
-        <div className="mb-4 relative">
-          <label className="block text-sm font-semibold mb-1">Cliente</label>
+        {/* Cliente */}
+        <div className="mb-2 relative">
+          <label className="block text-base font-semibold mb-1">Cliente</label>
           <input
             type="text"
-            className="w-full px-3 py-2 rounded-xl border shadow-sm"
+            className="w-full px-4 py-3 rounded-2xl border shadow-sm text-base focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
             value={clienteSearch || clientes.find(c => c.id === clienteId)?.nombre || ''}
             onChange={e => { setClienteSearch(e.target.value); setShowClienteSuggestions(true); }}
             onFocus={() => setShowClienteSuggestions(true)}
@@ -343,11 +345,11 @@ export default function FacturaForm() {
             placeholder="Buscar cliente..."
           />
           {showClienteSuggestions && clientesFiltrados.length > 0 && (
-            <div className="absolute z-10 bg-white border rounded-xl shadow max-h-40 overflow-y-auto w-full mt-1">
+            <div className="absolute z-20 bg-white border rounded-2xl shadow max-h-52 overflow-y-auto w-full mt-1">
               {clientesFiltrados.map(c => (
                 <div
                   key={c.id}
-                  className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm"
+                  className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-base"
                   onClick={() => {
                     setClienteId(c.id);
                     setClienteSearch(c.nombre);
@@ -361,12 +363,12 @@ export default function FacturaForm() {
           )}
           {formErrors.cliente && <div className="text-xs text-red-500 mt-1">{formErrors.cliente}</div>}
         </div>
-        {/* Selección de servicios/items con autocomplete */}
-        <div className="mb-4 relative">
-          <label className="block text-sm font-semibold mb-1">Servicios / Items</label>
+        {/* Servicios / Items */}
+        <div className="mb-2 relative">
+          <label className="block text-base font-semibold mb-1">Servicios / Items</label>
           <input
             type="text"
-            className="mb-2 px-3 py-1 rounded bg-blue-100 text-blue-700 text-xs w-full"
+            className="mb-2 px-4 py-2 rounded-xl bg-blue-50 text-blue-700 text-base w-full focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
             placeholder="Buscar servicio..."
             value={servicioSearch}
             onChange={e => {
@@ -378,11 +380,11 @@ export default function FacturaForm() {
             autoComplete="off"
           />
           {showServicioSuggestions && serviciosFiltrados.length > 0 && (
-            <div className="absolute z-10 bg-white border rounded-xl shadow max-h-40 overflow-y-auto w-full mt-1">
+            <div className="absolute z-20 bg-white border rounded-2xl shadow max-h-52 overflow-y-auto w-full mt-1">
               {serviciosFiltrados.map(s => (
                 <div
                   key={s.id}
-                  className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-xs"
+                  className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-base"
                   onClick={() => {
                     handleAddServicio(s.id);
                     setServicioSearch('');
@@ -395,50 +397,53 @@ export default function FacturaForm() {
             </div>
           )}
           {/* Items/servicios: tarjetas en móvil, tabla en desktop */}
-          <div className="mb-4">
-            <div className="font-semibold mb-1">Servicios / Items</div>
+          <div className="mb-2">
+            <div className="font-semibold mb-2 text-base">Servicios / Items</div>
             {/* Vista de tarjetas apiladas en móvil */}
             <div className="flex flex-col gap-3 md:hidden">
+              {items.length === 0 && <div className="text-gray-400 text-center py-4">Agrega servicios a la factura</div>}
               {items.map((item, idx) => (
-                <div key={idx} className="bg-white rounded-xl shadow border p-3 w-full flex flex-col gap-1">
+                <div key={idx} className="bg-gray-50 rounded-2xl shadow border p-4 w-full flex flex-col gap-2 relative">
+                  <div className="absolute top-2 right-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteItem(idx)}
+                      className="text-xs px-3 py-1 rounded-full bg-red-100 text-red-600 hover:bg-red-200"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                   <div><span className="font-semibold">Descripción:</span> {item.descripcion}</div>
                   <div><span className="font-semibold">Categoría:</span> {item.categoria}</div>
                   <div><span className="font-semibold">Precio Unitario:</span> ${item.precio_unitario}</div>
                   <div><span className="font-semibold">Cantidad:</span> {item.cantidad}</div>
                   <div><span className="font-semibold">Total:</span> <span className="text-blue-700 font-bold">${item.total}</span></div>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteItem(idx)}
-                    className="text-xs px-3 py-1 rounded bg-red-100 text-red-600 hover:bg-red-200 w-full mt-2"
-                  >
-                    Eliminar
-                  </button>
                 </div>
               ))}
             </div>
             {/* Tabla tradicional solo en desktop/tablet */}
-            <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200 bg-gray-50 relative">
-              <table className="min-w-[600px] w-full text-sm">
+            <div className="hidden md:block overflow-x-auto rounded-2xl border border-gray-200 bg-gray-50 relative">
+              <table className="min-w-[600px] w-full text-base">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="p-2 font-semibold">Categoría</th>
-                    <th className="p-2 font-semibold">Descripción</th>
-                    <th className="p-2 font-semibold">Precio Unitario</th>
-                    <th className="p-2 font-semibold">Cantidad</th>
-                    <th className="p-2 font-semibold">Total</th>
-                    <th className="p-2 font-semibold"></th>
+                    <th className="p-3 font-semibold">Categoría</th>
+                    <th className="p-3 font-semibold">Descripción</th>
+                    <th className="p-3 font-semibold">Precio Unitario</th>
+                    <th className="p-3 font-semibold">Cantidad</th>
+                    <th className="p-3 font-semibold">Total</th>
+                    <th className="p-3 font-semibold"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((item, idx) => (
                     <tr key={idx} className="border-t">
-                      <td className="p-2 whitespace-nowrap">{item.categoria}</td>
-                      <td className="p-2 whitespace-nowrap">{item.descripcion}</td>
-                      <td className="p-2 whitespace-nowrap">${item.precio_unitario}</td>
-                      <td className="p-2 whitespace-nowrap">{item.cantidad}</td>
-                      <td className="p-2 whitespace-nowrap">${item.total}</td>
-                      <td className="p-2 whitespace-nowrap">
-                        <button type="button" onClick={() => handleDeleteItem(idx)} className="text-xs px-2 py-1 rounded bg-red-100 text-red-600 hover:bg-red-200">Eliminar</button>
+                      <td className="p-3 whitespace-nowrap">{item.categoria}</td>
+                      <td className="p-3 whitespace-nowrap">{item.descripcion}</td>
+                      <td className="p-3 whitespace-nowrap">${item.precio_unitario}</td>
+                      <td className="p-3 whitespace-nowrap">{item.cantidad}</td>
+                      <td className="p-3 whitespace-nowrap">${item.total}</td>
+                      <td className="p-3 whitespace-nowrap">
+                        <button type="button" onClick={() => handleDeleteItem(idx)} className="text-xs px-3 py-1 rounded-full bg-red-100 text-red-600 hover:bg-red-200">Eliminar</button>
                       </td>
                     </tr>
                   ))}
@@ -449,53 +454,67 @@ export default function FacturaForm() {
           {formErrors.items && <div className="text-xs text-red-500 mt-1">{formErrors.items}</div>}
           {formErrors.itemsDetalle && <div className="text-xs text-red-500 mt-1">{formErrors.itemsDetalle}</div>}
         </div>
-        {/* Fechas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+        {/* Fechas y totales */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
           <div>
-            <label className="block text-xs font-semibold mb-1">Fecha de factura</label>
-            <input type="date" className="w-full px-3 py-2 rounded-xl border shadow-sm" value={fechaFactura} onChange={e => setFechaFactura(e.target.value)} />
+            <label className="block text-base font-semibold mb-1">Fecha de factura</label>
+            <input type="date" className="w-full px-4 py-3 rounded-2xl border shadow-sm text-base" value={fechaFactura} onChange={e => setFechaFactura(e.target.value)} />
           </div>
         </div>
-        {/* Subtotal, impuesto, total, depósito, balance */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
           <div>
-            <label className="block text-xs font-semibold mb-1">Subtotal</label>
-            <input type="text" className="w-full px-3 py-2 rounded-xl border shadow-sm" value={subtotal.toFixed(2)} readOnly />
+            <label className="block text-base font-semibold mb-1">Subtotal</label>
+            <input type="text" className="w-full px-4 py-3 rounded-2xl border shadow-sm text-base" value={subtotal.toFixed(2)} readOnly />
           </div>
           <div>
-            <label className="block text-xs font-semibold mb-1">Impuesto (%)</label>
-            <input type="number" className="w-full px-3 py-2 rounded-xl border shadow-sm" value={impuesto} onChange={e => setImpuesto(Number(e.target.value))} />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
-          <div>
-            <label className="block text-xs font-semibold mb-1">Total</label>
-            <input type="text" className="w-full px-3 py-2 rounded-xl border shadow-sm" value={total.toFixed(2)} readOnly />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold mb-1">Depósito recibido</label>
-            <input type="number" className="w-full px-3 py-2 rounded-xl border shadow-sm" value={deposito} onChange={e => setDeposito(Number(e.target.value))} />
+            <label className="block text-base font-semibold mb-1">Impuesto (%)</label>
+            <input type="number" className="w-full px-4 py-3 rounded-2xl border shadow-sm text-base" value={impuesto} onChange={e => setImpuesto(Number(e.target.value))} />
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
           <div>
-            <label className="block text-xs font-semibold mb-1">Balance restante</label>
-            <input type="text" className="w-full px-3 py-2 rounded-xl border shadow-sm" value={balance.toFixed(2)} readOnly />
+            <label className="block text-base font-semibold mb-1">Total</label>
+            <input type="text" className="w-full px-4 py-3 rounded-2xl border shadow-sm text-base" value={total.toFixed(2)} readOnly />
+          </div>
+          {/* Campo Depósito recibido y botón de vista previa sticky a la derecha en móvil */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2 relative">
+            <div className="relative">
+              <label className="block text-base font-semibold mb-1">Depósito recibido</label>
+              <input type="number" className="w-full px-4 py-3 rounded-2xl border shadow-sm text-base" value={deposito} onChange={e => setDeposito(Number(e.target.value))} />
+              {/* Botón circular sticky con icono de ojo, solo móvil, siempre visible */}
+              <button
+                type="button"
+                className="md:hidden fixed right-4 top-[30vh] w-16 h-16 rounded-full flex items-center justify-center bg-gray-900 text-white text-3xl shadow-lg border-4 border-white z-40"
+                onClick={() => setShowPreviewMobile(true)}
+                aria-label="Ver vista previa"
+                style={{ boxShadow: '0 4px 24px 0 rgba(0,0,0,0.10)' }}
+              >
+                <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' strokeWidth={1.5} stroke='currentColor' className='w-9 h-9'>
+                  <path strokeLinecap='round' strokeLinejoin='round' d='M2.25 12s3.75-7.5 9.75-7.5 9.75 7.5 9.75 7.5-3.75 7.5-9.75 7.5S2.25 12 2.25 12z' />
+                  <path strokeLinecap='round' strokeLinejoin='round' d='M15 12a3 3 0 11-6 0 3 3 0 016 0z' />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+          <div>
+            <label className="block text-base font-semibold mb-1">Balance restante</label>
+            <input type="text" className="w-full px-4 py-3 rounded-2xl border shadow-sm text-base" value={balance.toFixed(2)} readOnly />
           </div>
         </div>
         {/* Nota y términos */}
-        <div className="mb-4">
-          <label className="block text-xs font-semibold mb-1">Nota</label>
-          <textarea className="w-full px-3 py-2 rounded-xl border shadow-sm" value={nota} onChange={e => setNota(e.target.value)} />
+        <div className="mb-2">
+          <label className="block text-base font-semibold mb-1">Nota</label>
+          <textarea className="w-full px-4 py-3 rounded-2xl border shadow-sm text-base min-h-[60px]" value={nota} onChange={e => setNota(e.target.value)} />
         </div>
-        <div className="mb-4">
-          <label className="block text-xs font-semibold mb-1">Términos</label>
-          <textarea className="w-full px-3 py-2 rounded-xl border shadow-sm" value={terminos} onChange={e => setTerminos(e.target.value)} />
+        <div className="mb-2">
+          <label className="block text-base font-semibold mb-1">Términos</label>
+          <textarea className="w-full px-4 py-3 rounded-2xl border shadow-sm text-base min-h-[60px]" value={terminos} onChange={e => setTerminos(e.target.value)} />
         </div>
-        {/* Eliminar u ocultar el bloque de logo y firma */}
-        {/* Vista previa en tiempo real */}
-        <div className="mt-6">
-          <div className="font-semibold mb-2">Vista previa en tiempo real</div>
+        {/* Vista previa solo en desktop/tablet */}
+        <div className="hidden md:block mt-8">
+          <div className="font-semibold mb-2 text-lg">Vista previa en tiempo real</div>
           <FacturaPreview factura={{
             ...{
               negocio: {
@@ -522,18 +541,18 @@ export default function FacturaForm() {
             }
           }} mostrarStatus={editMode} />
         </div>
-        {/* Botones finales */}
-        <div className="flex flex-col md:flex-row gap-2 mt-6">
+        {/* Botones finales en posición estática, justo después de términos */}
+        <div className="flex flex-col gap-2 mt-6 md:flex-row md:gap-4 md:mt-8">
           <button
             type="button"
-            className="w-full md:w-auto px-4 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300"
+            className="w-full md:w-auto px-4 py-3 rounded-2xl bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 text-lg transition"
             onClick={handleCancelar}
           >
             Cancelar
           </button>
           <button
             type="button"
-            className="w-full md:w-auto px-4 py-2 rounded bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200"
+            className="w-full md:w-auto px-4 py-3 rounded-2xl bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200 text-lg transition"
             onClick={handleGuardarBorrador}
             disabled={loading}
           >
@@ -541,13 +560,54 @@ export default function FacturaForm() {
           </button>
           <button
             type="submit"
-            className="w-full md:w-auto px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700"
+            className="w-full md:w-auto px-4 py-3 rounded-2xl bg-blue-600 text-white font-semibold hover:bg-blue-700 text-lg transition"
             disabled={loading}
           >
             {editMode ? 'Actualizar factura' : 'Crear factura'}
           </button>
         </div>
       </form>
+      {/* Modal de vista previa en móvil */}
+      {showPreviewMobile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="relative w-full max-w-lg mx-auto bg-white rounded-2xl shadow-lg p-2 overflow-y-auto max-h-[95vh]">
+            <button
+              className="absolute top-2 right-2 text-2xl text-gray-500 hover:text-red-500 z-10"
+              onClick={() => setShowPreviewMobile(false)}
+              aria-label="Cerrar preview"
+            >
+              &times;
+            </button>
+            <div className="p-2 pt-8">
+              <FacturaPreview factura={{
+                ...{
+                  negocio: {
+                    nombre: negocioConfig?.nombre_negocio,
+                    direccion: negocioConfig?.direccion,
+                    email: negocioConfig?.email,
+                    telefono: negocioConfig?.telefono,
+                    logo_url: negocioConfig?.logo_url,
+                    nota: negocioConfig?.nota_factura,
+                    terminos: negocioConfig?.terminos_condiciones,
+                  },
+                  numero_factura: editMode && id && facturaCargada ? facturaCargada.numero_factura : numeroFactura,
+                  nota,
+                  terminos,
+                  cliente: clientes.find(c => c.id === clienteId) || {},
+                  items,
+                  subtotal,
+                  impuesto: totalImpuesto,
+                  total,
+                  deposito,
+                  balance_restante: balance,
+                  fecha_factura: fechaFactura,
+                  estado: facturaEstado,
+                }
+              }} mostrarStatus={editMode} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
