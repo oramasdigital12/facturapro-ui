@@ -4,12 +4,13 @@ import {
   TrashIcon,
   PhoneIcon,
   ChatBubbleLeftIcon,
-  LinkIcon
+  LinkIcon,
+  ArrowUturnLeftIcon
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { deleteFactura, updateFactura } from '../services/api';
-import { showDeleteConfirmation, showSuccessMessage } from '../utils/alerts';
+import { showDeleteConfirmation } from '../utils/alerts';
 import Swal from 'sweetalert2';
 
 type FacturaItemProps = {
@@ -37,6 +38,27 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
       toast.error('ID de factura inválido');
       return;
     }
+
+    // Si es borrador, preguntar si quiere crear la factura primero
+    if (factura.estado === 'borrador') {
+      const result = await Swal.fire({
+        title: 'Factura en borrador',
+        text: 'Esta factura está en borrador. ¿Deseas editarla y guardarla como factura completa primero?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, editar factura',
+        cancelButtonText: 'Cancelar'
+      });
+      if (result.isConfirmed) {
+        navigate(`/facturas/${factura.id}`);
+        return;
+      }
+      return;
+    }
+
+    // Para facturas que no son borrador, confirmar antes de marcar como pagada
     const result = await Swal.fire({
       title: '¿Marcar como pagada?',
       text: '¿Deseas marcar esta factura como pagada?',
@@ -47,16 +69,64 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
       confirmButtonText: 'Sí, marcar como pagada',
       cancelButtonText: 'Cancelar'
     });
-    if (result.isConfirmed) {
-      try {
-        await updateFactura(factura.id, { estado: 'pagada' });
-        showSuccessMessage('Factura marcada como pagada');
-        onChange && onChange();
-      } catch (err: any) {
-        toast.error(err.message || 'Error al marcar como pagada');
-      }
+
+    if (!result.isConfirmed) return;
+
+    try {
+      // Mostrar loading inmediato
+      toast.loading('Marcando como pagada...', { id: 'marcarPagada' });
+      
+      await updateFactura(factura.id, { estado: 'pagada' });
+      
+      // Cerrar loading y mostrar éxito
+      toast.dismiss('marcarPagada');
+      toast.success('Factura marcada como pagada');
+      
+      // Actualizar la lista inmediatamente
+      onChange && onChange();
+    } catch (err: any) {
+      toast.dismiss('marcarPagada');
+      toast.error(err.message || 'Error al marcar como pagada');
     }
   };
+  const handleDeshacerPagada = async () => {
+    if (!idValido) {
+      toast.error('ID de factura inválido');
+      return;
+    }
+
+    // Confirmar antes de deshacer el estado pagado
+    const result = await Swal.fire({
+      title: '¿Deshacer estado pagado?',
+      text: '¿Deseas cambiar esta factura de pagada a pendiente?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí, deshacer',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      // Mostrar loading inmediato
+      toast.loading('Deshaciendo estado...', { id: 'deshacerPagada' });
+      
+      await updateFactura(factura.id, { estado: 'pendiente' });
+      
+      // Cerrar loading y mostrar éxito
+      toast.dismiss('deshacerPagada');
+      toast.success('Factura marcada como pendiente');
+      
+      // Actualizar la lista inmediatamente
+      onChange && onChange();
+    } catch (err: any) {
+      toast.dismiss('deshacerPagada');
+      toast.error(err.message || 'Error al deshacer estado');
+    }
+  };
+
   const handleEliminar = async () => {
     if (!idValido) {
       toast.error('ID de factura inválido');
@@ -65,10 +135,19 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
     const result = await showDeleteConfirmation('Esta acción eliminará la factura permanentemente.');
     if (result.isConfirmed) {
       try {
+        // Mostrar loading inmediato
+        toast.loading('Eliminando factura...', { id: 'eliminarFactura' });
+        
         await deleteFactura(factura.id);
-        showSuccessMessage('Factura eliminada');
-        onChange && onChange(); // Refresca la lista dinámicamente
+        
+        // Cerrar loading y mostrar éxito
+        toast.dismiss('eliminarFactura');
+        toast.success('Factura eliminada');
+        
+        // Actualizar la lista inmediatamente
+        onChange && onChange();
       } catch (err: any) {
+        toast.dismiss('eliminarFactura');
         toast.error(err.message || 'Error al eliminar');
       }
     }
@@ -110,15 +189,35 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
         </div>
         {/* Acciones principales arriba derecha y documento/copy debajo */}
         <div className="flex flex-col items-end gap-2 ml-2">
-          {/* Acciones principales (editar, marcar pagada, eliminar) */}
+          {/* Acciones principales (editar, marcar pagada/deshacer, eliminar) */}
           <div className="flex space-x-3 md:space-x-2">
-            <button title="Editar" onClick={handleEditar} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full" disabled={!idValido}>
+            <button title="Editar" onClick={handleEditar} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors" disabled={!idValido}>
               <PencilIcon className="h-6 w-6 md:h-5 md:w-5" />
             </button>
-            <button title="Marcar como pagada" onClick={handleMarcarPagada} className="p-2 text-green-700 hover:bg-green-50 rounded-full" disabled={!idValido}>
-              <CheckCircleIcon className="h-6 w-6 md:h-5 md:w-5" />
-            </button>
-            <button title="Eliminar" onClick={handleEliminar} className="p-2 text-red-600 hover:bg-red-50 rounded-full" disabled={!idValido}>
+            {factura.estado === 'pagada' ? (
+              <button 
+                title="Deshacer estado pagado" 
+                onClick={handleDeshacerPagada} 
+                className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-full transition-colors"
+                disabled={!idValido}
+              >
+                <ArrowUturnLeftIcon className="h-6 w-6 md:h-5 md:w-5" />
+              </button>
+            ) : (
+              <button 
+                title={factura.estado === 'borrador' ? 'Completar factura (editar primero)' : 'Marcar como pagada'} 
+                onClick={handleMarcarPagada} 
+                className={`p-2 rounded-full transition-colors ${
+                  factura.estado === 'borrador' 
+                    ? 'text-gray-400 cursor-not-allowed' 
+                    : 'text-green-700 hover:bg-green-50'
+                }`} 
+                disabled={!idValido || factura.estado === 'borrador'}
+              >
+                <CheckCircleIcon className="h-6 w-6 md:h-5 md:w-5" />
+              </button>
+            )}
+            <button title="Eliminar" onClick={handleEliminar} className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors" disabled={!idValido}>
               <TrashIcon className="h-6 w-6 md:h-5 md:w-5" />
             </button>
           </div>

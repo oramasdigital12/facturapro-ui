@@ -41,7 +41,8 @@ export default function TareaItem({ tarea, onEdit, onChange, clientes }: Props) 
       const result = await showTaskConfirmation();
       if (result.isConfirmed) {
         try {
-          const response = await api.patch(`/api/tareas/${tarea.id}/estado`, {
+          const response = await api.put(`/api/tareas/${tarea.id}`, {
+            ...tarea,
             estado: 'completada'
           });
           if (response.data) {
@@ -77,7 +78,8 @@ export default function TareaItem({ tarea, onEdit, onChange, clientes }: Props) 
     try {
       const result = await showDeleteConfirmation('¿Seguro que deseas volver la tarea a pendiente?');
       if (result.isConfirmed) {
-        const response = await api.patch(`/api/tareas/${tarea.id}/estado`, {
+        const response = await api.put(`/api/tareas/${tarea.id}`, {
+          ...tarea,
           estado: 'pendiente'
         });
         if (response.data) {

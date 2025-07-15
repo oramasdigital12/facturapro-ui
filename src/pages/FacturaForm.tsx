@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { getClientes, getServiciosNegocio, createFactura, getFacturaById, updateFactura, getNegocioConfig, getUltimaFactura } from '../services/api';
 import FacturaPreview from '../components/FacturaPreview';
 import Swal from 'sweetalert2';
+import toast from 'react-hot-toast';
 
 export default function FacturaForm() {
   const { id } = useParams();
@@ -147,6 +148,11 @@ export default function FacturaForm() {
   // Confirmar antes de crear/actualizar
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    if (!validateForm()) return;
+    
+    // Confirmar antes de crear/actualizar
     const result = await Swal.fire({
       title: editMode ? '¿Actualizar factura?' : '¿Crear factura?',
       text: editMode ? '¿Deseas actualizar esta factura?' : '¿Deseas crear esta factura?',
@@ -157,14 +163,29 @@ export default function FacturaForm() {
       confirmButtonText: editMode ? 'Sí, actualizar' : 'Sí, crear',
       cancelButtonText: 'Cancelar'
     });
+    
     if (!result.isConfirmed) return;
-    setError(null);
-    setSuccess(null);
-    if (!validateForm()) return;
+    
     setLoading(true);
     try {
+      // Mostrar loading inmediato
+      toast.loading(editMode ? 'Actualizando factura...' : 'Creando factura...', { id: 'crearFactura' });
+      
+      // Obtener datos completos del cliente
+      const clienteSeleccionado = clientes.find(c => c.id === clienteId);
+      
       const body = {
         cliente_id: clienteId,
+        cliente: clienteSeleccionado, // Incluir datos completos del cliente
+        negocio: {
+          nombre: negocioConfig?.nombre_negocio,
+          direccion: negocioConfig?.direccion,
+          email: negocioConfig?.email,
+          telefono: negocioConfig?.telefono,
+          logo_url: negocioConfig?.logo_url,
+          nota: negocioConfig?.nota_factura,
+          terminos: negocioConfig?.terminos_condiciones,
+        }, // Incluir datos completos del negocio
         subtotal,
         impuesto: totalImpuesto,
         total,
@@ -192,15 +213,14 @@ export default function FacturaForm() {
         setTerminos('');
         setFormErrors({});
       }
-      await Swal.fire({
-        title: '¡Éxito!',
-        text: editMode ? 'Factura actualizada exitosamente' : 'Factura creada exitosamente',
-        icon: 'success',
-        confirmButtonColor: '#3085d6',
-        confirmButtonText: 'OK'
-      });
+      
+      // Cerrar loading y mostrar éxito
+      toast.dismiss('crearFactura');
+      toast.success(editMode ? 'Factura actualizada exitosamente' : 'Factura creada exitosamente');
+      
       navigate('/facturas');
     } catch (err: any) {
+      toast.dismiss('crearFactura');
       setError(err.message || 'Error al guardar factura');
     } finally {
       setLoading(false);
@@ -209,6 +229,11 @@ export default function FacturaForm() {
 
   // Guardar como borrador
   const handleGuardarBorrador = async () => {
+    setError(null);
+    setSuccess(null);
+    if (!validateForm()) return;
+    
+    // Confirmar antes de guardar como borrador
     const result = await Swal.fire({
       title: '¿Guardar como borrador?',
       text: '¿Deseas guardar esta factura como borrador?',
@@ -216,17 +241,32 @@ export default function FacturaForm() {
       showCancelButton: true,
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
-      confirmButtonText: 'Sí, guardar',
+      confirmButtonText: 'Sí, guardar borrador',
       cancelButtonText: 'Cancelar'
     });
+    
     if (!result.isConfirmed) return;
-    setError(null);
-    setSuccess(null);
-    if (!validateForm()) return;
+    
     setLoading(true);
     try {
+      // Mostrar loading inmediato
+      toast.loading('Guardando borrador...', { id: 'guardarBorrador' });
+      
+      // Obtener datos completos del cliente
+      const clienteSeleccionado = clientes.find(c => c.id === clienteId);
+      
       const body = {
         cliente_id: clienteId,
+        cliente: clienteSeleccionado, // Incluir datos completos del cliente
+        negocio: {
+          nombre: negocioConfig?.nombre_negocio,
+          direccion: negocioConfig?.direccion,
+          email: negocioConfig?.email,
+          telefono: negocioConfig?.telefono,
+          logo_url: negocioConfig?.logo_url,
+          nota: negocioConfig?.nota_factura,
+          terminos: negocioConfig?.terminos_condiciones,
+        }, // Incluir datos completos del negocio
         subtotal,
         impuesto: totalImpuesto,
         total,
@@ -255,15 +295,14 @@ export default function FacturaForm() {
         setTerminos('');
         setFormErrors({});
       }
-      await Swal.fire({
-        title: '¡Éxito!',
-        text: 'Factura guardada como borrador',
-        icon: 'success',
-        confirmButtonColor: '#3085d6',
-        confirmButtonText: 'OK'
-      });
+      
+      // Cerrar loading y mostrar éxito
+      toast.dismiss('guardarBorrador');
+      toast.success('Factura guardada como borrador');
+      
       navigate('/facturas');
     } catch (err: any) {
+      toast.dismiss('guardarBorrador');
       setError(err.message || 'Error al guardar como borrador');
     } finally {
       setLoading(false);
@@ -272,17 +311,25 @@ export default function FacturaForm() {
 
   // Confirmar antes de cancelar
   const handleCancelar = async () => {
-    const result = await Swal.fire({
-      title: '¿Cancelar edición?',
-      text: '¿Deseas cancelar y volver al listado de facturas? Los cambios no guardados se perderán.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Sí, cancelar',
-      cancelButtonText: 'Volver'
-    });
-    if (result.isConfirmed) {
+    // Verificar si hay cambios sin guardar
+    const hayCambios = clienteId || items.length > 0 || nota || terminos || impuesto > 0 || deposito > 0;
+    
+    if (hayCambios) {
+      const result = await Swal.fire({
+        title: '¿Cancelar edición?',
+        text: '¿Deseas cancelar y volver al listado de facturas? Los cambios no guardados se perderán.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, cancelar',
+        cancelButtonText: 'Volver'
+      });
+      if (result.isConfirmed) {
+        navigate('/facturas');
+      }
+    } else {
+      // Si no hay cambios, navegar directamente
       navigate('/facturas');
     }
   };
@@ -300,6 +347,28 @@ export default function FacturaForm() {
     : servicios;
 
   const [showPreviewMobile, setShowPreviewMobile] = useState(false);
+  
+  // Obtener el color personalizado del negocio
+  const outletContext = useOutletContext() as { color_personalizado?: string } | null;
+  const color_personalizado = outletContext?.color_personalizado || '#2563eb';
+
+  // Cerrar dropdowns cuando se hace clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.cliente-dropdown')) {
+        setShowClienteSuggestions(false);
+      }
+      if (!target.closest('.servicio-dropdown')) {
+        setShowServicioSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col w-full max-w-full md:items-center md:justify-center md:max-w-3xl md:mx-auto md:px-8 md:pl-28">
@@ -333,38 +402,62 @@ export default function FacturaForm() {
           <div className="text-center text-yellow-700 bg-yellow-100 rounded p-2 mb-4 font-semibold">Esta factura está pagada y no puede ser editada.</div>
         )}
         {/* Cliente */}
-        <div className="mb-2 relative">
+        <div className="mb-2 relative cliente-dropdown">
           <label className="block text-base font-semibold mb-1">Cliente</label>
-          <input
-            type="text"
-            className="w-full px-4 py-3 rounded-2xl border shadow-sm text-base focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
-            value={clienteSearch || clientes.find(c => c.id === clienteId)?.nombre || ''}
-            onChange={e => { setClienteSearch(e.target.value); setShowClienteSuggestions(true); }}
-            onFocus={() => setShowClienteSuggestions(true)}
-            autoComplete="off"
-            placeholder="Buscar cliente..."
-          />
-          {showClienteSuggestions && clientesFiltrados.length > 0 && (
+          <div
+            className={`w-full px-4 py-3 rounded-2xl border shadow-sm text-base bg-white cursor-pointer transition ${formErrors.cliente ? 'border-red-500' : 'focus:ring-2 focus:ring-blue-200 focus:border-blue-400'}`}
+            onClick={() => {
+              setShowClienteSuggestions(!showClienteSuggestions);
+              // Limpiar la búsqueda cuando se abre el dropdown para mostrar todos los clientes
+              if (!showClienteSuggestions) {
+                setClienteSearch('');
+              }
+              setTimeout(() => {
+                const inputElement = document.getElementById('cliente-search-input');
+                if (inputElement) inputElement.focus();
+              }, 100);
+            }}
+          >
+            {clienteId
+              ? clientes.find(c => c.id === clienteId)?.nombre || 'Selecciona un cliente'
+              : 'Selecciona un cliente'}
+          </div>
+          {showClienteSuggestions && (
             <div className="absolute z-20 bg-white border rounded-2xl shadow max-h-52 overflow-y-auto w-full mt-1">
-              {clientesFiltrados.map(c => (
-                <div
-                  key={c.id}
-                  className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-base"
-                  onClick={() => {
-                    setClienteId(c.id);
-                    setClienteSearch(c.nombre);
-                    setShowClienteSuggestions(false);
-                  }}
-                >
-                  {c.nombre}
-                </div>
-              ))}
+              <input
+                id="cliente-search-input"
+                type="text"
+                className="w-full px-4 py-3 border-b focus:outline-none text-base"
+                placeholder="Buscar cliente..."
+                value={clienteSearch}
+                onChange={e => setClienteSearch(e.target.value)}
+                onClick={e => e.stopPropagation()}
+                autoComplete="off"
+              />
+              {clientesFiltrados.length === 0 ? (
+                <div className="px-4 py-3 text-gray-500 text-base">No hay clientes</div>
+              ) : (
+                clientesFiltrados.map(c => (
+                  <div
+                    key={c.id}
+                    className={`px-4 py-3 hover:bg-blue-50 cursor-pointer text-base ${clienteId === c.id ? 'bg-blue-50 font-semibold' : ''}`}
+                    onClick={() => {
+                      setClienteId(c.id);
+                      setClienteSearch(''); // Limpiar la búsqueda al seleccionar
+                      setShowClienteSuggestions(false);
+                      setFormErrors({ ...formErrors, cliente: '' });
+                    }}
+                  >
+                    {c.nombre}
+                  </div>
+                ))
+              )}
             </div>
           )}
           {formErrors.cliente && <div className="text-xs text-red-500 mt-1">{formErrors.cliente}</div>}
         </div>
         {/* Servicios / Items */}
-        <div className="mb-2 relative">
+        <div className="mb-2 relative servicio-dropdown">
           <label className="block text-base font-semibold mb-1">Servicios / Items</label>
           <input
             type="text"
@@ -484,10 +577,13 @@ export default function FacturaForm() {
               {/* Botón circular sticky con icono de ojo, solo móvil, siempre visible */}
               <button
                 type="button"
-                className="md:hidden fixed right-4 top-[30vh] w-16 h-16 rounded-full flex items-center justify-center bg-gray-900 text-white text-3xl shadow-lg border-4 border-white z-40"
+                className="md:hidden fixed right-4 top-[30vh] w-16 h-16 rounded-full flex items-center justify-center text-white text-3xl shadow-lg border-4 border-white z-40 transition-colors hover:opacity-90"
                 onClick={() => setShowPreviewMobile(true)}
                 aria-label="Ver vista previa"
-                style={{ boxShadow: '0 4px 24px 0 rgba(0,0,0,0.10)' }}
+                style={{ 
+                  backgroundColor: color_personalizado,
+                  boxShadow: '0 4px 24px 0 rgba(0,0,0,0.10)' 
+                }}
               >
                 <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' strokeWidth={1.5} stroke='currentColor' className='w-9 h-9'>
                   <path strokeLinecap='round' strokeLinejoin='round' d='M2.25 12s3.75-7.5 9.75-7.5 9.75 7.5 9.75 7.5-3.75 7.5-9.75 7.5S2.25 12 2.25 12z' />
@@ -572,11 +668,11 @@ export default function FacturaForm() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
           <div className="relative w-full max-w-lg mx-auto bg-white rounded-2xl shadow-lg p-2 overflow-y-auto max-h-[95vh]">
             <button
-              className="absolute top-2 right-2 text-2xl text-gray-500 hover:text-red-500 z-10"
+              className="absolute top-4 right-4 w-12 h-12 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-3xl font-bold shadow-lg z-10 transition-colors"
               onClick={() => setShowPreviewMobile(false)}
               aria-label="Cerrar preview"
             >
-              &times;
+              ×
             </button>
             <div className="p-2 pt-8">
               <FacturaPreview factura={{

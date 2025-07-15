@@ -152,9 +152,11 @@ export default function Facturas() {
         {loading && <div className="text-center py-8">Cargando...</div>}
         {error && <div className="text-center py-8 text-red-500">{error}</div>}
         {!loading && !error && facturas.length === 0 && <div className="text-center py-8 text-gray-500">No hay facturas.</div>}
-        {!loading && !error && facturas.filter(f => esUUID(f.id) && filtrarPorNombre(f)).map(factura => (
-          <FacturaItem key={factura.id} factura={factura} onChange={fetchFacturas} />
-        ))}
+        <div className="flex flex-col gap-4">
+          {!loading && !error && facturas.filter(f => esUUID(f.id) && filtrarPorNombre(f)).map(factura => (
+            <FacturaItem key={factura.id} factura={factura} onChange={fetchFacturas} />
+          ))}
+        </div>
       </div>
       {/* Paginación */}
       <div className="flex justify-center items-center gap-2 mb-8">
