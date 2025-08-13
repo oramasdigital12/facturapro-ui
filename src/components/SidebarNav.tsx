@@ -54,7 +54,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ logo_url, nombre_negocio, class
   const transparent = color_personalizado + '22'; // #RRGGBBAA (AA=22 ~ 13% opacity)
   return (
     <aside
-      className={`h-screen w-64 bg-slate-50 dark:bg-slate-800 shadow-lg flex flex-col items-center py-8 px-4 transition-colors duration-300 hidden md:flex ${className || ''}`}
+      className={`fixed left-0 top-0 h-screen w-64 bg-slate-50 dark:bg-slate-800 shadow-lg flex flex-col items-center py-8 px-4 transition-colors duration-300 hidden md:flex z-40 ${className || ''}`}
     >
       {/* Logo y nombre dinámicos */}
       <div className="mb-10 flex flex-col items-center">

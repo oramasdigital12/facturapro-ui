@@ -42,7 +42,7 @@ export default function Layout() {
         nombre_negocio={negocio.nombre_negocio}
         color_personalizado={negocio.color_personalizado}
       />
-      <div className="hidden md:flex absolute top-4 right-4 gap-2 z-50">
+      <div className="hidden md:flex fixed top-4 right-4 gap-2 z-50">
         <button
           type="button"
           onClick={() => setDark(!dark)}
@@ -64,7 +64,7 @@ export default function Layout() {
           <ArrowRightOnRectangleIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-500" />
         </button>
       </div>
-      <main className="pb-16 flex flex-col items-center justify-center min-h-screen w-full px-0 md:px-4 flex-1 overflow-y-auto">
+      <main className="pb-16 flex flex-col items-center justify-center min-h-screen w-full px-0 md:pl-64 md:pr-4 flex-1 overflow-y-auto">
         <MobileHeader logo_url={negocio.logo_url} color_personalizado={negocio.color_personalizado}>
           <button
             type="button"
