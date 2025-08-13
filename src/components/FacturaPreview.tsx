@@ -6,7 +6,6 @@ type FacturaPreviewProps = {
 export default function FacturaPreview({ factura, mostrarStatus }: FacturaPreviewProps) {
   // Determinar estado y colores exactos como en el backend
   const estado = factura?.estado === 'pagada' ? 'PAID' : 'PENDING';
-  const colorEstado = factura?.estado === 'pagada' ? '#4CAF50' : '#F7E7A6';
   const colorTextoEstado = factura?.estado === 'pagada' ? '#218838' : '#8a6d3b';
   const colorFondoEstado = factura?.estado === 'pagada' ? '#e6f9ec' : '#fdf6d7';
   
