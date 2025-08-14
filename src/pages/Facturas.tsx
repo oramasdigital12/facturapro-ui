@@ -19,10 +19,7 @@ export default function Facturas() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalFacturas, setTotalFacturas] = useState(0);
 
-  // Métricas
-  const [totalFacturado, setTotalFacturado] = useState(0);
-  const [totalPendiente, setTotalPendiente] = useState(0);
-  const [totalPagadas, setTotalPagadas] = useState(0);
+
 
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
@@ -51,16 +48,6 @@ export default function Facturas() {
       setFacturas(res.data.facturas || res.data || []);
       setTotalFacturas(res.data.total || (res.data.facturas ? res.data.facturas.length : res.data.length));
       setTotalPages(res.data.totalPages || Math.ceil((res.data.total || res.data.length || 1) / PAGE_SIZE));
-      // Calcular métricas
-      let total = 0, pendiente = 0, pagadas = 0;
-      (res.data.facturas || res.data || []).forEach((f: any) => {
-        total += f.total || 0;
-        if (f.estado === 'pendiente') pendiente += f.total || 0;
-        if (f.estado === 'pagada') pagadas += f.total || 0;
-      });
-      setTotalFacturado(total);
-      setTotalPendiente(pendiente);
-      setTotalPagadas(pagadas);
     } catch (err: any) {
       setError(err.message || 'Error al cargar facturas');
     } finally {
@@ -83,29 +70,6 @@ export default function Facturas() {
       <div className="text-center mb-8 mt-8">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Facturas</h1>
         <div className="w-16 h-1 mx-auto rounded-full" style={{ background: color_personalizado }}></div>
-      </div>
-      {/* Métricas */}
-      <div className="grid grid-cols-2 gap-2 mt-4 mb-4 px-1 md:grid-cols-4 md:gap-3 md:mt-8 md:mb-6 md:px-2">
-        <div className="bg-white rounded-xl shadow p-2 flex flex-col items-center md:p-3">
-          <span className="text-xl md:text-2xl">💰</span>
-          <span className="text-[10px] md:text-xs text-gray-500">Total Facturado</span>
-          <span className="font-bold text-base md:text-lg text-gray-800">${totalFacturado.toFixed(2)}</span>
-        </div>
-        <div className="bg-white rounded-xl shadow p-2 flex flex-col items-center md:p-3">
-          <span className="text-xl md:text-2xl">📥</span>
-          <span className="text-[10px] md:text-xs text-gray-500">Pendiente de Pago</span>
-          <span className="font-bold text-base md:text-lg text-yellow-600">${totalPendiente.toFixed(2)}</span>
-        </div>
-        <div className="bg-white rounded-xl shadow p-2 flex flex-col items-center md:p-3">
-          <span className="text-xl md:text-2xl">📤</span>
-          <span className="text-[10px] md:text-xs text-gray-500">Pagadas</span>
-          <span className="font-bold text-base md:text-lg text-green-600">${totalPagadas.toFixed(2)}</span>
-        </div>
-        <div className="bg-white rounded-xl shadow p-2 flex flex-col items-center md:p-3">
-          <span className="text-xl md:text-2xl">📄</span>
-          <span className="text-[10px] md:text-xs text-gray-500"># Facturas</span>
-          <span className="font-bold text-base md:text-lg text-blue-600">{totalFacturas}</span>
-        </div>
       </div>
       {/* Botón Filtro y panel de filtros */}
       <div className="flex flex-col gap-2 mb-3 px-1 md:flex-row md:gap-3 md:mb-4 md:px-2">

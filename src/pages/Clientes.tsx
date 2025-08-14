@@ -344,7 +344,7 @@ export default function Clientes() {
                   </div>
                 </div>
 
-                <div className="flex gap-3 mt-4">
+                <div className="flex gap-2 mt-4">
                   <button
                     onClick={async () => {
                       if (!cliente.telefono || cliente.telefono.trim() === '') {
@@ -368,6 +368,33 @@ export default function Clientes() {
                   >
                     <PhoneIcon className="h-5 w-5" />
                     <span className="font-medium">Llamar</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!cliente.email || cliente.email.trim() === '') {
+                        const result = await Swal.fire({
+                          title: 'Sin email registrado',
+                          text: 'Este cliente no tiene un email guardado. ¿Deseas agregarle uno?',
+                          icon: 'warning',
+                          showCancelButton: true,
+                          confirmButtonText: 'Agregar Email',
+                          cancelButtonText: 'Cancelar',
+                        });
+                        if (result.isConfirmed) {
+                          setClienteEditando(cliente);
+                          setShowModal(true);
+                        }
+                        return;
+                      }
+                      // Enviar email directo
+                      const subject = encodeURIComponent('Mensaje desde ' + (window.location.hostname || 'Tu Negocio'));
+                      const body = encodeURIComponent('Hola ' + cliente.nombre + ',\n\nEspero que estés bien.\n\nSaludos,\nTu Negocio');
+                      window.open(`mailto:${cliente.email}?subject=${subject}&body=${body}`);
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-xl transition-colors"
+                  >
+                    <FiMail className="h-5 w-5" />
+                    <span className="font-medium">Email</span>
                   </button>
                   <button
                     onClick={async () => {
