@@ -367,11 +367,24 @@ export default function FacturaForm() {
     ? servicios.filter(s => s.nombre.toLowerCase().includes(servicioSearch.toLowerCase()))
     : servicios;
 
-  const [showPreviewMobile, setShowPreviewMobile] = useState(false);
-  
+    const [showPreviewMobile, setShowPreviewMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+   
   // Obtener el color personalizado del negocio
   const outletContext = useOutletContext() as { color_personalizado?: string } | null;
   const color_personalizado = outletContext?.color_personalizado || '#2563eb';
+
+  // Detectar si es móvil
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
 
   // Cerrar dropdowns cuando se hace clic fuera
   useEffect(() => {
@@ -746,20 +759,20 @@ export default function FacturaForm() {
                            {/* Modal de vista previa */}
         {showPreviewMobile && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-300 bg-opacity-80 backdrop-blur-sm p-2">
-            <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300" style={{ 
-              width: '8.5in', 
-              height: '11in', 
-              maxWidth: '98vw', 
-              maxHeight: '98vh',
-              // En móvil, forzar formato portrait y tamaño completo
-              ...(window.innerWidth < 768 && {
-                width: '100vw',
-                height: '100vh',
-                maxWidth: '100vw',
-                maxHeight: '100vh',
-                borderRadius: '0'
-              })
-            }}>
+                         <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300" style={{ 
+               width: '100vw', 
+               height: '100vh', 
+               maxWidth: '100vw', 
+               maxHeight: '100vh',
+               // En desktop, usar tamaño A4
+               ...(!isMobile && {
+                 width: '8.5in',
+                 height: '11in',
+                 maxWidth: '98vw',
+                 maxHeight: '98vh',
+                 borderRadius: '16px'
+               })
+             }}>
                                                    {/* Header del modal */}
               <div className="flex items-center justify-between p-3 md:p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                 <h3 className="text-sm md:text-base font-semibold text-gray-800">Vista Previa de Factura</h3>
@@ -771,9 +784,20 @@ export default function FacturaForm() {
                   ×
                 </button>
               </div>
-                                                   {/* Contenido del modal con scroll */}
-              <div className="overflow-y-auto" style={{ height: 'calc(100% - 60px)' }}>
-                <div className="p-3 md:p-6">
+                                                                  {/* Contenido del modal con scroll */}
+               <div className="overflow-y-auto overflow-x-auto" style={{ 
+                 height: isMobile ? 'auto' : 'calc(100% - 60px)',
+                 maxHeight: isMobile ? 'none' : 'calc(100% - 60px)'
+               }}>
+                 <div className="p-0 md:p-6">
+                   <div className="min-w-[800px] md:min-w-0" style={{
+                     // En móvil, mantener el ancho original para scroll horizontal
+                     ...(isMobile && {
+                       width: '800px',
+                       height: 'auto',
+                       minWidth: '800px'
+                     })
+                   }}>
                                  <FacturaPreview factura={{
                    negocio: {
                      nombre: negocioConfig?.nombre_negocio,
@@ -799,10 +823,11 @@ export default function FacturaForm() {
                    balance_restante: balance,
                    fecha_factura: fechaFactura,
                    estado: facturaEstado,
-                 }} mostrarStatus={editMode} />
-                 
-                 
-              </div>
+                                   }} mostrarStatus={editMode} />
+                  </div>
+                  
+                  
+               </div>
             </div>
           </div>
         </div>

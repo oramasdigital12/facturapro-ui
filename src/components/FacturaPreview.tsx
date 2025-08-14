@@ -48,6 +48,7 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
       padding: 0,
       lineHeight: '1.4',
       maxWidth: '800px',
+      width: '100%',
       marginLeft: 'auto',
       marginRight: 'auto',
       minHeight: '100vh',
@@ -63,6 +64,7 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
           
           .invoice-container {
             max-width: 800px;
+            width: 100%;
             margin: 0 auto;
             background: #fff;
             min-height: 100vh;
