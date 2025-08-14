@@ -3,7 +3,7 @@
   publish = "dist"
 
 [build.environment]
-  VITE_API_URL = "https://crm-wa-api-production.up.railway.app"
+  VITE_API_URL = "https://facturapro-api-production.up.railway.app"
 
 [[headers]]
   for = "/*"
