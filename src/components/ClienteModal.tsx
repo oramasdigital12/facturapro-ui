@@ -12,19 +12,6 @@ interface Props {
   cliente?: any | null;
 }
 
-function calcularCategoria(pendiente: boolean, hasta: string): string {
-  if (pendiente) return 'pendiente';
-  if (!hasta) return '';
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  const hastaDate = new Date(hasta);
-  hastaDate.setHours(0, 0, 0, 0);
-  const diffDias = Math.ceil((hastaDate.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDias < 0) return 'Vencido';
-  if (diffDias <= 3) return 'por_vencer';
-  return 'activo';
-}
-
 function validarNombre(nombre: string) {
   return /^[A-Za-zÁÉÍÓÚáéíóúÑñ ]{2,}$/.test(nombre);
 }
@@ -35,31 +22,6 @@ function validarEmail(email: string) {
   return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
 }
 
-// Función para calcular la edad a partir de la fecha de nacimiento
-function calcularEdad(fecha: string) {
-  if (!fecha) return '';
-  const hoy = new Date();
-  const nacimiento = new Date(fecha);
-  let edad = hoy.getFullYear() - nacimiento.getFullYear();
-  const m = hoy.getMonth() - nacimiento.getMonth();
-  if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) {
-    edad--;
-  }
-  return edad >= 0 ? edad : '';
-}
-
-function esFechaValida(fecha: string) {
-  // Valida formato y existencia real de la fecha YYYY-MM-DD y que no sea futura
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return false;
-  const [y, m, d] = fecha.split('-').map(Number);
-  const date = new Date(Date.UTC(y, m - 1, d));
-  if (date.getUTCFullYear() !== y || date.getUTCMonth() + 1 !== m || date.getUTCDate() !== d) return false;
-  const hoy = new Date();
-  const hoyUTC = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()));
-  if (date > hoyUTC) return false;
-  return true;
-}
-
 export default function ClienteModal({ open, onClose, onCreated, cliente }: Props) {
   const { user } = useAuth();
   const [form, setForm] = useState({
@@ -68,16 +30,12 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
     email: '',
     identification_number: '',
     sexo: '',
-    fecha_nacimiento: '',
-    fecha_inicio: '',
-    fecha_vencimiento: '',
     direccion: '',
     notas: '',
   });
   const [status, setStatus] = useState<'pendiente' | 'activo' | ''>('');
   const [loading, setLoading] = useState(false);
   const [errores, setErrores] = useState<{ [key: string]: string }>({});
-  const [usarFechas, setUsarFechas] = useState(false);
 
   useEffect(() => {
     if (cliente) {
@@ -87,14 +45,10 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
         email: cliente.email || '',
         identification_number: cliente.identification_number || '',
         sexo: cliente.sexo || '',
-        fecha_nacimiento: cliente.fecha_nacimiento || '',
-        fecha_inicio: cliente.fecha_inicio && cliente.fecha_inicio !== '9999-12-31' ? cliente.fecha_inicio : '',
-        fecha_vencimiento: cliente.fecha_vencimiento && cliente.fecha_vencimiento !== '9999-12-31' ? cliente.fecha_vencimiento : '',
         direccion: cliente.direccion || '',
         notas: cliente.notas || '',
       });
       setStatus(cliente.categoria === 'pendiente' ? 'pendiente' : 'activo');
-      setUsarFechas(!!(cliente.fecha_inicio && cliente.fecha_inicio !== '9999-12-31'));
     } else {
       setForm({
         nombre: '',
@@ -102,114 +56,52 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
         email: '',
         identification_number: '',
         sexo: '',
-        fecha_nacimiento: '',
-        fecha_inicio: '',
-        fecha_vencimiento: '',
         direccion: '',
         notas: '',
       });
       setStatus('');
-      setUsarFechas(false);
     }
     setErrores({});
-  }, [cliente, open]);
+  }, [cliente]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setErrores({ ...errores, [e.target.name]: '' });
-  };
-
-  const handleFechaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setErrores({ ...errores, fecha: '' });
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+    if (errores[name]) {
+      setErrores(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const validarFormulario = () => {
     const nuevosErrores: { [key: string]: string } = {};
+
+    if (!form.nombre.trim()) {
+      nuevosErrores.nombre = 'El nombre es requerido';
+    } else if (!validarNombre(form.nombre.trim())) {
+      nuevosErrores.nombre = 'El nombre debe tener al menos 2 caracteres y solo letras';
+    }
+
+    if (!form.telefono.trim()) {
+      nuevosErrores.telefono = 'El teléfono es requerido';
+    } else if (!validarTelefono(form.telefono.trim())) {
+      nuevosErrores.telefono = 'El teléfono debe tener 10 dígitos';
+    }
+
+    if (form.email.trim() && !validarEmail(form.email.trim())) {
+      nuevosErrores.email = 'El email no es válido';
+    }
+
     if (!status) {
-      nuevosErrores.status = 'Debes seleccionar un status.';
+      nuevosErrores.status = 'Debes seleccionar un estado';
     }
-    if (!validarNombre(form.nombre)) {
-      nuevosErrores.nombre = 'El nombre debe tener al menos 2 letras y solo puede contener letras y espacios.';
-    }
-    if (form.telefono && !validarTelefono(form.telefono)) {
-      nuevosErrores.telefono = 'El teléfono debe tener exactamente 10 dígitos.';
-    }
-    if (form.email && !validarEmail(form.email)) {
-      nuevosErrores.email = 'Ingresa un email válido.';
-    }
-    if (form.sexo && form.sexo.trim().length > 0 && !['M', 'F'].includes(form.sexo)) {
-      nuevosErrores.sexo = 'El sexo debe ser Masculino (M) o Femenino (F).';
-    }
-    if (form.fecha_nacimiento && !esFechaValida(form.fecha_nacimiento)) {
-      nuevosErrores.fecha_nacimiento = 'La fecha de nacimiento debe ser válida y tener el formato YYYY-MM-DD.';
-    }
-    if (form.direccion && form.direccion.trim().length > 0 && form.direccion.trim().length < 3) {
-      nuevosErrores.direccion = 'La dirección debe tener al menos 3 caracteres.';
-    }
-    if (usarFechas) {
-      // Solo validar formato si alguna está presente
-      if (form.fecha_inicio && isNaN(Date.parse(form.fecha_inicio))) {
-        nuevosErrores.fecha = 'La fecha de comienzo debe ser válida.';
-      }
-      if (form.fecha_vencimiento && isNaN(Date.parse(form.fecha_vencimiento))) {
-        nuevosErrores.fecha = 'La fecha de vencimiento debe ser válida.';
-      }
-      if (form.fecha_inicio && form.fecha_vencimiento && form.fecha_vencimiento < form.fecha_inicio) {
-        nuevosErrores.fecha = 'La fecha "Hasta" debe ser igual o posterior a la fecha "Desde".';
-      }
-    }
+
     setErrores(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
-      toast.error('Usuario no autenticado');
-      return;
-    }
-    if (!validarFormulario()) {
-      toast.error('Corrige los errores antes de guardar');
-      return;
-    }
-
-    // Detectar campos importantes en blanco
-    const camposFaltantes: string[] = [];
-    const descripciones: string[] = [];
-    if (!form.telefono) {
-      camposFaltantes.push('Teléfono');
-      descripciones.push('<b>Teléfono:</b> No podrás llamarlo ni enviarle mensajes de WhatsApp.');
-    }
-    if (!form.email) {
-      camposFaltantes.push('Email');
-      descripciones.push('<b>Email:</b> No podrás enviarle correos electrónicos.');
-    }
-    if (!form.fecha_nacimiento) {
-      camposFaltantes.push('Fecha de nacimiento');
-      descripciones.push('<b>Fecha de nacimiento:</b> No podrás felicitarlo en su cumpleaños.');
-    }
-    if (!form.identification_number) {
-      camposFaltantes.push('Identificación');
-      descripciones.push('<b>Identificación:</b> Sin número de identificación no podrás enviar emails automáticos a validaciones.');
-    }
-
-    if (camposFaltantes.length > 0 || !usarFechas) {
-      let extra = '';
-      if (!usarFechas) {
-        extra = '<br><b>Fecha de Comienzo y Fecha de Vencimiento:</b> Si no seleccionas fechas, no podrás tener control de los clientes por vencer y no lo detectará en ese filtro.';
-      }
-      const { isConfirmed } = await Swal.fire({
-        title: '¿Estás seguro que deseas guardar el cliente sin estos campos?',
-        html: `<ul style='text-align:left;'>${camposFaltantes.map(c => `<li>• ${c}</li>`).join('')}</ul><div class='mt-2 text-sm text-gray-600'>${descripciones.join('<br>')}${extra}</div>`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Guardar de todos modos',
-        cancelButtonText: 'Cancelar',
-        customClass: { htmlContainer: 'text-left' }
-      });
-      if (!isConfirmed) return;
-    }
+    if (!validarFormulario()) return;
 
     setLoading(true);
     try {
@@ -217,11 +109,11 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
       const data: any = {
         nombre: form.nombre,
         user_id: user.id,
-        categoria: !usarFechas ? status : calcularCategoria(status === 'pendiente', form.fecha_vencimiento),
-        fecha_inicio: usarFechas ? (form.fecha_inicio || '9999-12-31') : '9999-12-31',
-        fecha_vencimiento: usarFechas ? (form.fecha_vencimiento || '9999-12-31') : '9999-12-31',
+        categoria: status,
+        fecha_inicio: '9999-12-31',
+        fecha_vencimiento: '9999-12-31',
       };
-      ['telefono', 'email', 'identification_number', 'sexo', 'fecha_nacimiento', 'direccion', 'notas'].forEach((campo) => {
+      ['telefono', 'email', 'identification_number', 'sexo', 'direccion', 'notas'].forEach((campo) => {
         const valor = (form as any)[campo];
         data[campo] = valor === undefined || valor === null || valor === '' ? null : valor;
       });
@@ -333,44 +225,6 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
                   />
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-3 mb-3 relative">
-                  <div className="w-full mb-2 flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={usarFechas}
-                      onChange={e => setUsarFechas(e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-400 focus:ring-2 focus:ring-blue-400"
-                      id="usarFechas"
-                    />
-                    <label htmlFor="usarFechas" className="text-sm text-gray-700 select-none cursor-pointer">Seleccionar fechas</label>
-                  </div>
-                  <div className="flex-1">
-                    <label className="text-sm font-medium mb-1 text-gray-700">Fecha de Comienzo</label>
-                    <input
-                      type="text"
-                      name="fecha_inicio"
-                      placeholder="yyyy-mm-dd"
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${errores.fecha ? 'border-red-500' : 'border-gray-300'}`}
-                      value={usarFechas ? form.fecha_inicio : ''}
-                      onChange={handleFechaChange}
-                      disabled={!usarFechas}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="text-sm font-medium mb-1 text-gray-700">Fecha de Vencimiento</label>
-                    <input
-                      type="text"
-                      name="fecha_vencimiento"
-                      placeholder="yyyy-mm-dd"
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${errores.fecha ? 'border-red-500' : 'border-gray-300'}`}
-                      value={usarFechas ? form.fecha_vencimiento : ''}
-                      onChange={handleFechaChange}
-                      disabled={!usarFechas}
-                    />
-                  </div>
-                </div>
-                {errores.fecha && <div className="text-sm text-red-600 mb-2 text-center">{errores.fecha}</div>}
-
                 <div>
                   <label className="text-sm font-medium mb-1 text-gray-700">Sexo</label>
                   <select
@@ -386,28 +240,6 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
                     <option value="F">Femenino</option>
                   </select>
                   {errores.sexo && <div className="text-sm text-red-600 mt-1">{errores.sexo}</div>}
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-1 text-gray-700">Fecha de nacimiento</label>
-                  <input
-                    name="fecha_nacimiento"
-                    type="text"
-                    placeholder="yyyy-mm-dd"
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ${
-                      errores.fecha_nacimiento ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    value={form.fecha_nacimiento}
-                    onChange={handleFechaChange}
-                  />
-                  {errores.fecha_nacimiento && (
-                    <div className="text-sm text-red-600 mt-1">{errores.fecha_nacimiento}</div>
-                  )}
-                  {form.fecha_nacimiento && esFechaValida(form.fecha_nacimiento) && form.fecha_nacimiento !== '9999-12-31' && (
-                    <div className="text-sm text-gray-600 mt-1">
-                      Edad: <span className="font-semibold">{calcularEdad(form.fecha_nacimiento)}</span>
-                    </div>
-                  )}
                 </div>
 
                 <div>

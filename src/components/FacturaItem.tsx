@@ -1,6 +1,5 @@
 import {
   PencilIcon,
-  CheckCircleIcon,
   TrashIcon,
   PhoneIcon,
   ChatBubbleLeftIcon,
@@ -8,10 +7,15 @@ import {
   ArrowUturnLeftIcon
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { deleteFactura, updateFactura } from '../services/api';
 import { showDeleteConfirmation } from '../utils/alerts';
 import Swal from 'sweetalert2';
+import { FiDollarSign, FiCalendar, FiUser } from 'react-icons/fi';
+import CompletarPagoModal from './CompletarPagoModal';
+import WhatsAppFacturaModal from './WhatsAppFacturaModal';
+import EmailFacturaModal from './EmailFacturaModal';
 
 type FacturaItemProps = {
   factura: any;
@@ -19,11 +23,36 @@ type FacturaItemProps = {
 
 export default function FacturaItem({ factura, onChange }: FacturaItemProps & { onChange?: () => void }) {
   const navigate = useNavigate();
+  const [showCompletarPagoModal, setShowCompletarPagoModal] = useState(false);
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   // Validación de UUID
   const esUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(id);
   const idValido = factura.id && typeof factura.id === 'string' && esUUID(factura.id);
   const pdfUrl = factura.pdfUrl;
+
+  // Función para obtener el estado en español
+  const getEstadoTexto = (estado: string) => {
+    switch (estado) {
+      case 'pendiente': return 'Pendiente a Pagar';
+      case 'pagada': return 'Pagada';
+      case 'borrador': return 'Borrador';
+      default: return estado;
+    }
+  };
+
+
+
+  // Función para obtener el icono del estado
+  const getEstadoIcon = (estado: string) => {
+    switch (estado) {
+      case 'pendiente': return '⏳';
+      case 'pagada': return '✅';
+      case 'borrador': return '📝';
+      default: return '📄';
+    }
+  };
 
   // Handlers de acciones
   const handleEditar = () => {
@@ -33,62 +62,9 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
       toast.error('ID de factura inválido');
     }
   };
-  const handleMarcarPagada = async () => {
-    if (!idValido) {
-      toast.error('ID de factura inválido');
-      return;
-    }
 
-    // Si es borrador, preguntar si quiere crear la factura primero
-    if (factura.estado === 'borrador') {
-      const result = await Swal.fire({
-        title: 'Factura en borrador',
-        text: 'Esta factura está en borrador. ¿Deseas editarla y guardarla como factura completa primero?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Sí, editar factura',
-        cancelButtonText: 'Cancelar'
-      });
-      if (result.isConfirmed) {
-        navigate(`/facturas/${factura.id}`);
-        return;
-      }
-      return;
-    }
 
-    // Para facturas que no son borrador, confirmar antes de marcar como pagada
-    const result = await Swal.fire({
-      title: '¿Marcar como pagada?',
-      text: '¿Deseas marcar esta factura como pagada?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Sí, marcar como pagada',
-      cancelButtonText: 'Cancelar'
-    });
 
-    if (!result.isConfirmed) return;
-
-    try {
-      // Mostrar loading inmediato
-      toast.loading('Marcando como pagada...', { id: 'marcarPagada' });
-      
-      await updateFactura(factura.id, { estado: 'pagada' });
-      
-      // Cerrar loading y mostrar éxito
-      toast.dismiss('marcarPagada');
-      toast.success('Factura marcada como pagada');
-      
-      // Actualizar la lista inmediatamente
-      onChange && onChange();
-    } catch (err: any) {
-      toast.dismiss('marcarPagada');
-      toast.error(err.message || 'Error al marcar como pagada');
-    }
-  };
   const handleDeshacerPagada = async () => {
     if (!idValido) {
       toast.error('ID de factura inválido');
@@ -110,16 +86,13 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
     if (!result.isConfirmed) return;
 
     try {
-      // Mostrar loading inmediato
       toast.loading('Deshaciendo estado...', { id: 'deshacerPagada' });
       
       await updateFactura(factura.id, { estado: 'pendiente' });
       
-      // Cerrar loading y mostrar éxito
       toast.dismiss('deshacerPagada');
-      toast.success('Factura marcada como pendiente');
+      toast.success('Estado deshecho correctamente');
       
-      // Actualizar la lista inmediatamente
       onChange && onChange();
     } catch (err: any) {
       toast.dismiss('deshacerPagada');
@@ -132,19 +105,17 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
       toast.error('ID de factura inválido');
       return;
     }
-    const result = await showDeleteConfirmation('Esta acción eliminará la factura permanentemente.');
+
+    const result = await showDeleteConfirmation('¿Seguro que deseas eliminar esta factura?');
     if (result.isConfirmed) {
       try {
-        // Mostrar loading inmediato
         toast.loading('Eliminando factura...', { id: 'eliminarFactura' });
         
         await deleteFactura(factura.id);
         
-        // Cerrar loading y mostrar éxito
         toast.dismiss('eliminarFactura');
         toast.success('Factura eliminada');
         
-        // Actualizar la lista inmediatamente
         onChange && onChange();
       } catch (err: any) {
         toast.dismiss('eliminarFactura');
@@ -152,6 +123,7 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
       }
     }
   };
+
   const handleLlamar = () => {
     const tel = factura.cliente?.telefono?.replace(/[^\d]/g, '');
     if (tel) {
@@ -160,95 +132,278 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
       toast.error('El cliente no tiene teléfono válido');
     }
   };
+
   const handleWhatsapp = () => {
-    const tel = factura.cliente?.telefono?.replace(/[^\d]/g, '');
-    if (!pdfUrl) {
-      toast.error('No hay PDF público disponible');
-      return;
-    }
-    if (tel) {
-      const texto = `Hola, aquí tienes tu factura:\nFactura #${factura.numero_factura || factura.id}\nTotal: $${factura.total?.toFixed(2)}\n${pdfUrl}`;
-      const url = `https://wa.me/${tel}?text=${encodeURIComponent(texto)}`;
-      window.open(url, '_blank');
-    } else {
-      toast.error('El cliente no tiene teléfono válido');
-    }
+    setShowWhatsAppModal(true);
+  };
+
+  const handleEmail = () => {
+    setShowEmailModal(true);
+  };
+
+  const handleCompletarPago = () => {
+    setShowCompletarPagoModal(true);
+  };
+
+  const handlePagoCompletado = () => {
+    // La factura se actualizará desde el servidor cuando se recargue la lista
+    onChange && onChange();
   };
 
   return (
-    <div className="bg-white rounded-xl shadow p-3 flex flex-col gap-2 md:p-4">
-      <div className="flex justify-between items-start gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="font-bold text-gray-800 text-base md:text-lg">{factura.cliente?.nombre || 'Cliente'}</div>
-          <div className="text-xs text-gray-500">{factura.fecha_factura || ''}</div>
-          <div className="flex gap-2 mt-1 items-center flex-wrap">
-            <span className="text-sm font-semibold text-blue-700">${factura.total?.toFixed(2) || '0.00'}</span>
-            <span className={`text-xs rounded-full px-2 py-0.5 ${factura.estado === 'pendiente' ? 'text-yellow-600 bg-yellow-100' : factura.estado === 'pagada' ? 'text-green-700 bg-green-100' : 'text-gray-600 bg-gray-100'}`}>{factura.estado}</span>
-            <span className="text-xs text-gray-500">Balance: ${factura.balance_restante?.toFixed(2) || '0.00'}</span>
+    <>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 relative hover:shadow-xl transition-all duration-300">
+        {/* Header de la factura */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-lg">
+                {factura.cliente?.nombre?.charAt(0)?.toUpperCase() || 'F'}
+              </span>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+                {factura.cliente?.nombre || 'Cliente'}
+              </h3>
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                factura.estado === 'activo' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                factura.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                factura.estado === 'borrador' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
+                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+              }`}>
+                {getEstadoIcon(factura.estado)} {getEstadoTexto(factura.estado)}
+              </span>
+            </div>
           </div>
-        </div>
-        {/* Acciones principales arriba derecha y documento/copy debajo */}
-        <div className="flex flex-col items-end gap-2 ml-2">
-          {/* Acciones principales (editar, marcar pagada/deshacer, eliminar) */}
-          <div className="flex space-x-3 md:space-x-2">
-            <button title="Editar" onClick={handleEditar} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors" disabled={!idValido}>
-              <PencilIcon className="h-6 w-6 md:h-5 md:w-5" />
+          <div className="flex gap-2">
+            <button
+              onClick={handleEditar}
+              className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-colors"
+              title="Editar factura"
+              disabled={!idValido}
+            >
+              <PencilIcon className="h-5 w-5" />
             </button>
-            {factura.estado === 'pagada' ? (
+            {factura.estado === 'pagada' && (
               <button 
-                title="Deshacer estado pagado" 
                 onClick={handleDeshacerPagada} 
-                className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-full transition-colors"
+                className="p-2 text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-xl transition-colors"
+                title="Deshacer estado pagado"
                 disabled={!idValido}
               >
-                <ArrowUturnLeftIcon className="h-6 w-6 md:h-5 md:w-5" />
-              </button>
-            ) : (
-              <button 
-                title={factura.estado === 'borrador' ? 'Completar factura (editar primero)' : 'Marcar como pagada'} 
-                onClick={handleMarcarPagada} 
-                className={`p-2 rounded-full transition-colors ${
-                  factura.estado === 'borrador' 
-                    ? 'text-gray-400 cursor-not-allowed' 
-                    : 'text-green-700 hover:bg-green-50'
-                }`} 
-                disabled={!idValido || factura.estado === 'borrador'}
-              >
-                <CheckCircleIcon className="h-6 w-6 md:h-5 md:w-5" />
+                <ArrowUturnLeftIcon className="h-5 w-5" />
               </button>
             )}
-            <button title="Eliminar" onClick={handleEliminar} className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors" disabled={!idValido}>
-              <TrashIcon className="h-6 w-6 md:h-5 md:w-5" />
+            <button
+              onClick={handleEliminar}
+              className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+              title="Eliminar factura"
+              disabled={!idValido}
+            >
+              <TrashIcon className="h-5 w-5" />
             </button>
           </div>
-          {/* Iconos grandes de documento y copiar link debajo */}
-          <div className="flex gap-2 mt-2">
-            {idValido && pdfUrl && (
-              <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="p-1 rounded-full hover:bg-gray-100 text-blue-600" title="Ver PDF">
-                <span role="img" aria-label="documento" className="text-4xl md:text-5xl">📄</span>
-              </a>
-            )}
-            <button title="Copiar link PDF" onClick={() => {
+        </div>
+
+        {/* Información de la factura organizada */}
+        <div className="space-y-6 mb-6">
+          {/* Información principal */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                Información de Factura
+              </h4>
+              <span className="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-full">
+                #{factura.numero_factura || 'N/A'}
+              </span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                <FiDollarSign className="h-5 w-5 text-green-500" />
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Total</p>
+                  <p className="font-bold text-gray-900 dark:text-gray-100 text-lg">
+                    ${factura.total?.toFixed(2) || '0.00'}
+                  </p>
+                </div>
+              </div>
+              
+              {factura.estado === 'pendiente' && factura.balance_restante && factura.balance_restante > 0 && (
+                <div className="flex items-center gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 dark:border-yellow-800">
+                  <FiDollarSign className="h-5 w-5 text-yellow-500" />
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Balance Pendiente</p>
+                    <p className="font-bold text-yellow-700 dark:text-yellow-300">
+                      ${factura.balance_restante?.toFixed(2) || '0.00'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleCompletarPago}
+                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium text-sm transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
+                    title="Completar Pago"
+                  >
+                    <FiDollarSign className="h-4 w-4" />
+                    Completar Pago
+                  </button>
+                </div>
+              )}
+
+              {factura.estado === 'pagada' && (
+                <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                  <FiDollarSign className="h-5 w-5 text-green-500" />
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Estado</p>
+                    <p className="font-bold text-green-700 dark:text-green-300">
+                      Pagada
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Información adicional */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              Detalles
+            </h4>
+            <div className="space-y-2">
+              {/* Fechas en una fila */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                  <FiCalendar className="h-5 w-5 text-blue-500" />
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Fecha de Creación</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">
+                      {factura.fecha_factura || 'Sin fecha'}
+                    </p>
+                  </div>
+                </div>
+                
+                {factura.fecha_vencimiento && (
+                  <div className="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-200 dark:border-orange-800">
+                    <FiCalendar className="h-5 w-5 text-orange-500" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Fecha de Vencimiento</p>
+                      <p className="font-medium text-orange-700 dark:text-orange-300">
+                        {factura.fecha_vencimiento}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                <FiUser className="h-5 w-5 text-purple-500" />
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Cliente</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                    {factura.cliente?.nombre || 'Sin nombre'}
+                  </p>
+                </div>
+              </div>
+              
+              {factura.estado === 'pagada' && factura.metodo_pago && (
+                <div className="flex items-center gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                  <FiDollarSign className="h-5 w-5 text-green-500" />
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Método de Pago</p>
+                    <p className="font-medium text-green-700 dark:text-green-300">
+                      {factura.metodo_pago.nombre}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Acciones de documento */}
+        <div className="flex gap-3 mb-6">
+          {idValido && pdfUrl && (
+            <a 
+              href={pdfUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex-1 flex items-center justify-center gap-3 py-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors font-medium"
+              title="Ver PDF"
+            >
+              <span className="text-2xl">📄</span>
+              Ver PDF
+            </a>
+          )}
+          <button 
+            onClick={() => {
               if (pdfUrl) {
-                navigator.clipboard.writeText(pdfUrl); toast.success('Link público copiado');
+                navigator.clipboard.writeText(pdfUrl); 
+                toast.success('Link público copiado');
               } else {
                 toast.error('No hay PDF público disponible');
               }
-            }} className="p-2 md:p-3 rounded-full hover:bg-gray-100 text-gray-600" style={{ fontSize: 36 }} disabled={!idValido || !pdfUrl}>
-              <LinkIcon className="h-9 w-9 md:h-10 md:w-10" />
-            </button>
-          </div>
+            }} 
+            className="flex-1 flex items-center justify-center gap-3 py-3 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors font-medium"
+            title="Copiar link PDF"
+            disabled={!idValido || !pdfUrl}
+          >
+            <LinkIcon className="h-5 w-5" />
+            Copiar Link
+          </button>
+        </div>
+
+        {/* Botones de acción */}
+        <div className="flex gap-3">
+          <button
+            onClick={handleLlamar}
+            className="flex-1 flex items-center justify-center gap-3 py-3 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 rounded-xl transition-colors font-medium"
+            title="Llamar al cliente"
+          >
+            <PhoneIcon className="h-5 w-5" />
+            Llamar
+          </button>
+          <button
+            onClick={handleWhatsapp}
+            className="flex-1 flex items-center justify-center gap-3 py-3 text-green-600 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 rounded-xl transition-colors font-medium"
+            title="Enviar WhatsApp"
+          >
+            <ChatBubbleLeftIcon className="h-5 w-5" />
+            WhatsApp
+          </button>
+          <button
+            onClick={handleEmail}
+            className="flex-1 flex items-center justify-center gap-3 py-3 text-purple-600 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:text-purple-400 rounded-xl transition-colors font-medium"
+            title="Enviar Email"
+          >
+            <span className="text-lg">📧</span>
+            Email
+          </button>
         </div>
       </div>
-      {/* Botones de acción secundarios (llamar, WhatsApp) abajo */}
-      <div className="flex gap-2 mt-2">
-        <button title="Llamar" onClick={handleLlamar} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-semibold hover:bg-blue-100 text-sm md:text-base">
-          <PhoneIcon className="h-5 w-5" /> Llamar
-        </button>
-        <button title="WhatsApp" onClick={handleWhatsapp} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-green-50 text-green-700 font-semibold hover:bg-green-100 text-sm md:text-base">
-          <ChatBubbleLeftIcon className="h-5 w-5" /> Mensaje
-        </button>
-      </div>
-    </div>
+
+      {/* Modal de Completar Pago */}
+      <CompletarPagoModal
+        open={showCompletarPagoModal}
+        onClose={() => setShowCompletarPagoModal(false)}
+        factura={factura}
+        onPagoCompletado={handlePagoCompletado}
+      />
+
+      {/* Modal de WhatsApp */}
+      {showWhatsAppModal && factura && (
+        <WhatsAppFacturaModal
+          open={showWhatsAppModal}
+          onClose={() => setShowWhatsAppModal(false)}
+          factura={factura}
+        />
+      )}
+
+      {/* Modal de Email */}
+      {showEmailModal && factura && (
+        <EmailFacturaModal
+          open={showEmailModal}
+          onClose={() => setShowEmailModal(false)}
+          factura={factura}
+        />
+      )}
+    </>
   );
 } 

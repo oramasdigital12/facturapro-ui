@@ -69,4 +69,12 @@ export const getUltimaFactura = () => api.get('/api/facturas?limit=1&order=numer
 // --- Clientes ---
 export const getClientes = () => api.get('/api/clientes');
 
+// --- Métodos de Pago ---
+export const getMetodosPago = () => api.get('/api/metodos-pago');
+export const getMetodoPagoById = (id: string) => api.get(`/api/metodos-pago/${id}`);
+export const createMetodoPago = (data: any) => api.post('/api/metodos-pago', data);
+export const updateMetodoPago = (id: string, data: any) => api.put(`/api/metodos-pago/${id}`, data);
+export const deleteMetodoPago = (id: string) => api.delete(`/api/metodos-pago/${id}`);
+export const updateOrdenMetodosPago = (ids: string[]) => api.post('/api/metodos-pago/orden', { ids });
+
 export default api; 

@@ -3,8 +3,10 @@ import { useOutletContext } from 'react-router-dom';
 import api from '../services/api';
 import { useState, useEffect } from 'react';
 import ClienteModal from '../components/ClienteModal';
+import MensajeWhatsappModal from '../components/MensajeWhatsappModal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import Swal from 'sweetalert2';
 
 export default function Home() {
   const { user } = useAuth();
@@ -12,10 +14,12 @@ export default function Home() {
   const [negocio, setNegocio] = useState({ nombre_negocio: '', email: '', logo_url: '' });
   const [clienteEditando, setClienteEditando] = useState<any>(null);
   const [showClienteModal, setShowClienteModal] = useState(false);
+  const [showMensajeModal, setShowMensajeModal] = useState(false);
+  const [clienteParaMensaje, setClienteParaMensaje] = useState<any>(null);
   const { dark } = useDarkMode();
   const outletContext = useOutletContext() as { color_personalizado?: string } | null;
   const color_personalizado = outletContext?.color_personalizado || '#2563eb';
-
+  
   // Métricas de facturas
   const [totalFacturado, setTotalFacturado] = useState(0);
   const [totalPendiente, setTotalPendiente] = useState(0);
@@ -28,11 +32,6 @@ export default function Home() {
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [showFiltrosFecha, setShowFiltrosFecha] = useState(false);
-
-  // Estados para acciones de clientes
-  const [clienteSeleccionado, setClienteSeleccionado] = useState<any>(null);
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [emailData, setEmailData] = useState({ titulo: '', descripcion: '' });
 
   useEffect(() => {
     fetchClientes();
@@ -110,52 +109,190 @@ export default function Home() {
     setClienteEditando(null);
   };
 
-  const handleLlamarCliente = (cliente: any) => {
-    if (cliente.telefono) {
-      window.open(`tel:${cliente.telefono}`, '_blank');
-    } else {
-      alert('Este cliente no tiene número de teléfono registrado');
-    }
-  };
-
-  const handleEmailCliente = (cliente: any) => {
-    if (cliente.email) {
-      setClienteSeleccionado(cliente);
-      setShowEmailModal(true);
-    } else {
-      const agregarEmail = confirm('Este cliente no tiene email registrado. ¿Deseas agregarle uno?');
-      if (agregarEmail) {
+  const handleLlamarCliente = async (cliente: any) => {
+    if (!cliente.telefono || cliente.telefono.trim() === '') {
+      const result = await Swal.fire({
+        title: 'Sin teléfono registrado',
+        text: 'Este cliente no tiene un número de teléfono guardado. Por favor, regístralo para poder llamar.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Editar',
+        cancelButtonText: 'Cancelar',
+      });
+      if (result.isConfirmed) {
         setClienteEditando(cliente);
         setShowClienteModal(true);
       }
-    }
-  };
-
-  const handleWhatsappCliente = (cliente: any) => {
-    if (cliente.telefono) {
-      const mensaje = `Hola ${cliente.nombre}, soy ${negocio.nombre_negocio}. ¿Cómo estás?`;
-      window.open(`https://wa.me/${cliente.telefono}?text=${encodeURIComponent(mensaje)}`, '_blank');
-    } else {
-      alert('Este cliente no tiene número de teléfono registrado');
-    }
-  };
-
-  const handleEnviarEmail = async () => {
-    if (!emailData.titulo || !emailData.descripcion) {
-      alert('Por favor completa el título y descripción del email');
       return;
     }
+    window.open(`tel:${cliente.telefono}`);
+  };
 
-    try {
-      // Aquí iría la lógica para enviar el email
-      console.log('Enviando email a:', clienteSeleccionado.email, emailData);
-      alert('Email enviado correctamente');
-      setShowEmailModal(false);
-      setEmailData({ titulo: '', descripcion: '' });
-      setClienteSeleccionado(null);
-    } catch (error) {
-      alert('Error al enviar el email');
+  const handleEmailCliente = async (cliente: any) => {
+    if (!cliente.email || cliente.email.trim() === '') {
+      const result = await Swal.fire({
+        title: 'Sin email registrado',
+        text: 'Este cliente no tiene un email guardado. ¿Deseas agregarle uno?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Agregar Email',
+        cancelButtonText: 'Cancelar',
+      });
+      if (result.isConfirmed) {
+        setClienteEditando(cliente);
+        setShowClienteModal(true);
+      }
+      return;
     }
+    // Enviar email directo
+    const subject = encodeURIComponent('Mensaje desde ' + (window.location.hostname || 'Tu Negocio'));
+    const body = encodeURIComponent('Hola ' + cliente.nombre + ',\n\nEspero que estés bien.\n\nSaludos,\nTu Negocio');
+    window.open(`mailto:${cliente.email}?subject=${subject}&body=${body}`);
+  };
+
+  const handleWhatsappCliente = async (cliente: any) => {
+    if (!cliente.telefono || cliente.telefono.trim() === '') {
+      const result = await Swal.fire({
+        title: 'Sin teléfono registrado',
+        text: 'Este cliente no tiene un número de teléfono guardado. Por favor, regístralo para poder enviar mensajes.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Editar',
+        cancelButtonText: 'Cancelar',
+      });
+      if (result.isConfirmed) {
+        setClienteEditando(cliente);
+        setShowClienteModal(true);
+      }
+      return;
+    }
+    setClienteParaMensaje(cliente);
+    setShowMensajeModal(true);
+  };
+
+  const handleVerInfoCliente = (cliente: any) => {
+    // Función para calcular la edad
+    const calcularEdad = (fecha: string) => {
+      if (!fecha || fecha === '9999-12-31') return '';
+      const hoy = new Date();
+      const nacimiento = new Date(fecha);
+      let edad = hoy.getFullYear() - nacimiento.getFullYear();
+      const m = hoy.getMonth() - nacimiento.getMonth();
+      if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) {
+        edad--;
+      }
+      return edad >= 0 ? edad : '';
+    };
+
+    let infoHTML = `
+      <div class="text-left space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-gray-700">Nombre:</span>
+          <span>${cliente.nombre}</span>
+        </div>
+    `;
+
+    if (cliente.telefono) {
+      infoHTML += `
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-gray-700">Teléfono:</span>
+          <span>${cliente.telefono}</span>
+        </div>
+      `;
+    }
+
+    if (cliente.email) {
+      infoHTML += `
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-gray-700">Email:</span>
+          <span>${cliente.email}</span>
+        </div>
+      `;
+    }
+
+    if (cliente.sexo) {
+      infoHTML += `
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-gray-700">Sexo:</span>
+          <span>${cliente.sexo}</span>
+        </div>
+      `;
+    }
+
+    if (cliente.direccion) {
+      infoHTML += `
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-gray-700">Dirección:</span>
+          <span>${cliente.direccion}</span>
+        </div>
+      `;
+    }
+
+    if (cliente.fecha_nacimiento && cliente.fecha_nacimiento !== '9999-12-31') {
+      const edad = calcularEdad(cliente.fecha_nacimiento);
+      infoHTML += `
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-gray-700">Fecha de nacimiento:</span>
+          <span>${cliente.fecha_nacimiento} (${edad} años)</span>
+        </div>
+      `;
+    }
+
+    if (cliente.fecha_inicio && cliente.fecha_inicio !== '9999-12-31') {
+      infoHTML += `
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-gray-700">Fecha de inicio:</span>
+          <span>${cliente.fecha_inicio}</span>
+        </div>
+      `;
+    }
+
+    if (cliente.fecha_vencimiento && cliente.fecha_vencimiento !== '9999-12-31') {
+      infoHTML += `
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-gray-700">Fecha de vencimiento:</span>
+          <span>${cliente.fecha_vencimiento}</span>
+        </div>
+      `;
+    }
+
+    if (cliente.notas) {
+      infoHTML += `
+        <div class="flex items-start gap-2">
+          <span class="font-semibold text-gray-700">Notas:</span>
+          <span>${cliente.notas}</span>
+      </div>
+      `;
+    }
+
+    infoHTML += `
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-gray-700">Estado:</span>
+          <span class="px-2 py-1 rounded-full text-xs font-medium ${
+            cliente.categoria === 'activo' ? 'bg-green-100 text-green-800' :
+            cliente.categoria === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
+            cliente.categoria === 'por_vencer' ? 'bg-orange-100 text-orange-800' :
+            cliente.categoria === 'Vencido' ? 'bg-red-100 text-red-800' :
+            'bg-gray-100 text-gray-800'
+          }">${cliente.categoria}</span>
+        </div>
+          </div>
+    `;
+
+    Swal.fire({
+      title: 'Información del Cliente',
+      html: infoHTML,
+      icon: 'info',
+      confirmButtonText: 'Cerrar',
+      showCancelButton: true,
+      cancelButtonText: 'Editar',
+      reverseButtons: true,
+    }).then((result) => {
+      if (result.dismiss === Swal.DismissReason.cancel) {
+        setClienteEditando(cliente);
+        setShowClienteModal(true);
+      }
+    });
   };
 
   const getRangoFechasTexto = () => {
@@ -175,14 +312,14 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col md:items-center md:justify-center md:max-w-6xl md:mx-auto md:px-8 md:pl-28">
       <div className="text-center mb-8 mt-8">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
           ¡Hola, {negocio.nombre_negocio || user?.email?.split('@')[0] || 'Usuario'}!
-        </h1>
+          </h1>
         <p className="text-gray-600 dark:text-gray-400 mb-4">
           Bienvenido a tu panel de control
         </p>
-        <div className="w-16 h-1 mx-auto rounded-full" style={{ background: color_personalizado }}></div>
-      </div>
+          <div className="w-16 h-1 mx-auto rounded-full" style={{ background: color_personalizado }}></div>
+        </div>
 
       {/* Métricas Modernas */}
       <div className="grid grid-cols-2 gap-4 mb-8 px-4 md:grid-cols-6 md:gap-6 md:px-0">
@@ -273,9 +410,9 @@ export default function Home() {
           </div>
           <div className="text-xs text-red-600 dark:text-red-400 mt-1">
             Próximos 7 días
-          </div>
-        </div>
-      </div>
+                    </div>
+                  </div>
+                </div>
 
       {/* Métrica Principal - Pagadas con Filtros */}
       <div className="w-full max-w-4xl mx-auto px-4 md:px-0 mb-8">
@@ -383,7 +520,8 @@ export default function Home() {
               {clientes.slice(0, 6).map((cliente: any) => (
                 <div
                   key={cliente.id}
-                  className="p-4 rounded-xl border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200"
+                  className="p-4 rounded-xl border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200 cursor-pointer"
+                  onClick={() => handleVerInfoCliente(cliente)}
                 >
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
@@ -395,16 +533,32 @@ export default function Home() {
                       <h3 className="font-semibold text-gray-800 dark:text-gray-200 truncate">
                         {cliente.nombre}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                        {cliente.email || 'Sin email'}
-                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          cliente.categoria === 'activo' ? 'bg-green-100 text-green-800' :
+                          cliente.categoria === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
+                          cliente.categoria === 'por_vencer' ? 'bg-orange-100 text-orange-800' :
+                          cliente.categoria === 'Vencido' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {cliente.categoria}
+                        </span>
+                        {cliente.email && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            {cliente.email}
+                          </span>
+                        )}
                     </div>
                   </div>
+                </div>
                   
                   {/* Botones de acción */}
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleLlamarCliente(cliente)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLlamarCliente(cliente);
+                      }}
                       className="flex-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center justify-center gap-1"
                       title="Llamar"
                     >
@@ -415,7 +569,10 @@ export default function Home() {
                     </button>
                     
                     <button
-                      onClick={() => handleEmailCliente(cliente)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEmailCliente(cliente);
+                      }}
                       className="flex-1 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm flex items-center justify-center gap-1"
                       title="Enviar Email"
                     >
@@ -426,13 +583,16 @@ export default function Home() {
                     </button>
                     
                     <button
-                      onClick={() => handleWhatsappCliente(cliente)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleWhatsappCliente(cliente);
+                      }}
                       className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center justify-center gap-1"
                       title="WhatsApp"
                     >
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M20.52 3.48A12.07 12.07 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.16 1.6 5.97L0 24l6.18-1.62A12.07 12.07 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.21-1.25-6.23-3.48-8.52zM12 22c-1.85 0-3.68-.5-5.25-1.45l-.37-.22-3.67.96.98-3.58-.24-.37A9.94 9.94 0 0 1 2 12c0-5.52 4.48-10 10-10s10 4.48 10 10-4.48 10-10 10zm5.2-7.8c-.28-.14-1.65-.81-1.9-.9-.25-.09-.43-.14-.61.14-.18.28-.28.9-.86 1.08-.16.18-.32.2-.6.07-.28-.14-1.18-.44-2.25-1.4-.83-.74-1.39-1.65-1.55-1.93-.16-.28-.02-.43.12-.57.13-.13.28-.34.42-.51.14-.17.18-.29.28-.48.09-.19.05-.36-.02-.5-.07-.14-.61-1.47-.84-2.01-.22-.53-.45-.46-.61-.47-.16-.01-.35-.01-.54-.01-.19 0-.5.07-.76.34-.26.27-1 1-.97 2.43.03 1.43 1.03 2.81 1.18 3.01.15.2 2.03 3.1 4.93 4.23.69.3 1.23.48 1.65.61.69.22 1.32.19 1.81.12.55-.08 1.65-.67 1.88-1.32.23-.65.23-1.21.16-1.32-.07-.11-.25-.18-.53-.32z"/>
-                      </svg>
+              <path d="M20.52 3.48A12.07 12.07 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.16 1.6 5.97L0 24l6.18-1.62A12.07 12.07 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.21-1.25-6.23-3.48-8.52zM12 22c-1.85 0-3.68-.5-5.25-1.45l-.37-.22-3.67.96.98-3.58-.24-.37A9.94 9.94 0 0 1 2 12c0-5.52 4.48-10 10-10s10 4.48 10 10-4.48 10-10 10zm5.2-7.8c-.28-.14-1.65-.81-1.9-.9-.25-.09-.43-.14-.61.14-.18.28-.28.9-.86 1.08-.16.18-.32.2-.6.07-.28-.14-1.18-.44-2.25-1.4-.83-.74-1.39-1.65-1.55-1.93-.16-.28-.02-.43.12-.57.13-.13.28-.34.42-.51.14-.17.18-.29.28-.48.09-.19.05-.36-.02-.5-.07-.14-.61-1.47-.84-2.01-.22-.53-.45-.46-.61-.47-.16-.01-.35-.01-.54-.01-.19 0-.5.07-.76.34-.26.27-1 1-.97 2.43.03 1.43 1.03 2.81 1.18 3.01.15.2 2.03 3.1 4.93 4.23.69.3 1.23.48 1.65.61.69.22 1.32.19 1.81.12.55-.08 1.65-.67 1.88-1.32.23-.65.23-1.21.16-1.32-.07-.11-.25-.18-.53-.32z"/>
+            </svg>
                       WA
                     </button>
                   </div>
@@ -451,62 +611,12 @@ export default function Home() {
         onCreated={fetchClientes}
       />
 
-      {/* Modal de Email */}
-      {showEmailModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">
-              Enviar Email a {clienteSeleccionado?.nombre}
-            </h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Título del Email
-                </label>
-                <input
-                  type="text"
-                  value={emailData.titulo}
-                  onChange={(e) => setEmailData({ ...emailData, titulo: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                  placeholder="Asunto del email"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Descripción
-                </label>
-                <textarea
-                  value={emailData.descripcion}
-                  onChange={(e) => setEmailData({ ...emailData, descripcion: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 min-h-[100px]"
-                  placeholder="Contenido del email"
-                />
-              </div>
-            </div>
-            
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowEmailModal(false);
-                  setEmailData({ titulo: '', descripcion: '' });
-                  setClienteSeleccionado(null);
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleEnviarEmail}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Enviar Email
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal de WhatsApp */}
+      <MensajeWhatsappModal
+        open={showMensajeModal}
+        onClose={() => setShowMensajeModal(false)}
+        cliente={clienteParaMensaje}
+      />
     </div>
   );
 } 

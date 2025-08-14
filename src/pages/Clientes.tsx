@@ -22,20 +22,15 @@ interface Cliente {
   telefono: string;
   email: string;
   categoria: string;
-  fecha_nacimiento?: string;
   sexo?: string;
   direccion?: string;
   notas?: string;
-  fecha_inicio?: string;
-  fecha_vencimiento?: string;
 }
 
 const categorias = [
-  { label: 'Todos', value: '', color: 'blue' },
-  { label: 'Activo', value: 'activo', color: 'green' },
-  { label: 'Pendiente', value: 'pendiente', color: 'yellow' },
-  { label: 'Por vencer', value: 'por_vencer', color: 'orange' },
-  { label: 'Vencido', value: 'Vencido', color: 'red' },
+  { label: 'Todos', value: '', color: 'blue', icon: '👥' },
+  { label: 'Activos', value: 'activo', color: 'green', icon: '✅' },
+  { label: 'Pendientes', value: 'pendiente', color: 'yellow', icon: '⏳' },
 ];
 
 export default function Clientes() {
@@ -53,7 +48,6 @@ export default function Clientes() {
   const { dark } = useDarkMode();
   const outletContext = useOutletContext() as { color_personalizado?: string } | null;
   const color_personalizado = outletContext?.color_personalizado || '#2563eb';
-  console.log('color_personalizado CLIENTES', color_personalizado);
 
   useEffect(() => {
     fetchClientes();
@@ -84,8 +78,6 @@ export default function Clientes() {
     '': clientes.length,
     'activo': clientes.filter(c => c.categoria === 'activo').length,
     'pendiente': clientes.filter(c => c.categoria === 'pendiente').length,
-    'por_vencer': clientes.filter(c => c.categoria === 'por_vencer').length,
-    'Vencido': clientes.filter(c => c.categoria === 'Vencido').length,
   };
 
   // Filtrado por categoría (solo para el listado)
@@ -112,19 +104,6 @@ export default function Clientes() {
     }
   };
 
-  // Función para calcular la edad a partir de la fecha de nacimiento
-  function calcularEdad(fecha: string) {
-    if (!fecha) return '';
-    const hoy = new Date();
-    const nacimiento = new Date(fecha);
-    let edad = hoy.getFullYear() - nacimiento.getFullYear();
-    const m = hoy.getMonth() - nacimiento.getMonth();
-    if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) {
-      edad--;
-    }
-    return edad >= 0 ? edad : '';
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col md:items-center md:justify-center md:max-w-3xl md:mx-auto md:px-8 md:pl-28">
       {/* Wave decoration */}
@@ -150,42 +129,45 @@ export default function Clientes() {
         </div>
 
         <div className="flex flex-col gap-4 mb-6">
+          {/* Búsqueda moderna */}
           <div className="relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Buscar por nombre..."
-              className="w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
+              className="w-full pl-12 pr-4 py-4 border-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 bg-white dark:bg-gray-800 shadow-lg text-gray-900 dark:text-gray-100"
               value={busqueda}
               onChange={e => setBusqueda(e.target.value)}
             />
           </div>
-          <div className="flex gap-2 justify-center mb-6 flex-wrap">
+
+          {/* Filtros modernos */}
+          <div className="flex gap-3 justify-center mb-6">
             {categorias.map(cat => (
               <button
                 key={cat.value}
-                className={`flex flex-col items-center px-3 py-2 rounded-xl border-2 transition-all duration-200 min-w-[70px] max-w-[90px] focus:outline-none
-                  ${categoria === cat.value 
-                    ? `border-${cat.color}-600 bg-${cat.color}-50 text-${cat.color}-700` 
-                    : `border-gray-200 bg-white text-gray-700 hover:border-${cat.color}-400 hover:text-${cat.color}-600`}
-                `}
+                className={`flex flex-col items-center px-6 py-4 rounded-2xl border-2 transition-all duration-300 min-w-[100px] focus:outline-none transform hover:scale-105 ${
+                  categoria === cat.value 
+                    ? `border-${cat.color}-500 bg-${cat.color}-50 text-${cat.color}-700 shadow-lg` 
+                    : `border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-${cat.color}-400 hover:text-${cat.color}-600 hover:shadow-md`
+                }`}
                 onClick={() => setCategoria(cat.value)}
               >
-                <span className={`mb-1 text-xs font-bold rounded-full px-2 py-0.5
-                  ${cat.color === 'blue' ? 'bg-blue-500 text-white' :
-                    cat.color === 'green' ? 'bg-green-500 text-white' :
-                    cat.color === 'yellow' ? 'bg-yellow-400 text-white' :
-                    cat.color === 'orange' ? 'bg-orange-500 text-white' :
-                    'bg-red-500 text-white'}
-                `}>
+                <span className="text-2xl mb-2">{cat.icon}</span>
+                <span className="text-sm font-semibold">{cat.label}</span>
+                <span className={`text-lg font-bold mt-1 ${
+                  cat.color === 'blue' ? 'text-blue-600' :
+                  cat.color === 'green' ? 'text-green-600' :
+                  'text-yellow-600'
+                }`}>
                   {contadores[cat.value as keyof typeof contadores]}
                 </span>
-                <span className="text-xs font-medium">{cat.label}</span>
               </button>
             ))}
           </div>
-          {/* Botón de email y crear cliente justo encima del listado de clientes */}
-          <div className="flex justify-between items-center mb-2 gap-2">
+
+          {/* Botón de email y crear cliente */}
+          <div className="flex justify-between items-center mb-4 gap-2">
             <div className="flex gap-2 items-center w-full justify-end">
               <div className="hidden md:block">
                 <BotonCrear
@@ -201,9 +183,9 @@ export default function Clientes() {
               </div>
               <button
                 onClick={() => setShowEmailModal(true)}
-                className="p-4 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 transition-colors shadow-sm"
+                className="p-4 rounded-2xl bg-blue-50 hover:bg-blue-100 text-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl"
                 title="Enviar email"
-                style={{ boxShadow: '0 2px 8px rgba(59,130,246,0.10)' }}
+                style={{ boxShadow: '0 4px 12px rgba(59,130,246,0.15)' }}
               >
                 <FiMail className="h-6 w-6" />
               </button>
@@ -223,128 +205,154 @@ export default function Clientes() {
             </div>
           </div>
         </div>
+
         {loading ? (
-          <div className="text-center py-8">Cargando...</div>
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">Cargando clientes...</p>
+          </div>
         ) : clientesMostrados.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">No hay clientes.</div>
+          <div className="text-center py-12">
+            <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+              <UserIcon className="w-10 h-10 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+              No hay clientes
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              {busqueda ? 'No se encontraron clientes con ese nombre.' : 'Comienza agregando tu primer cliente.'}
+            </p>
+            {!busqueda && (
+              <button
+                onClick={() => {
+                  setClienteEditando(null);
+                  setShowModal(true);
+                }}
+                className="px-6 py-3 rounded-xl font-semibold shadow-lg transition-all duration-200"
+                style={{ background: color_personalizado, color: 'white' }}
+              >
+                Agregar Primer Cliente
+              </button>
+            )}
+          </div>
         ) : (
           <ul className="space-y-4">
             {clientesMostrados.map((cliente) => (
-              <li key={cliente.id} className="bg-white rounded-xl shadow-sm p-4 relative">
-                <div className="flex gap-2 mb-1 items-start">
-                  <UserIcon className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start">
-                      <h3 className="font-medium text-gray-900 leading-snug flex-1 min-w-0 break-words whitespace-pre-line">{cliente.nombre}</h3>
-                      <div className="flex gap-2 flex-shrink-0 ml-2">
-                        <button
-                          onClick={() => {
-                            setClienteEditando(cliente);
-                            setShowModal(true);
-                          }}
-                          className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <PencilIcon className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(cliente.id)}
-                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <TrashIcon className="h-5 w-5" />
-                        </button>
-                      </div>
+              <li key={cliente.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 relative hover:shadow-xl transition-all duration-300">
+                {/* Header del cliente */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">
+                        {cliente.nombre?.charAt(0)?.toUpperCase() || 'C'}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+                        {cliente.nombre}
+                      </h3>
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                        cliente.categoria === 'activo' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                        cliente.categoria === 'pendiente' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                        'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                      }`}>
+                        {cliente.categoria === 'activo' ? '✅ Activo' : '⏳ Pendiente'}
+                      </span>
                     </div>
                   </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setClienteEditando(cliente);
+                        setShowModal(true);
+                      }}
+                      className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-colors"
+                      title="Editar cliente"
+                    >
+                      <PencilIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(cliente.id)}
+                      className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+                      title="Eliminar cliente"
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
-                
-                <div className="mb-3">
+
+                {/* Información del cliente organizada */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   {/* Información de contacto */}
-                  <div className="space-y-2 mb-3">
-                    <div className="flex items-center gap-2">
-                      <PhoneIcon className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm text-gray-600">{cliente.telefono}</span>
-                    </div>
-                    
-                    {cliente.email && (
-                      <div className="flex items-center gap-2">
-                        <FiMail className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">{cliente.email}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Detalles personales */}
-                  <div className="space-y-2 mb-3">
-                    {cliente.sexo && (
-                      <div className="flex items-center gap-2">
-                        <BsGenderAmbiguous className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">{cliente.sexo}</span>
-                      </div>
-                    )}
-                    
-                    {cliente.direccion && (
-                      <div className="flex items-center gap-2">
-                        <FiMapPin className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">{cliente.direccion}</span>
-                      </div>
-                    )}
-
-                    {cliente.fecha_nacimiento && cliente.fecha_nacimiento !== '9999-12-31' && (
-                      <div className="flex items-center gap-2">
-                        <FiCalendar className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">
-                          {cliente.fecha_nacimiento}
-                          <span className="ml-2 text-xs bg-gray-100 px-2 py-0.5 rounded-full">
-                            {calcularEdad(cliente.fecha_nacimiento)} años
-                          </span>
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Fechas de membresía */}
-                  {(cliente.fecha_inicio !== '9999-12-31' || cliente.fecha_vencimiento !== '9999-12-31') && (
-                    <div className="border-t border-gray-100 pt-2 mt-2 space-y-2">
-                      {cliente.fecha_inicio !== '9999-12-31' && (
-                        <div className="flex items-center gap-2">
-                          <FiCalendar className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">Desde: {cliente.fecha_inicio}</span>
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                      Información de Contacto
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                        <PhoneIcon className="h-5 w-5 text-blue-500" />
+                        <div>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Teléfono</p>
+                          <p className="font-medium text-gray-900 dark:text-gray-100">{cliente.telefono}</p>
                         </div>
-                      )}
-                      {cliente.fecha_vencimiento !== '9999-12-31' && (
-                        <div className="flex items-center gap-2">
-                          <FiCalendar className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-600">Hasta: {cliente.fecha_vencimiento}</span>
+                      </div>
+                      
+                      {cliente.email && (
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                          <FiMail className="h-5 w-5 text-blue-500" />
+                          <div>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">{cliente.email}</p>
+                          </div>
                         </div>
                       )}
                     </div>
-                  )}
+                  </div>
 
-                  {/* Notas */}
-                  {cliente.notas && (
-                    <div className="border-t border-gray-100 pt-2 mt-2">
-                      <div className="flex items-start gap-2">
-                        <FiFileText className="h-4 w-4 text-gray-400 mt-0.5" />
-                        <span className="text-sm text-gray-600">{cliente.notas}</span>
-                      </div>
+                  {/* Información personal */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                      Información Personal
+                    </h4>
+                    <div className="space-y-2">
+                      {cliente.sexo && (
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                          <BsGenderAmbiguous className="h-5 w-5 text-purple-500" />
+                          <div>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Sexo</p>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">{cliente.sexo}</p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {cliente.direccion && (
+                        <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                          <FiMapPin className="h-5 w-5 text-green-500" />
+                          <div>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Dirección</p>
+                            <p className="font-medium text-gray-900 dark:text-gray-100">{cliente.direccion}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-
-                  {/* Estado */}
-                  <div className="mt-3">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      cliente.categoria === 'activo' ? 'bg-green-100 text-green-800' :
-                      cliente.categoria === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
-                      cliente.categoria === 'por_vencer' ? 'bg-orange-100 text-orange-800' :
-                      cliente.categoria === 'Vencido' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {cliente.categoria}
-                    </span>
                   </div>
                 </div>
 
-                <div className="flex gap-2 mt-4">
+                {/* Notas */}
+                {cliente.notas && (
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+                      Notas
+                    </h4>
+                    <div className="flex items-start gap-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 dark:border-yellow-800">
+                      <FiFileText className="h-5 w-5 text-yellow-500 mt-0.5" />
+                      <p className="text-gray-800 dark:text-gray-200">{cliente.notas}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Botones de acción */}
+                <div className="flex gap-3">
                   <button
                     onClick={async () => {
                       if (!cliente.telefono || cliente.telefono.trim() === '') {
@@ -364,10 +372,10 @@ export default function Clientes() {
                       }
                       window.open(`tel:${cliente.telefono}`);
                     }}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors"
+                    className="flex-1 flex items-center justify-center gap-3 py-3 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 rounded-xl transition-colors font-medium"
                   >
                     <PhoneIcon className="h-5 w-5" />
-                    <span className="font-medium">Llamar</span>
+                    Llamar
                   </button>
                   <button
                     onClick={async () => {
@@ -391,10 +399,10 @@ export default function Clientes() {
                       const body = encodeURIComponent('Hola ' + cliente.nombre + ',\n\nEspero que estés bien.\n\nSaludos,\nTu Negocio');
                       window.open(`mailto:${cliente.email}?subject=${subject}&body=${body}`);
                     }}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-xl transition-colors"
+                    className="flex-1 flex items-center justify-center gap-3 py-3 text-purple-600 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:text-purple-400 rounded-xl transition-colors font-medium"
                   >
                     <FiMail className="h-5 w-5" />
-                    <span className="font-medium">Email</span>
+                    Email
                   </button>
                   <button
                     onClick={async () => {
@@ -416,16 +424,17 @@ export default function Clientes() {
                       setClienteParaMensaje(cliente);
                       setShowMensajeModal(true);
                     }}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 text-green-600 bg-green-50 hover:bg-green-100 rounded-xl transition-colors"
+                    className="flex-1 flex items-center justify-center gap-3 py-3 text-green-600 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 rounded-xl transition-colors font-medium"
                   >
                     <ChatBubbleLeftIcon className="h-5 w-5" />
-                    <span className="font-medium">Mensaje</span>
+                    Mensaje
                   </button>
                 </div>
               </li>
             ))}
           </ul>
         )}
+
         <ClienteModal
           open={showModal}
           onClose={() => {

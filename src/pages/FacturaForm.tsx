@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
-import { getClientes, getServiciosNegocio, createFactura, getFacturaById, updateFactura, getNegocioConfig, getUltimaFactura } from '../services/api';
+import { getClientes, getServiciosNegocio, createFactura, getFacturaById, updateFactura, getNegocioConfig, getUltimaFactura, getMetodosPago } from '../services/api';
 import FacturaPreview from '../components/FacturaPreview';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
@@ -14,7 +14,7 @@ export default function FacturaForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [formErrors, setFormErrors] = useState<{cliente?: string; items?: string; itemsDetalle?: string; fecha?: string; impuesto?: string; deposito?: string; nota?: string; terminos?: string}>({});
+  const [formErrors, setFormErrors] = useState<{cliente?: string; items?: string; itemsDetalle?: string; fecha?: string; impuesto?: string; deposito?: string; nota?: string; terminos?: string; numero_factura?: string; fecha_vencimiento?: string; metodo_pago_id?: string}>({});
   const [facturaEstado, setFacturaEstado] = useState<string>('');
   const [editMode, setEditMode] = useState(false);
   const [negocioConfig, setNegocioConfig] = useState<any>(null);
@@ -24,6 +24,9 @@ export default function FacturaForm() {
   // Estado del formulario
   const [clienteId, setClienteId] = useState('');
   const [fechaFactura, setFechaFactura] = useState(() => new Date().toISOString().slice(0, 10));
+  const [fechaVencimiento, setFechaVencimiento] = useState('');
+  const [metodoPagoId, setMetodoPagoId] = useState('');
+  const [metodosPago, setMetodosPago] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [impuesto, setImpuesto] = useState(0);
   const [deposito, setDeposito] = useState(0);
@@ -45,6 +48,7 @@ export default function FacturaForm() {
     fetchClientes();
     fetchServicios();
     fetchNegocioConfig();
+    fetchMetodosPago();
     if (id) {
       setEditMode(true);
       fetchFactura(id);
@@ -82,6 +86,15 @@ export default function FacturaForm() {
     }
   };
 
+  const fetchMetodosPago = async () => {
+    try {
+      const res = await getMetodosPago();
+      setMetodosPago(res.data || []);
+    } catch {
+      setMetodosPago([]);
+    }
+  };
+
   const fetchNumeroSiguiente = async () => {
     try {
       const res = await getUltimaFactura();
@@ -99,6 +112,8 @@ export default function FacturaForm() {
       setFacturaCargada(f);
       setClienteId(f.cliente_id);
       setFechaFactura(f.fecha_factura);
+      setFechaVencimiento(f.fecha_vencimiento || '');
+      setMetodoPagoId(f.metodo_pago_id || '');
       setItems(f.items.map((i: any) => ({
         categoria: i.categoria,
         descripcion: i.descripcion,
@@ -138,7 +153,7 @@ export default function FacturaForm() {
 
   // Validación antes de enviar
   const validateForm = () => {
-    const errors: {cliente?: string; items?: string; itemsDetalle?: string; fecha?: string; impuesto?: string; deposito?: string; nota?: string; terminos?: string} = {};
+    const errors: {cliente?: string; items?: string; itemsDetalle?: string; fecha?: string; impuesto?: string; deposito?: string; nota?: string; terminos?: string; numero_factura?: string; fecha_vencimiento?: string} = {};
     
     // Validar cliente
     if (!clienteId) errors.cliente = 'Selecciona un cliente.';
@@ -149,6 +164,14 @@ export default function FacturaForm() {
     
     // Validar fecha
     if (!fechaFactura) errors.fecha = 'La fecha de factura es obligatoria.';
+    
+    // Validar fecha de vencimiento (completamente opcional)
+    if (fechaVencimiento && fechaVencimiento.trim() !== '') {
+      const fechaVenc = new Date(fechaVencimiento);
+      if (isNaN(fechaVenc.getTime())) {
+        errors.fecha_vencimiento = 'La fecha de vencimiento debe ser válida.';
+      }
+    }
     
     // Validar impuesto
     if (impuesto === null || impuesto === undefined || impuesto < 0) errors.impuesto = 'El impuesto debe ser un número válido mayor o igual a 0.';
@@ -207,6 +230,9 @@ export default function FacturaForm() {
           nota: negocioConfig?.nota_factura,
           terminos: negocioConfig?.terminos_condiciones,
         }, // Incluir datos completos del negocio
+        fecha_factura: fechaFactura,
+        fecha_vencimiento: fechaVencimiento && fechaVencimiento.trim() !== '' ? fechaVencimiento : null,
+        numero_factura: editMode && id && facturaCargada ? facturaCargada.numero_factura : numeroFactura,
         subtotal,
         impuesto: totalImpuesto,
         total,
@@ -232,6 +258,7 @@ export default function FacturaForm() {
         setDeposito(0);
         setNota('');
         setTerminos('');
+        setFechaVencimiento('');
         setFormErrors({});
       }
       
@@ -288,6 +315,9 @@ export default function FacturaForm() {
           nota: negocioConfig?.nota_factura,
           terminos: negocioConfig?.terminos_condiciones,
         }, // Incluir datos completos del negocio
+        fecha_factura: fechaFactura,
+        fecha_vencimiento: fechaVencimiento && fechaVencimiento.trim() !== '' ? fechaVencimiento : null,
+        numero_factura: editMode && id && facturaCargada ? facturaCargada.numero_factura : numeroFactura,
         subtotal,
         impuesto: totalImpuesto,
         total,
@@ -314,17 +344,18 @@ export default function FacturaForm() {
         setDeposito(0);
         setNota('');
         setTerminos('');
+        setFechaVencimiento('');
         setFormErrors({});
       }
       
       // Cerrar loading y mostrar éxito
       toast.dismiss('guardarBorrador');
-      toast.success('Factura guardada como borrador');
+      toast.success('Borrador guardado exitosamente');
       
       navigate('/facturas');
     } catch (err: any) {
       toast.dismiss('guardarBorrador');
-      setError(err.message || 'Error al guardar como borrador');
+      setError(err.message || 'Error al guardar borrador');
     } finally {
       setLoading(false);
     }
@@ -589,10 +620,25 @@ export default function FacturaForm() {
 
         {/* Layout moderno optimizado - flujo vertical eficiente */}
         <div className="space-y-6">
-          {/* Fecha y totales en una fila */}
+          {/* Número de factura, fecha de creación y fecha de vencimiento en una fila */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-700">Fecha de factura *</label>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">Número de Factura</label>
+              <input 
+                type="text" 
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base ${formErrors.numero_factura ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
+                value={editMode && id && facturaCargada ? facturaCargada.numero_factura : numeroFactura} 
+                onChange={e => {
+                  const value = e.target.value.replace(/[^0-9]/g, '');
+                  setNumeroFactura(value);
+                  if (formErrors.numero_factura) setFormErrors({...formErrors, numero_factura: ''});
+                }}
+                placeholder="Número de factura"
+              />
+              {formErrors.numero_factura && <div className="text-xs text-red-500 mt-1">{formErrors.numero_factura}</div>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">Fecha de Creación *</label>
               <input 
                 type="date" 
                 className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base ${formErrors.fecha ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
@@ -604,6 +650,24 @@ export default function FacturaForm() {
               />
               {formErrors.fecha && <div className="text-xs text-red-500 mt-1">{formErrors.fecha}</div>}
             </div>
+                         <div>
+               <label className="block text-sm font-semibold mb-2 text-gray-700">Fecha de Vencimiento</label>
+               <input 
+                 type="date" 
+                 className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base ${formErrors.fecha_vencimiento ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
+                 value={fechaVencimiento} 
+                 onChange={e => {
+                   setFechaVencimiento(e.target.value);
+                   if (formErrors.fecha_vencimiento) setFormErrors({...formErrors, fecha_vencimiento: ''});
+                 }} 
+               />
+               {formErrors.fecha_vencimiento && <div className="text-xs text-red-500 mt-1">{formErrors.fecha_vencimiento}</div>}
+               <p className="text-xs text-gray-500 mt-1">Opcional</p>
+             </div>
+          </div>
+
+          {/* Subtotal y Total en una fila */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold mb-2 text-gray-700">Subtotal</label>
               <input type="text" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-base font-medium" value={subtotal.toFixed(2)} readOnly />
@@ -817,6 +881,7 @@ export default function FacturaForm() {
                   deposito,
                   balance_restante: balance,
                   fecha_factura: fechaFactura,
+                  fecha_vencimiento: fechaVencimiento,
                   estado: facturaEstado,
                 }} mostrarStatus={editMode} />
               </div>
