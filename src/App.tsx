@@ -8,8 +8,8 @@ import Clientes from './pages/Clientes';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Configuracion from './pages/Configuracion';
-import Agenda from './pages/Agenda';
-import Ventas from './pages/Ventas';
+
+
 import Facturas from './pages/Facturas';
 import FacturaForm from './pages/FacturaForm';
 import FacturaDetalle from './pages/FacturaDetalle';
@@ -28,8 +28,8 @@ function App() {
                 <Route path="/home" element={<Home />} />
                 <Route path="/clientes" element={<Clientes />} />
                 <Route path="/configuracion" element={<Configuracion />} />
-                <Route path="/agenda" element={<Agenda />} />
-                <Route path="/ventas" element={<Ventas />} />
+
+
                 <Route path="/facturas" element={<Facturas />} />
                 <Route path="/facturas/nueva" element={<FacturaForm />} />
                 <Route path="/facturas/:id" element={<FacturaForm />} />

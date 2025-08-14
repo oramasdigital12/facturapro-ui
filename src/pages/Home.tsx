@@ -1,61 +1,11 @@
-import { Link } from 'react-router-dom';
-import { UserGroupIcon, CurrencyDollarIcon, CalendarIcon, Cog6ToothIcon, DocumentTextIcon } from '@heroicons/react/24/solid';
 import { useAuth, useDarkMode } from '../contexts/AuthContext';
 import { useOutletContext } from 'react-router-dom';
-import ValidarClienteModal from '../components/ValidarClienteModal';
 import api from '../services/api';
 import { useState, useEffect } from 'react';
 import ClienteModal from '../components/ClienteModal';
-import { FiMail } from 'react-icons/fi';
-
-const menuItems = [
-  {
-    title: 'Clientes',
-    description: 'Gestiona tus clientes',
-    icon: UserGroupIcon,
-    href: '/clientes',
-    color: 'text-blue-500'
-  },
-  {
-    title: 'Ventas',
-    description: 'Historial y exportación',
-    icon: CurrencyDollarIcon,
-    href: '/ventas',
-    color: 'text-emerald-500'
-  },
-  {
-    title: 'Facturas',
-    description: 'Facturación profesional',
-    icon: DocumentTextIcon,
-    href: '/facturas',
-    color: 'text-indigo-500'
-  },
-  {
-    title: 'Agenda',
-    description: 'Tareas y recordatorios',
-    icon: CalendarIcon,
-    href: '/agenda',
-    color: 'text-red-500'
-  },
-  {
-    title: 'Información del Negocio',
-    description: 'Ajustes y cuenta',
-    icon: Cog6ToothIcon,
-    href: '/configuracion',
-    color: 'text-gray-500'
-  },
-  {
-    title: 'Validar Cliente',
-    description: 'Enviar email a validaciones',
-    icon: FiMail,
-    href: '',
-    color: 'text-blue-400'
-  }
-];
 
 export default function Home() {
   const { user } = useAuth();
-  const [showValidarModal, setShowValidarModal] = useState(false);
   const [clientes, setClientes] = useState([]);
   const [negocio, setNegocio] = useState({ nombre_negocio: '', email: '', logo_url: '' });
   const [clienteEditando, setClienteEditando] = useState<any>(null);
@@ -111,43 +61,6 @@ export default function Home() {
           <div className="w-16 h-1 mx-auto rounded-full" style={{ background: color_personalizado }}></div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto w-full md:max-w-lg md:gap-8 md:mt-8">
-          {menuItems.map((item) => (
-            item.title === 'Validar Cliente' ? (
-              <button
-                key={item.title}
-                className="transform transition-all duration-300 hover:scale-105 w-full"
-                onClick={() => setShowValidarModal(true)}
-              >
-                <div className="aspect-square bg-white dark:bg-gray-800 rounded-3xl shadow-sm hover:shadow-md transition-shadow duration-300">
-                  <div className="h-full w-full p-4">
-                    <div className="flex flex-col items-center justify-center h-full text-center">
-                      <item.icon className={`h-10 w-10 mb-2 transition-colors duration-300 ${item.color}`} />
-                      <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-0.5">{item.title}</h2>
-                      <p className="text-xs leading-tight" style={{ color: color_personalizado }}>{item.description}</p>
-                    </div>
-                  </div>
-                </div>
-              </button>
-            ) : (
-              <Link
-                key={item.title}
-                to={item.href}
-                className="transform transition-all duration-300 hover:scale-105"
-              >
-                <div className="aspect-square bg-white dark:bg-gray-800 rounded-3xl shadow-sm hover:shadow-md transition-shadow duration-300">
-                  <div className="h-full w-full p-4">
-                    <div className="flex flex-col items-center justify-center h-full text-center">
-                      <item.icon className={`h-10 w-10 mb-2 transition-colors duration-300 ${item.color}`} />
-                      <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-0.5">{item.title}</h2>
-                      <p className="text-xs leading-tight" style={{ color: color_personalizado }}>{item.description}</p>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            )
-          ))}
-        </div>
         {/* Sección de soporte */}
         <div className="flex flex-col items-center mt-10 gap-3 md:max-w-md md:mx-auto">
           <div className="flex items-center gap-2">
@@ -168,27 +81,14 @@ export default function Home() {
           </a>
         </div>
       </div>
-      <ValidarClienteModal
-        open={showValidarModal}
-        onClose={() => setShowValidarModal(false)}
-        clientes={clientes}
-        nombreNegocio={negocio.nombre_negocio}
-        emailNegocio={negocio.email}
-        onEditCliente={(cliente) => {
-          setClienteEditando(cliente);
-          setShowClienteModal(true);
-        }}
-      />
       <ClienteModal
         open={showClienteModal}
         onClose={() => {
           setShowClienteModal(false);
-          setShowValidarModal(true);
         }}
         onCreated={() => {
           api.get('/api/clientes').then(res => setClientes(res.data));
           setShowClienteModal(false);
-          setShowValidarModal(true);
         }}
         cliente={clienteEditando}
       />

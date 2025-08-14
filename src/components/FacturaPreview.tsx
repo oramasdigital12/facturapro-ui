@@ -47,13 +47,14 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
       margin: 0,
       padding: 0,
       lineHeight: '1.4',
-      maxWidth: '800px',
       width: '100%',
+      maxWidth: '800px',
       marginLeft: 'auto',
       marginRight: 'auto',
-      minHeight: '100vh',
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'column',
+      minHeight: 'auto',
+      height: 'auto'
     }}>
       <style>
         {`
@@ -63,85 +64,168 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
           }
           
           .invoice-container {
-            max-width: 800px;
             width: 100%;
+            max-width: 800px;
             margin: 0 auto;
             background: #fff;
-            min-height: 100vh;
             display: flex;
             flex-direction: column;
+            min-height: auto;
+            height: auto;
+            overflow: visible;
+            font-size: 14px;
           }
           
-          /* Header Section */
+          /* Header Section - Responsive */
           .header {
             background: ${colorNegocio};
             color: white;
-            padding: 30px;
+            padding: 20px;
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
+            flex-direction: column;
+            gap: 15px;
+          }
+          
+          @media (min-width: 768px) {
+            .header {
+              padding: 30px;
+              flex-direction: row;
+              justify-content: space-between;
+              align-items: flex-start;
+              gap: 20px;
+            }
           }
           
           .header-left {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
+            flex-wrap: wrap;
+          }
+          
+          @media (min-width: 768px) {
+            .header-left {
+              gap: 20px;
+            }
           }
           
           .logo-placeholder {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             background: rgba(255,255,255,0.2);
             border: 2px dashed rgba(255,255,255,0.3);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 10px;
             color: rgba(255,255,255,0.7);
             text-align: center;
+            flex-shrink: 0;
+          }
+          
+          @media (min-width: 768px) {
+            .logo-placeholder {
+              width: 80px;
+              height: 80px;
+              font-size: 12px;
+            }
           }
           
           .logo {
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             object-fit: contain;
             border-radius: 8px;
             background: white;
+            flex-shrink: 0;
+          }
+          
+          @media (min-width: 768px) {
+            .logo {
+              width: 80px;
+              height: 80px;
+            }
           }
           
           .invoice-title {
-            font-size: 2.5rem;
+            font-size: 1.8rem;
             font-weight: bold;
             margin: 0;
+            line-height: 1.2;
+          }
+          
+          @media (min-width: 768px) {
+            .invoice-title {
+              font-size: 2.5rem;
+            }
           }
           
           .business-info {
-            text-align: right;
+            text-align: left;
+            flex-shrink: 0;
+          }
+          
+          @media (min-width: 768px) {
+            .business-info {
+              text-align: right;
+            }
           }
           
           .business-name {
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             font-weight: bold;
             margin-bottom: 5px;
           }
           
+          @media (min-width: 768px) {
+            .business-name {
+              font-size: 1.3rem;
+            }
+          }
+          
           .business-details {
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             line-height: 1.3;
           }
           
-          /* Main Content */
+          @media (min-width: 768px) {
+            .business-details {
+              font-size: 0.95rem;
+            }
+          }
+          
+          /* Main Content - Responsive */
           .main-content {
-            padding: 30px;
+            padding: 20px;
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+          }
+          
+          @media (min-width: 768px) {
+            .main-content {
+              padding: 30px;
+              gap: 30px;
+            }
           }
           
           .invoice-details-section {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 20px;
             padding-bottom: 20px;
             border-bottom: 1px solid #e0e0e0;
+          }
+          
+          @media (min-width: 768px) {
+            .invoice-details-section {
+              flex-direction: row;
+              justify-content: space-between;
+              gap: 40px;
+              margin-bottom: 30px;
+            }
           }
           
           .invoice-details {
@@ -150,19 +234,38 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
           
           .bill-to {
             flex: 1;
-            text-align: right;
+            text-align: left;
+          }
+          
+          @media (min-width: 768px) {
+            .bill-to {
+              text-align: right;
+            }
           }
           
           .section-title {
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 1rem;
             margin-bottom: 10px;
             color: ${colorNegocio};
           }
           
+          @media (min-width: 768px) {
+            .section-title {
+              font-size: 1.1rem;
+            }
+          }
+          
           .detail-row {
             margin-bottom: 5px;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
+            word-break: break-word;
+          }
+          
+          @media (min-width: 768px) {
+            .detail-row {
+              font-size: 0.95rem;
+            }
           }
           
           .detail-label {
@@ -170,37 +273,74 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
             color: #666;
           }
           
-          /* Items Table */
+          /* Items Table - Responsive */
           .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+          }
+          
+          @media (min-width: 768px) {
+            .items-table {
+              margin-bottom: 30px;
+              font-size: 0.95rem;
+            }
           }
           
           .items-table th {
             background: #f8f9fa;
-            padding: 12px 8px;
+            padding: 8px 4px;
             text-align: left;
             font-weight: bold;
             color: ${colorNegocio};
             border-bottom: 2px solid #e0e0e0;
+            font-size: 0.8rem;
+          }
+          
+          @media (min-width: 768px) {
+            .items-table th {
+              padding: 12px 8px;
+              font-size: 0.95rem;
+            }
           }
           
           .items-table td {
-            padding: 12px 8px;
+            padding: 8px 4px;
             border-bottom: 1px solid #f0f0f0;
+            word-break: break-word;
+            font-size: 0.8rem;
+          }
+          
+          @media (min-width: 768px) {
+            .items-table td {
+              padding: 12px 8px;
+              font-size: 0.95rem;
+            }
           }
           
           .items-table tr:nth-child(even) {
             background: #fafafa;
           }
           
-          /* Bottom Section */
-          .bottom-section {
-            display: flex;
-            justify-content: space-between;
-            gap: 40px;
-          }
+                     /* Bottom Section - Responsive */
+           .bottom-section {
+             display: flex;
+             flex-direction: column;
+             gap: 20px;
+             align-items: stretch;
+             margin-top: 20px;
+           }
+           
+           @media (min-width: 768px) {
+             .bottom-section {
+               flex-direction: row;
+               justify-content: space-between;
+               align-items: flex-start;
+               gap: 40px;
+               margin-top: 30px;
+             }
+           }
           
           .terms-section {
             flex: 1;
@@ -211,89 +351,276 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
             white-space: pre-wrap;
             word-wrap: break-word;
             line-height: 1.5;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #555;
           }
           
-          .totals-section {
-            flex: 0 0 200px;
-            text-align: right;
+          @media (min-width: 768px) {
+            .terms-content {
+              font-size: 0.9rem;
+            }
           }
           
-          .total-row {
-            margin-bottom: 8px;
-            font-size: 0.95rem;
-          }
+                     .totals-section {
+             flex: 0 0 auto;
+             text-align: left;
+             min-width: 200px;
+             display: flex;
+             flex-direction: column;
+             align-items: flex-end;
+             margin-left: auto;
+           }
+           
+           @media (min-width: 768px) {
+             .totals-section {
+               flex: 0 0 200px;
+               text-align: right;
+               align-items: flex-end;
+               margin-left: auto;
+             }
+           }
           
-          .total-row.total {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: ${colorNegocio};
-            border-top: 2px solid #e0e0e0;
-            padding-top: 8px;
-            margin-top: 8px;
-          }
+                     .total-row {
+             margin-bottom: 8px;
+             font-size: 0.9rem;
+             display: flex;
+             justify-content: space-between;
+             width: 100%;
+             max-width: 200px;
+             align-items: center;
+           }
+           
+           @media (min-width: 768px) {
+             .total-row {
+               font-size: 0.95rem;
+               display: flex;
+               justify-content: space-between;
+               width: 100%;
+               max-width: 200px;
+               align-items: center;
+             }
+           }
           
-          .total-label {
-            display: inline-block;
-            width: 80px;
-            text-align: left;
-          }
+                     .total-row.total {
+             font-size: 1rem;
+             font-weight: bold;
+             color: ${colorNegocio};
+             border-top: 2px solid #e0e0e0;
+             padding-top: 8px;
+             margin-top: 8px;
+             margin-bottom: 12px;
+           }
+           
+           @media (min-width: 768px) {
+             .total-row.total {
+               font-size: 1.1rem;
+               margin-bottom: 12px;
+             }
+           }
           
-          .total-value {
-            display: inline-block;
-            width: 80px;
-            text-align: right;
-          }
+                     .total-label {
+             display: inline-block;
+             width: 80px;
+             text-align: left;
+             flex-shrink: 0;
+             font-weight: 500;
+           }
+           
+           @media (min-width: 768px) {
+             .total-label {
+               width: 80px;
+               text-align: left;
+               flex-shrink: 0;
+               font-weight: 500;
+             }
+           }
+           
+           .total-value {
+             display: inline-block;
+             width: 80px;
+             text-align: right;
+             flex-shrink: 0;
+             font-weight: 500;
+           }
+           
+           @media (min-width: 768px) {
+             .total-value {
+               width: 80px;
+               text-align: right;
+               flex-shrink: 0;
+               font-weight: 500;
+             }
+           }
           
-          /* Status Badge */
-          .status-badge {
-            margin-top: 20px;
-            background: ${colorFondoEstado};
-            color: ${colorTextoEstado};
-            font-weight: bold;
-            font-size: 1.2rem;
-            padding: 12px 24px;
-            border-radius: 25px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            text-align: center;
-            display: inline-block;
-          }
+                     /* Status Badge - Responsive */
+           .status-badge {
+             margin-top: 15px;
+             background: ${colorFondoEstado};
+             color: ${colorTextoEstado};
+             font-weight: bold;
+             font-size: 1rem;
+             padding: 10px 20px;
+             border-radius: 25px;
+             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+             text-align: center;
+             display: inline-block;
+             width: 100%;
+             max-width: 200px;
+             align-self: flex-end;
+             border: 1px solid ${colorTextoEstado}20;
+           }
+           
+           @media (min-width: 768px) {
+             .status-badge {
+               margin-top: 20px;
+               font-size: 1.2rem;
+               padding: 12px 24px;
+               width: auto;
+               max-width: none;
+               align-self: flex-end;
+               border: 1px solid ${colorTextoEstado}20;
+             }
+           }
           
-          /* Footer */
+          /* Footer - Responsive */
           .footer {
             background: ${colorNegocio};
             color: white;
-            padding: 15px 30px;
+            padding: 12px 20px;
             text-align: center;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             margin-top: auto;
           }
           
+          @media (min-width: 768px) {
+            .footer {
+              padding: 15px 30px;
+              font-size: 0.9rem;
+            }
+          }
+          
           .footer-logo {
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
             object-fit: contain;
             border-radius: 50%;
             background: white;
             padding: 2px;
           }
           
-          /* Page Break */
-          .page-break {
-            page-break-before: always;
+          @media (min-width: 768px) {
+            .footer-logo {
+              width: 20px;
+              height: 20px;
+            }
           }
           
-          /* Ensure footer stays at bottom */
+          /* Ensure content flows properly */
           .invoice-container {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            height: auto;
+            min-height: auto;
+            overflow: visible;
           }
           
           .main-content {
             flex: 1;
+            height: auto;
+            min-height: auto;
           }
+          
+                     /* Mobile-specific optimizations - IDENTICAL TO DESKTOP */
+           @media (max-width: 767px) {
+             .invoice-container {
+               width: 100%;
+               max-width: 100%;
+               margin: 0;
+               padding: 0;
+               font-size: 14px;
+             }
+             
+             .header {
+               padding: 20px;
+             }
+             
+             .main-content {
+               padding: 20px;
+             }
+             
+             .items-table {
+               font-size: 0.85rem;
+             }
+             
+             .items-table th,
+             .items-table td {
+               padding: 8px 4px;
+               font-size: 0.8rem;
+             }
+             
+             .terms-content {
+               font-size: 0.85rem;
+             }
+             
+             .total-row {
+               font-size: 0.9rem;
+               margin-bottom: 6px;
+             }
+             
+             .total-row.total {
+               margin-bottom: 10px;
+             }
+             
+             .section-title {
+               font-size: 1rem;
+             }
+             
+             .detail-row {
+               font-size: 0.9rem;
+             }
+             
+             .business-name {
+               font-size: 1.1rem;
+             }
+             
+             .business-details {
+               font-size: 0.85rem;
+             }
+             
+             .invoice-title {
+               font-size: 1.8rem;
+             }
+             
+             .logo,
+             .logo-placeholder {
+               width: 60px;
+               height: 60px;
+             }
+             
+             .footer {
+               padding: 12px 20px;
+               font-size: 0.8rem;
+             }
+             
+             .footer-logo {
+               width: 16px;
+               height: 16px;
+             }
+             
+             .status-badge {
+               font-size: 1rem;
+               padding: 10px 20px;
+               margin-top: 12px;
+             }
+             
+             .bottom-section {
+               margin-top: 15px;
+               gap: 15px;
+             }
+             
+             .totals-section {
+               margin-left: auto;
+               margin-right: 0;
+             }
+           }
         `}
       </style>
 
@@ -405,7 +732,7 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
               <span className="total-value">${Number(balanceRestante).toFixed(2)}</span>
             </div>
             
-            {/* Status Badge - Más grande y debajo del BALANCE */}
+            {/* Status Badge */}
             {mostrarStatus && estado && (
               <div className="status-badge">{estado}</div>
             )}
@@ -419,8 +746,8 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
           {logoUrl ? 
             <img src={logoUrl} className="footer-logo" alt="Logo" /> : 
             <div style={{ 
-              width: '20px', 
-              height: '20px', 
+              width: '16px', 
+              height: '16px', 
               background: 'white', 
               borderRadius: '50%', 
               display: 'flex', 
@@ -428,7 +755,7 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
               justifyContent: 'center', 
               fontWeight: 'bold', 
               color: colorNegocio, 
-              fontSize: '12px' 
+              fontSize: '10px' 
             }}>F</div>
           }
           <span>{nombreNegocio || 'FreshBooks'}</span>

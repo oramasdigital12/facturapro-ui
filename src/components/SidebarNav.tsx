@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { HiOutlineHome, HiOutlineUserGroup, HiOutlineClipboardList, HiOutlineCurrencyDollar, HiOutlineCog, HiOutlineMail } from "react-icons/hi";
+import { HiOutlineHome, HiOutlineUserGroup, HiOutlineCog } from "react-icons/hi";
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
 
 interface SidebarNavProps {
@@ -21,31 +21,19 @@ const navItems = [
     to: "/clientes",
     icon: <HiOutlineUserGroup size={22} />,
   },
-  {
-    label: "Tareas",
-    to: "/agenda",
-    icon: <HiOutlineClipboardList size={22} />,
-  },
+
   {
     label: "Facturas",
     to: "/facturas",
     icon: <DocumentTextIcon className='w-6 h-6' />,
   },
+
   {
-    label: "Ventas",
-    to: "/ventas",
-    icon: <HiOutlineCurrencyDollar size={22} />,
-  },
-  {
-    label: "Información del Negocio",
+    label: "Configuración",
     to: "/configuracion",
     icon: <HiOutlineCog size={22} />,
   },
-  {
-    label: "Validar Cliente",
-    to: "/validar-cliente",
-    icon: <HiOutlineMail size={22} />,
-  },
+
 ];
 
 const SidebarNav: React.FC<SidebarNavProps> = ({ logo_url, nombre_negocio, className, color_personalizado = '#2563eb' }) => {

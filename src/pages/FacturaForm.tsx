@@ -367,7 +367,7 @@ export default function FacturaForm() {
     ? servicios.filter(s => s.nombre.toLowerCase().includes(servicioSearch.toLowerCase()))
     : servicios;
 
-    const [showPreviewMobile, setShowPreviewMobile] = useState(false);
+  const [showPreviewMobile, setShowPreviewMobile] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
    
   // Obtener el color personalizado del negocio
@@ -405,18 +405,18 @@ export default function FacturaForm() {
   }, []);
 
   return (
-         <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col w-full max-w-full md:items-center md:justify-center md:max-w-6xl md:mx-auto md:px-8 md:pl-28">
-       
-       <form className="w-full max-w-full md:max-w-4xl mx-auto bg-white md:rounded-2xl md:shadow-lg md:p-6 p-4 flex flex-col gap-6 pb-8 relative" onSubmit={handleSubmit}>
-         {/* Botón cerrar moderno (solo desktop) */}
-         <button
-           type="button"
-           className="hidden md:block absolute top-4 right-4 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-lg font-bold shadow-lg transition-all duration-200 hover:scale-110 z-10"
-           onClick={() => navigate('/facturas')}
-           aria-label="Cerrar"
-         >
-           ×
-         </button>
+    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col w-full max-w-full md:items-center md:justify-center md:max-w-6xl md:mx-auto md:px-8 md:pl-28">
+      
+      <form className="w-full max-w-full md:max-w-4xl mx-auto bg-white md:rounded-2xl md:shadow-lg md:p-6 p-4 flex flex-col gap-6 pb-8 relative" onSubmit={handleSubmit}>
+        {/* Botón cerrar moderno (solo desktop) */}
+        <button
+          type="button"
+          className="hidden md:block absolute top-4 right-4 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-lg font-bold shadow-lg transition-all duration-200 hover:scale-110 z-10"
+          onClick={() => navigate('/facturas')}
+          aria-label="Cerrar"
+        >
+          ×
+        </button>
         <div className="flex items-center mb-2 md:mb-4">
           {/* Flecha back solo en móvil/tablet */}
           <button
@@ -438,26 +438,26 @@ export default function FacturaForm() {
           <div className="text-center text-yellow-700 bg-yellow-100 rounded p-2 mb-4 font-semibold">Esta factura está pagada y no puede ser editada.</div>
         )}
 
-                 {/* Cliente */}
-         <div className="mb-4 relative cliente-dropdown">
-           <label className="block text-sm font-semibold mb-2 text-gray-700">Cliente *</label>
-           <div
-             className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base bg-white cursor-pointer ${formErrors.cliente ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-blue-300'}`}
-             onClick={() => {
-               setShowClienteSuggestions(!showClienteSuggestions);
-               if (!showClienteSuggestions) {
-                 setClienteSearch('');
-               }
-               setTimeout(() => {
-                 const inputElement = document.getElementById('cliente-search-input');
-                 if (inputElement) inputElement.focus();
-               }, 100);
-             }}
-           >
-             {clienteId
-               ? clientes.find(c => c.id === clienteId)?.nombre || 'Selecciona un cliente'
-               : 'Selecciona un cliente'}
-           </div>
+        {/* Cliente */}
+        <div className="mb-4 relative cliente-dropdown">
+          <label className="block text-sm font-semibold mb-2 text-gray-700">Cliente *</label>
+          <div
+            className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base bg-white cursor-pointer ${formErrors.cliente ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-blue-300'}`}
+            onClick={() => {
+              setShowClienteSuggestions(!showClienteSuggestions);
+              if (!showClienteSuggestions) {
+                setClienteSearch('');
+              }
+              setTimeout(() => {
+                const inputElement = document.getElementById('cliente-search-input');
+                if (inputElement) inputElement.focus();
+              }, 100);
+            }}
+          >
+            {clienteId
+              ? clientes.find(c => c.id === clienteId)?.nombre || 'Selecciona un cliente'
+              : 'Selecciona un cliente'}
+          </div>
           {showClienteSuggestions && (
             <div className="absolute z-20 bg-white border rounded-2xl shadow max-h-52 overflow-y-auto w-full mt-1">
               <input
@@ -587,139 +587,139 @@ export default function FacturaForm() {
           {formErrors.itemsDetalle && <div className="text-xs text-red-500 mt-1">{formErrors.itemsDetalle}</div>}
         </div>
 
-                 {/* Layout moderno optimizado - flujo vertical eficiente */}
-         <div className="space-y-6">
-           {/* Fecha y totales en una fila */}
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-             <div>
-               <label className="block text-sm font-semibold mb-2 text-gray-700">Fecha de factura *</label>
-               <input 
-                 type="date" 
-                 className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base ${formErrors.fecha ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
-                 value={fechaFactura} 
-                 onChange={e => {
-                   setFechaFactura(e.target.value);
-                   if (formErrors.fecha) setFormErrors({...formErrors, fecha: ''});
-                 }} 
-               />
-               {formErrors.fecha && <div className="text-xs text-red-500 mt-1">{formErrors.fecha}</div>}
-             </div>
-             <div>
-               <label className="block text-sm font-semibold mb-2 text-gray-700">Subtotal</label>
-               <input type="text" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-base font-medium" value={subtotal.toFixed(2)} readOnly />
-             </div>
-             <div>
-               <label className="block text-sm font-semibold mb-2 text-gray-700">Total</label>
-               <input type="text" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-base font-medium text-blue-600" value={total.toFixed(2)} readOnly />
-             </div>
-           </div>
+        {/* Layout moderno optimizado - flujo vertical eficiente */}
+        <div className="space-y-6">
+          {/* Fecha y totales en una fila */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">Fecha de factura *</label>
+              <input 
+                type="date" 
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base ${formErrors.fecha ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
+                value={fechaFactura} 
+                onChange={e => {
+                  setFechaFactura(e.target.value);
+                  if (formErrors.fecha) setFormErrors({...formErrors, fecha: ''});
+                }} 
+              />
+              {formErrors.fecha && <div className="text-xs text-red-500 mt-1">{formErrors.fecha}</div>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">Subtotal</label>
+              <input type="text" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-base font-medium" value={subtotal.toFixed(2)} readOnly />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">Total</label>
+              <input type="text" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-base font-medium text-blue-600" value={total.toFixed(2)} readOnly />
+            </div>
+          </div>
 
-           {/* Impuesto y depósito en una fila */}
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             <div>
-               <label className="block text-sm font-semibold mb-2 text-gray-700">Impuesto (%) *</label>
-               <input 
-                 type="number" 
-                 className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base ${formErrors.impuesto ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
-                 value={impuesto} 
-                 onChange={e => {
-                   const value = e.target.value === '' ? 0 : Number(e.target.value);
-                   setImpuesto(value);
-                   if (formErrors.impuesto) setFormErrors({...formErrors, impuesto: ''});
-                 }}
-                 onFocus={(e) => {
-                   if (e.target.value === '0') {
-                     e.target.value = '';
-                   }
-                 }}
-                 min="0"
-                 step="0.01"
-               />
-               {formErrors.impuesto && <div className="text-xs text-red-500 mt-1">{formErrors.impuesto}</div>}
-             </div>
-             <div>
-               <label className="block text-sm font-semibold mb-2 text-gray-700">Depósito recibido *</label>
-               <input 
-                 type="number" 
-                 className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base ${formErrors.deposito ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
-                 value={deposito} 
-                 onChange={e => {
-                   const value = e.target.value === '' ? 0 : Number(e.target.value);
-                   setDeposito(value);
-                   if (formErrors.deposito) setFormErrors({...formErrors, deposito: ''});
-                 }}
-                 onFocus={(e) => {
-                   if (e.target.value === '0') {
-                     e.target.value = '';
-                   }
-                 }}
-                 min="0"
-                 step="0.01"
-               />
-               {formErrors.deposito && <div className="text-xs text-red-500 mt-1">{formErrors.deposito}</div>}
-             </div>
-           </div>
+          {/* Impuesto y depósito en una fila */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">Impuesto (%) *</label>
+              <input 
+                type="number" 
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base ${formErrors.impuesto ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
+                value={impuesto} 
+                onChange={e => {
+                  const value = e.target.value === '' ? 0 : Number(e.target.value);
+                  setImpuesto(value);
+                  if (formErrors.impuesto) setFormErrors({...formErrors, impuesto: ''});
+                }}
+                onFocus={(e) => {
+                  if (e.target.value === '0') {
+                    e.target.value = '';
+                  }
+                }}
+                min="0"
+                step="0.01"
+              />
+              {formErrors.impuesto && <div className="text-xs text-red-500 mt-1">{formErrors.impuesto}</div>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">Depósito recibido *</label>
+              <input 
+                type="number" 
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base ${formErrors.deposito ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
+                value={deposito} 
+                onChange={e => {
+                  const value = e.target.value === '' ? 0 : Number(e.target.value);
+                  setDeposito(value);
+                  if (formErrors.deposito) setFormErrors({...formErrors, deposito: ''});
+                }}
+                onFocus={(e) => {
+                  if (e.target.value === '0') {
+                    e.target.value = '';
+                  }
+                }}
+                min="0"
+                step="0.01"
+              />
+              {formErrors.deposito && <div className="text-xs text-red-500 mt-1">{formErrors.deposito}</div>}
+            </div>
+          </div>
 
-           {/* Balance restante */}
-           <div>
-             <label className="block text-sm font-semibold mb-2 text-gray-700">Balance restante</label>
-             <input type="text" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-base font-medium text-green-600" value={balance.toFixed(2)} readOnly />
-           </div>
+          {/* Balance restante */}
+          <div>
+            <label className="block text-sm font-semibold mb-2 text-gray-700">Balance restante</label>
+            <input type="text" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-base font-medium text-green-600" value={balance.toFixed(2)} readOnly />
+          </div>
 
-           {/* Nota y términos en una fila */}
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             <div>
-               <label className="block text-sm font-semibold mb-2 text-gray-700">Nota *</label>
-               <textarea 
-                 className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base min-h-[100px] resize-none ${formErrors.nota ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
-                 value={nota} 
-                 onChange={e => {
-                   setNota(e.target.value);
-                   if (formErrors.nota) setFormErrors({...formErrors, nota: ''});
-                 }} 
-               />
-               {formErrors.nota && <div className="text-xs text-red-500 mt-1">{formErrors.nota}</div>}
-             </div>
-             <div>
-               <label className="block text-sm font-semibold mb-2 text-gray-700">Términos *</label>
-               <textarea 
-                 className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base min-h-[100px] resize-none ${formErrors.terminos ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
-                 value={terminos} 
-                 onChange={e => {
-                   setTerminos(e.target.value);
-                   if (formErrors.terminos) setFormErrors({...formErrors, terminos: ''});
-                 }} 
-               />
-               {formErrors.terminos && <div className="text-xs text-red-500 mt-1">{formErrors.terminos}</div>}
-             </div>
-           </div>
+          {/* Nota y términos en una fila */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">Nota *</label>
+              <textarea 
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base min-h-[100px] resize-none ${formErrors.nota ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
+                value={nota} 
+                onChange={e => {
+                  setNota(e.target.value);
+                  if (formErrors.nota) setFormErrors({...formErrors, nota: ''});
+                }} 
+              />
+              {formErrors.nota && <div className="text-xs text-red-500 mt-1">{formErrors.nota}</div>}
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">Términos *</label>
+              <textarea 
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base min-h-[100px] resize-none ${formErrors.terminos ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
+                value={terminos} 
+                onChange={e => {
+                  setTerminos(e.target.value);
+                  if (formErrors.terminos) setFormErrors({...formErrors, terminos: ''});
+                }} 
+              />
+              {formErrors.terminos && <div className="text-xs text-red-500 mt-1">{formErrors.terminos}</div>}
+            </div>
+          </div>
 
-           {/* Botones finales modernos */}
-           <div className="flex flex-col gap-3 mt-8 md:flex-row md:gap-4 md:justify-end">
-             <button
-               type="button"
-               className="w-full md:w-auto px-6 py-3 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-all duration-200 border-2 border-gray-200"
-               onClick={handleCancelar}
-             >
-               Cancelar
-             </button>
-             <button
-               type="button"
-               className="w-full md:w-auto px-6 py-3 rounded-xl bg-blue-50 text-blue-700 font-semibold hover:bg-blue-100 transition-all duration-200 border-2 border-blue-200"
-               onClick={handleGuardarBorrador}
-               disabled={loading}
-             >
-               Guardar borrador
-             </button>
-             <button
-               type="submit"
-               className="w-full md:w-auto px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-               disabled={loading}
-             >
-               {editMode ? 'Actualizar factura' : 'Crear factura'}
-             </button>
-           </div>
-         </div>
+          {/* Botones finales modernos */}
+          <div className="flex flex-col gap-3 mt-8 md:flex-row md:gap-4 md:justify-end">
+            <button
+              type="button"
+              className="w-full md:w-auto px-6 py-3 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-all duration-200 border-2 border-gray-200"
+              onClick={handleCancelar}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              className="w-full md:w-auto px-6 py-3 rounded-xl bg-blue-50 text-blue-700 font-semibold hover:bg-blue-100 transition-all duration-200 border-2 border-blue-200"
+              onClick={handleGuardarBorrador}
+              disabled={loading}
+            >
+              Guardar borrador
+            </button>
+            <button
+              type="submit"
+              className="w-full md:w-auto px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+              disabled={loading}
+            >
+              {editMode ? 'Actualizar factura' : 'Crear factura'}
+            </button>
+          </div>
+        </div>
       </form>
 
       {/* Botón circular sticky con icono de ojo, solo móvil, siempre visible */}
@@ -739,95 +739,87 @@ export default function FacturaForm() {
         </svg>
       </button>
 
-                           {/* Botón circular sticky con icono de ojo, solo desktop, siempre visible */}
-        <button
-          type="button"
-          className="hidden md:block fixed right-8 top-1/2 -translate-y-1/2 w-20 h-20 rounded-full flex items-center justify-center text-white text-3xl shadow-lg border-4 border-white z-40 transition-all duration-300 hover:opacity-90 hover:scale-110"
-          onClick={() => setShowPreviewMobile(true)}
-          aria-label="Ver vista previa"
-          style={{ 
-            backgroundColor: color_personalizado,
-            boxShadow: '0 8px 32px 0 rgba(0,0,0,0.15)' 
-          }}
-        >
-                     <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' strokeWidth={1.5} stroke='currentColor' className='w-10 h-10 flex-shrink-0' style={{ display: 'block', margin: '0 auto' }}>
-             <path strokeLinecap='round' strokeLinejoin='round' d='M2.25 12s3.75-7.5 9.75-7.5 9.75 7.5 9.75 7.5-3.75 7.5-9.75 7.5S2.25 12 2.25 12z' />
-             <path strokeLinecap='round' strokeLinejoin='round' d='M15 12a3 3 0 11-6 0 3 3 0 016 0z' />
-           </svg>
-        </button>
+      {/* Botón circular sticky con icono de ojo, solo desktop, siempre visible */}
+      <button
+        type="button"
+        className="hidden md:block fixed right-8 top-1/2 -translate-y-1/2 w-20 h-20 rounded-full flex items-center justify-center text-white text-3xl shadow-lg border-4 border-white z-40 transition-all duration-300 hover:opacity-90 hover:scale-110"
+        onClick={() => setShowPreviewMobile(true)}
+        aria-label="Ver vista previa"
+        style={{ 
+          backgroundColor: color_personalizado,
+          boxShadow: '0 8px 32px 0 rgba(0,0,0,0.15)' 
+        }}
+      >
+        <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' strokeWidth={1.5} stroke='currentColor' className='w-10 h-10 flex-shrink-0' style={{ display: 'block', margin: '0 auto' }}>
+          <path strokeLinecap='round' strokeLinejoin='round' d='M2.25 12s3.75-7.5 9.75-7.5 9.75 7.5 9.75 7.5-3.75 7.5-9.75 7.5S2.25 12 2.25 12z' />
+          <path strokeLinecap='round' strokeLinejoin='round' d='M15 12a3 3 0 11-6 0 3 3 0 016 0z' />
+        </svg>
+      </button>
 
-                           {/* Modal de vista previa */}
-        {showPreviewMobile && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-300 bg-opacity-80 backdrop-blur-sm p-2">
-                         <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300" style={{ 
-               width: '100vw', 
-               height: '100vh', 
-               maxWidth: '100vw', 
-               maxHeight: '100vh',
-               // En desktop, usar tamaño A4
-               ...(!isMobile && {
-                 width: '8.5in',
-                 height: '11in',
-                 maxWidth: '98vw',
-                 maxHeight: '98vh',
-                 borderRadius: '16px'
-               })
-             }}>
-                                                   {/* Header del modal */}
-              <div className="flex items-center justify-between p-3 md:p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                <h3 className="text-sm md:text-base font-semibold text-gray-800">Vista Previa de Factura</h3>
-                <button
-                  className="w-7 h-7 md:w-8 md:h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-base md:text-lg font-bold shadow-lg transition-all duration-200 hover:scale-110"
-                  onClick={() => setShowPreviewMobile(false)}
-                  aria-label="Cerrar preview"
-                >
-                  ×
-                </button>
+      {/* Modal de vista previa */}
+      {showPreviewMobile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-300 bg-opacity-80 backdrop-blur-sm p-2">
+          <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 w-full h-full max-w-full max-h-full flex flex-col" style={{ 
+            // En desktop, usar tamaño A4
+            ...(!isMobile && {
+              width: '8.5in',
+              height: '11in',
+              maxWidth: '98vw',
+              maxHeight: '98vh',
+              borderRadius: '16px'
+            })
+          }}>
+            {/* Header del modal */}
+            <div className="flex items-center justify-between p-3 md:p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 flex-shrink-0">
+              <h3 className="text-sm md:text-base font-semibold text-gray-800">Vista Previa de Factura</h3>
+              <button
+                className="w-7 h-7 md:w-8 md:h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-base md:text-lg font-bold shadow-lg transition-all duration-200 hover:scale-110"
+                onClick={() => setShowPreviewMobile(false)}
+                aria-label="Cerrar preview"
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* Contenido del modal - SIN ZOOM, IDENTICO A LA FACTURA FINAL */}
+            <div className="flex-1 overflow-y-auto overflow-x-auto p-0">
+              <div className="w-full h-full" style={{
+                // En móvil, mostrar sin zoom y sin padding
+                ...(isMobile && {
+                  padding: '0',
+                  margin: '0',
+                  transform: 'none',
+                  zoom: '1',
+                  transformOrigin: 'top left'
+                })
+              }}>
+                <FacturaPreview factura={{
+                  negocio: {
+                    nombre: negocioConfig?.nombre_negocio,
+                    direccion: negocioConfig?.direccion,
+                    email: negocioConfig?.email,
+                    telefono: negocioConfig?.telefono,
+                    logo_url: negocioConfig?.logo_url,
+                    nota: negocioConfig?.nota_factura,
+                    terminos: negocioConfig?.terminos_condiciones,
+                  },
+                  numero_factura: editMode && id && facturaCargada ? facturaCargada.numero_factura : numeroFactura,
+                  nota,
+                  terminos,
+                  cliente: clientes.find(c => c.id === clienteId) || { nombre: '', email: '', telefono: '' },
+                  items: items.map(item => ({
+                    ...item,
+                    total: item.precio_unitario * item.cantidad // Asegurar que el total esté calculado correctamente
+                  })),
+                  subtotal,
+                  impuesto: totalImpuesto,
+                  total,
+                  deposito,
+                  balance_restante: balance,
+                  fecha_factura: fechaFactura,
+                  estado: facturaEstado,
+                }} mostrarStatus={editMode} />
               </div>
-                                                                  {/* Contenido del modal con scroll */}
-               <div className="overflow-y-auto overflow-x-auto" style={{ 
-                 height: isMobile ? 'auto' : 'calc(100% - 60px)',
-                 maxHeight: isMobile ? 'none' : 'calc(100% - 60px)'
-               }}>
-                 <div className="p-0 md:p-6">
-                   <div className="min-w-[800px] md:min-w-0" style={{
-                     // En móvil, mantener el ancho original para scroll horizontal
-                     ...(isMobile && {
-                       width: '800px',
-                       height: 'auto',
-                       minWidth: '800px'
-                     })
-                   }}>
-                                 <FacturaPreview factura={{
-                   negocio: {
-                     nombre: negocioConfig?.nombre_negocio,
-                     direccion: negocioConfig?.direccion,
-                     email: negocioConfig?.email,
-                     telefono: negocioConfig?.telefono,
-                     logo_url: negocioConfig?.logo_url,
-                     nota: negocioConfig?.nota_factura,
-                     terminos: negocioConfig?.terminos_condiciones,
-                   },
-                   numero_factura: editMode && id && facturaCargada ? facturaCargada.numero_factura : numeroFactura,
-                   nota,
-                   terminos,
-                   cliente: clientes.find(c => c.id === clienteId) || { nombre: '', email: '', telefono: '' },
-                   items: items.map(item => ({
-                     ...item,
-                     total: item.precio_unitario * item.cantidad // Asegurar que el total esté calculado correctamente
-                   })),
-                   subtotal,
-                   impuesto: totalImpuesto,
-                   total,
-                   deposito,
-                   balance_restante: balance,
-                   fecha_factura: fechaFactura,
-                   estado: facturaEstado,
-                                   }} mostrarStatus={editMode} />
-                  </div>
-                  
-                  
-               </div>
             </div>
           </div>
         </div>
