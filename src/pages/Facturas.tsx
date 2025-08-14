@@ -4,7 +4,7 @@ import FacturaItem from '../components/FacturaItem';
 import { useNavigate } from 'react-router-dom';
 import { useOutletContext } from 'react-router-dom';
 import BotonCrear from '../components/BotonCrear';
-import { FiSearch, FiFileText, FiDollarSign, FiClock, FiEdit, FiCalendar } from 'react-icons/fi';
+import { FiSearch, FiFileText, FiCalendar } from 'react-icons/fi';
 
 const PAGE_SIZE = 10;
 
@@ -25,7 +25,7 @@ export default function Facturas() {
   const [fechaHasta, setFechaHasta] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalFacturas, setTotalFacturas] = useState(0);
+  const [, setTotalFacturas] = useState(0);
   const [mostrarFiltrosFecha, setMostrarFiltrosFecha] = useState(false);
 
   const navigate = useNavigate();

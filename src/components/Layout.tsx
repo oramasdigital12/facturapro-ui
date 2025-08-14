@@ -10,7 +10,7 @@ import { useDarkMode } from '../contexts/AuthContext';
 
 export default function Layout() {
 
-  const [clientes, setClientes] = useState([]);
+  const [, setClientes] = useState([]);
   const [negocio, setNegocio] = useState({ nombre_negocio: '', email: '', logo_url: '', color_personalizado: '#2563eb' });
   const { dark, setDark } = useDarkMode();
 

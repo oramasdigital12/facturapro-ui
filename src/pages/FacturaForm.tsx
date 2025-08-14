@@ -25,8 +25,8 @@ export default function FacturaForm() {
   const [clienteId, setClienteId] = useState('');
   const [fechaFactura, setFechaFactura] = useState(() => new Date().toISOString().slice(0, 10));
   const [fechaVencimiento, setFechaVencimiento] = useState('');
-  const [metodoPagoId, setMetodoPagoId] = useState('');
-  const [metodosPago, setMetodosPago] = useState<any[]>([]);
+  const [, setMetodoPagoId] = useState('');
+  const [, setMetodosPago] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [impuesto, setImpuesto] = useState(0);
   const [deposito, setDeposito] = useState(0);

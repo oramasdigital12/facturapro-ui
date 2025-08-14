@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
-import { FiSearch, FiMail, FiMapPin, FiCalendar, FiFileText } from 'react-icons/fi';
+import { FiSearch, FiMail, FiMapPin, FiFileText } from 'react-icons/fi';
 import { BsGenderAmbiguous } from 'react-icons/bs';
 import ClienteModal from '../components/ClienteModal';
 import { PhoneIcon } from '@heroicons/react/24/outline';

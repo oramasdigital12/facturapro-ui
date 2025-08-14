@@ -70,7 +70,7 @@ export default function MensajeWhatsappModal({ open, onClose, cliente, factura }
   };
 
   // Generar mensaje automático basado en el estado de la factura
-  const generarMensajeAutomatico = (factura: any, metodo?: MetodoPago) => {
+  const generarMensajeAutomatico = (factura: any, metodo?: MetodoPago | null) => {
     const linkPublico = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/factura/${factura.id}`;
     
     if (factura.estado === 'pendiente') {

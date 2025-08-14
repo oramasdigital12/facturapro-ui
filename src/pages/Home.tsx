@@ -16,7 +16,7 @@ export default function Home() {
   const [showClienteModal, setShowClienteModal] = useState(false);
   const [showMensajeModal, setShowMensajeModal] = useState(false);
   const [clienteParaMensaje, setClienteParaMensaje] = useState<any>(null);
-  const { dark } = useDarkMode();
+  const { } = useDarkMode();
   const outletContext = useOutletContext() as { color_personalizado?: string } | null;
   const color_personalizado = outletContext?.color_personalizado || '#2563eb';
   
@@ -99,10 +99,10 @@ export default function Home() {
     }
   };
 
-  const handleEditCliente = (cliente: any) => {
-    setClienteEditando(cliente);
-    setShowClienteModal(true);
-  };
+  // const handleEditCliente = (cliente: any) => {
+  //   setClienteEditando(cliente);
+  //   setShowClienteModal(true);
+  // };
 
   const handleCloseModal = () => {
     setShowClienteModal(false);

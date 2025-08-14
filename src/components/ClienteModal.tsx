@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
-import Swal from 'sweetalert2';
 import { Dialog } from '@headlessui/react';
 
 interface Props {
@@ -108,7 +107,7 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
       // Construir el objeto data solo con los campos llenados o null
       const data: any = {
         nombre: form.nombre,
-        user_id: user.id,
+        user_id: user?.id,
         categoria: status,
         fecha_inicio: '9999-12-31',
         fecha_vencimiento: '9999-12-31',
