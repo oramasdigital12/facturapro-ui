@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { buildPDFUrl } from '../utils/urls';
 
 export default function FacturaPDFPublica() {
   const { id } = useParams();
-  const [searchParams] = useSearchParams();
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -15,7 +13,6 @@ export default function FacturaPDFPublica() {
       window.location.href = pdfUrl;
     } else {
       setError('ID de factura no proporcionado');
-      setLoading(false);
     }
   }, [id]);
 
