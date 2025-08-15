@@ -3,7 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { buildPDFUrl } from '../utils/urls';
 
 export default function FacturaPDFPublica() {
-  const { id, cliente, numero } = useParams();
+  const { id } = useParams();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
