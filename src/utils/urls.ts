@@ -7,7 +7,9 @@ export const buildPDFUrl = (facturaId: string): string => {
 
 export const buildPublicFacturaUrl = (facturaId: string): string => {
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-  return `${baseUrl}/factura/${facturaId}`;
+  // Usar el endpoint de PDF directo que funciona correctamente
+  const timestamp = new Date().getTime();
+  return `${baseUrl}/api/facturas/${facturaId}/pdf/public?t=${timestamp}`;
 };
 
 // Función para limpiar caché del navegador para una factura específica
