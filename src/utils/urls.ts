@@ -6,9 +6,9 @@ export const buildPDFUrl = (facturaId: string): string => {
 };
 
 export const buildPublicFacturaUrl = (facturaId: string): string => {
-  // Usar el dominio de Netlify que sí funciona
+  // Usar el dominio correcto de Netlify
   const timestamp = new Date().getTime();
-  return `https://facturapro-ui.netlify.app/factura/${facturaId}?t=${timestamp}`;
+  return `https://vendedorpro.app/factura/${facturaId}?t=${timestamp}`;
 };
 
 // Función para limpiar caché del navegador para una factura específica
