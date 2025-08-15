@@ -13,7 +13,7 @@ export const buildPublicFacturaUrl = (facturaId: string, factura?: any): string 
     : 'cliente';
   const numeroFactura = factura?.numero_factura || 'factura';
   
-  return `https://vendedorpro.app/factura/${nombreCliente}/${numeroFactura}?id=${facturaId}`;
+  return `https://facturapro.app/factura/${nombreCliente}/${numeroFactura}?id=${facturaId}`;
 };
 
 // Función para limpiar caché del navegador para una factura específica

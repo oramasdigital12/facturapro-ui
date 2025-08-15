@@ -52,7 +52,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ logo_url, nombre_negocio, class
           className="w-16 h-16 rounded-xl bg-white dark:bg-slate-700 p-2 shadow-md mb-2 object-contain"
         />
         <span className="text-lg font-bold text-slate-700 dark:text-slate-200 tracking-tight text-center w-full truncate max-w-[12rem]">
-          {nombre_negocio && nombre_negocio.trim() !== '' ? nombre_negocio : 'VendedorPro'}
+          {nombre_negocio && nombre_negocio.trim() !== '' ? nombre_negocio : 'FacturaPro'}
         </span>
       </div>
       {/* Navegación */}
