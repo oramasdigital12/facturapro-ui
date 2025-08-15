@@ -6,9 +6,9 @@ export const buildPDFUrl = (facturaId: string): string => {
 };
 
 export const buildPublicFacturaUrl = (facturaId: string): string => {
-  // Usar un dominio personalizado para ocultar la URL de la API
+  // Usar el dominio de Netlify que sí funciona
   const timestamp = new Date().getTime();
-  return `https://facturapro.app/factura/${facturaId}?t=${timestamp}`;
+  return `https://facturapro-ui.netlify.app/factura/${facturaId}?t=${timestamp}`;
 };
 
 // Función para limpiar caché del navegador para una factura específica
