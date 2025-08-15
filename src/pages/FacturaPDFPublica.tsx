@@ -1,20 +1,24 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { buildPDFUrl } from '../utils/urls';
 
 export default function FacturaPDFPublica() {
-  const { id } = useParams();
+  const { id, cliente, numero } = useParams();
+  const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (id) {
+    // Obtener el ID de la factura del parámetro de la URL
+    const facturaId = id || searchParams.get('id');
+    
+    if (facturaId) {
       // Redirigir al PDF usando la API interna
-      const pdfUrl = buildPDFUrl(id);
+      const pdfUrl = buildPDFUrl(facturaId);
       window.location.href = pdfUrl;
     } else {
       setError('ID de factura no proporcionado');
     }
-  }, [id]);
+  }, [id, searchParams]);
 
   if (error) {
     return (

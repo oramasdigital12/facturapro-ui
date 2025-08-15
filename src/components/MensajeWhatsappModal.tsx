@@ -81,7 +81,7 @@ export default function MensajeWhatsappModal({ open, onClose, cliente, factura }
 
   // Generar mensaje automático basado en el estado de la factura
   const generarMensajeAutomatico = (factura: any, metodo?: MetodoPago | null) => {
-    const linkPublico = buildPublicFacturaUrl(factura.id);
+    const linkPublico = buildPublicFacturaUrl(factura.id, factura);
     
     if (factura.estado === 'pendiente') {
       let mensaje = `Hola ${factura.cliente?.nombre}, aquí tienes tu factura pendiente:\n\n`;

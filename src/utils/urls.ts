@@ -5,10 +5,15 @@ export const buildPDFUrl = (facturaId: string): string => {
   return `${baseUrl}/api/facturas/${facturaId}/pdf/public?t=${timestamp}`;
 };
 
-export const buildPublicFacturaUrl = (facturaId: string): string => {
-  // Usar el dominio correcto de Netlify
-  const timestamp = new Date().getTime();
-  return `https://vendedorpro.app/factura/${facturaId}?t=${timestamp}`;
+export const buildPublicFacturaUrl = (facturaId: string, factura?: any): string => {
+  // Usar un formato más legible: /factura/nombre-cliente/numero-factura
+  // Pero mantener el ID original como parámetro para la API
+  const nombreCliente = factura?.cliente?.nombre 
+    ? factura.cliente.nombre.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-')
+    : 'cliente';
+  const numeroFactura = factura?.numero_factura || 'factura';
+  
+  return `https://vendedorpro.app/factura/${nombreCliente}/${numeroFactura}?id=${facturaId}`;
 };
 
 // Función para limpiar caché del navegador para una factura específica

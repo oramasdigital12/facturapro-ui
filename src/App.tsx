@@ -24,6 +24,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               {/* Ruta pública para facturas - no requiere autenticación */}
+              <Route path="/factura/:cliente/:numero" element={<FacturaPDFPublica />} />
               <Route path="/factura/:id" element={<FacturaPDFPublica />} />
               <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
                 <Route path="/home" element={<Home />} />

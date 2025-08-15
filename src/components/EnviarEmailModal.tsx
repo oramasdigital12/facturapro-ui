@@ -73,7 +73,7 @@ export default function EnviarEmailModal({
 
   // Generar mensaje automático basado en el estado de la factura
   const generarMensajeAutomatico = (factura: any, metodo?: MetodoPago | null) => {
-    const linkPublico = buildPublicFacturaUrl(factura.id);
+    const linkPublico = buildPublicFacturaUrl(factura.id, factura);
     
     if (factura.estado === 'pendiente') {
       let titulo = `Factura #${factura.numero_factura} - Pendiente de Pago`;
