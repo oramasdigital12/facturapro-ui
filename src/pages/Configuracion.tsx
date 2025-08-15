@@ -26,45 +26,53 @@ const Configuracion: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-      <div className="text-center mb-2 mt-2 md:mb-8 md:mt-8 px-2 sm:px-4">
-        <h1 className="text-lg sm:text-xl md:text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Configuración</h1>
-        <div className="w-12 sm:w-16 h-1 mx-auto rounded-full" style={{ background: color_personalizado }}></div>
+      <div className="text-center mb-4 mt-4 md:mb-8 md:mt-8 px-4">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100 mb-3">Configuración</h1>
+        <div className="w-16 sm:w-20 h-1 mx-auto rounded-full" style={{ background: color_personalizado }}></div>
       </div>
-      <div className="flex flex-col items-center justify-center flex-1 gap-2 sm:gap-3 md:gap-8 py-2 sm:py-4 md:py-8 w-full px-2 sm:px-3 md:px-4">
-        {/* Primera fila: Info Negocio y Categorías */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-8 w-full max-w-md md:max-w-none">
-          {/* Card tipo Home para Info Negocio */}
+      
+      <div className="flex-1 px-4 pb-6">
+        <div className="grid grid-cols-2 gap-4 md:gap-6 max-w-2xl mx-auto">
+          {/* Primera fila: Info Negocio y Categorías */}
           <button
             onClick={() => setShowInfoModal(true)}
-            className="aspect-square bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center justify-center w-full h-20 sm:h-24 md:w-48 md:h-48 text-center border-2 border-transparent group p-2 sm:p-3"
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-center p-4 h-32 sm:h-36 md:h-40 text-center border border-gray-200 dark:border-gray-700 group hover:scale-105"
           >
-            <FiSettings className="h-5 w-5 sm:h-6 sm:w-6 md:h-12 md:w-12 text-gray-400 mb-1 sm:mb-2 transition-colors duration-300" />
-            <span className="text-xs sm:text-sm md:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-0.5 sm:mb-1">Info. Negocio</span>
-            <span className="text-xs" style={{ color: color_personalizado }}>Editar datos del negocio</span>
+            <FiSettings className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-gray-500 dark:text-gray-400 mb-3 group-hover:text-blue-500 transition-colors duration-300" />
+            <span className="text-sm sm:text-base md:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">Info. Negocio</span>
+            <span className="text-xs sm:text-sm" style={{ color: color_personalizado }}>Editar datos del negocio</span>
           </button>
-          {/* Card para Categorías y Servicios */}
+
           <button
             onClick={() => setShowGestionModal(true)}
-            className="aspect-square bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center justify-center w-full h-20 sm:h-24 md:w-48 md:h-48 text-center border-2 border-transparent group p-2 sm:p-3"
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-center p-4 h-32 sm:h-36 md:h-40 text-center border border-gray-200 dark:border-gray-700 group hover:scale-105"
           >
-            <FiLayers className="h-5 w-5 sm:h-6 sm:w-6 md:h-12 md:w-12 text-gray-400 mb-1 sm:mb-2 transition-colors duration-300" />
-            <span className="text-xs sm:text-sm md:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-0.5 sm:mb-1">Categorías y Servicios</span>
-            <span className="text-xs" style={{ color: color_personalizado }}>Gestionar categorías y servicios</span>
+            <FiLayers className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-gray-500 dark:text-gray-400 mb-3 group-hover:text-green-500 transition-colors duration-300" />
+            <span className="text-sm sm:text-base md:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">Categorías y Servicios</span>
+            <span className="text-xs sm:text-sm" style={{ color: color_personalizado }}>Gestionar categorías y servicios</span>
           </button>
-        </div>
-        
-        {/* Segunda fila: Métodos de Pago centrado */}
-        <div className="w-full max-w-md md:max-w-none">
+
+          {/* Segunda fila: Métodos de Pago y espacio para futura sección */}
           <button
             onClick={() => setShowMetodosPagoModal(true)}
-            className="aspect-square bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col items-center justify-center w-full h-20 sm:h-24 md:w-48 md:h-48 text-center border-2 border-transparent group p-2 sm:p-3 mx-auto"
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-center p-4 h-32 sm:h-36 md:h-40 text-center border border-gray-200 dark:border-gray-700 group hover:scale-105"
           >
-            <FiDollarSign className="h-5 w-5 sm:h-6 sm:w-6 md:h-12 md:w-12 text-gray-400 mb-1 sm:mb-2 transition-colors duration-300" />
-            <span className="text-xs sm:text-sm md:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-0.5 sm:mb-1">Métodos de Pago</span>
-            <span className="text-xs" style={{ color: color_personalizado }}>Gestionar formas de pago</span>
+            <FiDollarSign className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-gray-500 dark:text-gray-400 mb-3 group-hover:text-green-500 transition-colors duration-300" />
+            <span className="text-sm sm:text-base md:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">Métodos de Pago</span>
+            <span className="text-xs sm:text-sm" style={{ color: color_personalizado }}>Gestionar formas de pago</span>
           </button>
+
+          {/* Espacio reservado para futura sección */}
+          <div className="bg-gray-100 dark:bg-gray-700 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center p-4 h-32 sm:h-36 md:h-40 text-center opacity-60">
+            <div className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 bg-gray-300 dark:bg-gray-600 rounded-full mb-3 flex items-center justify-center">
+              <span className="text-gray-500 dark:text-gray-400 text-lg font-bold">+</span>
+            </div>
+            <span className="text-sm sm:text-base md:text-lg font-semibold text-gray-500 dark:text-gray-400 mb-1">Nueva Sección</span>
+            <span className="text-xs sm:text-sm text-gray-400 dark:text-gray-500">Próximamente</span>
+          </div>
         </div>
       </div>
+
       <InfoNegocioModal open={showInfoModal} onClose={() => setShowInfoModal(false)} />
       <GestionCategoriasServiciosModal open={showGestionModal} onClose={() => setShowGestionModal(false)} />
       <GestionMetodosPagoModal open={showMetodosPagoModal} onClose={() => setShowMetodosPagoModal(false)} />
