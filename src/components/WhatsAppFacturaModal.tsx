@@ -4,6 +4,7 @@ import api from '../services/api';
 import { FiEdit, FiCheck, FiX, FiMessageCircle, FiSmartphone } from 'react-icons/fi';
 import MetodosPagoModal from './MetodosPagoModal';
 import { buildPublicFacturaUrl } from '../utils/urls';
+import { openWhatsApp } from '../utils/urls';
 
 interface MetodoPago {
   id: string;
@@ -141,18 +142,22 @@ export default function WhatsAppFacturaModal({ open, onClose, factura }: Props) 
 
     setLoading(true);
 
-    // Simular envío (en producción esto sería una llamada real a la API)
-    setTimeout(() => {
-      const numeroWhatsApp = clienteEditado.telefono.replace(/[^\d]/g, '');
-      const mensajeCodificado = encodeURIComponent(mensaje);
-      const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${mensajeCodificado}`;
-      
-      window.open(urlWhatsApp, '_blank');
-      
+    // Usar la función utilitaria para abrir WhatsApp
+    const success = openWhatsApp(clienteEditado.telefono, mensaje);
+    
+    if (success) {
       toast.success('WhatsApp abierto con el mensaje');
-      setLoading(false);
-      onClose();
-    }, 1000);
+    } else {
+      // Fallback: copiar al portapapeles y mostrar instrucciones
+      navigator.clipboard.writeText(mensaje).then(() => {
+        toast.success('Mensaje copiado al portapapeles. Abre WhatsApp manualmente.');
+      }).catch(() => {
+        toast.error('Error al abrir WhatsApp. Intenta manualmente.');
+      });
+    }
+    
+    setLoading(false);
+    onClose();
   };
 
   const handleGuardarCliente = () => {

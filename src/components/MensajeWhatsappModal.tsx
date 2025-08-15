@@ -4,6 +4,7 @@ import api from '../services/api';
 import { FiTrash2, FiMessageCircle, FiSmartphone, FiSend, FiSave, FiX, FiAlertTriangle, FiCheck, FiClock, FiDollarSign, FiPlus, FiSearch } from 'react-icons/fi';
 import MetodosPagoModal from './MetodosPagoModal';
 import { buildPublicFacturaUrl } from '../utils/urls';
+import { openWhatsApp } from '../utils/urls';
 
 interface Mensaje {
   id: string;
@@ -131,8 +132,22 @@ export default function MensajeWhatsappModal({ open, onClose, cliente, factura }
       return;
     }
 
-    const texto = encodeURIComponent(mensaje.replace('{cliente}', cliente?.nombre || ''));
-    window.open(`https://wa.me/${cliente?.telefono}?text=${texto}`, '_blank');
+    const mensajeFinal = mensaje.replace('{cliente}', cliente?.nombre || '');
+    
+    // Usar la función utilitaria para abrir WhatsApp
+    const success = openWhatsApp(cliente?.telefono || '', mensajeFinal);
+    
+    if (success) {
+      toast.success('WhatsApp abierto con el mensaje');
+    } else {
+      // Fallback: copiar al portapapeles y mostrar instrucciones
+      navigator.clipboard.writeText(mensajeFinal).then(() => {
+        toast.success('Mensaje copiado al portapapeles. Abre WhatsApp manualmente.');
+      }).catch(() => {
+        toast.error('Error al abrir WhatsApp. Intenta manualmente.');
+      });
+    }
+    
     onClose();
   };
 

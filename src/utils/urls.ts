@@ -22,3 +22,27 @@ export const clearFacturaCache = (facturaId: string) => {
     });
   }
 };
+
+// Función para abrir WhatsApp de manera robusta en diferentes dispositivos
+export const openWhatsApp = (phoneNumber: string, message: string) => {
+  const numeroWhatsApp = phoneNumber.replace(/[^\d]/g, '');
+  const mensajeCodificado = encodeURIComponent(message);
+  const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${mensajeCodificado}`;
+  
+  // Detectar si es dispositivo móvil
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  
+  try {
+    if (isMobile) {
+      // En móviles, usar location.href para mejor compatibilidad con web apps
+      window.location.href = urlWhatsApp;
+    } else {
+      // En desktop, usar window.open
+      window.open(urlWhatsApp, '_blank');
+    }
+    return true;
+  } catch (error) {
+    console.error('Error al abrir WhatsApp:', error);
+    return false;
+  }
+};
