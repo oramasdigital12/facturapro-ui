@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
-import { getClientes, getServiciosNegocio, createFactura, getFacturaById, updateFactura, getNegocioConfig, getUltimaFactura, getMetodosPago } from '../services/api';
+import { getClientes, getServiciosNegocio, createFactura, getFacturaById, updateFactura, getNegocioConfig, getUltimaFactura, getMetodosPago, regenerateFacturaPDF } from '../services/api';
+import { clearFacturaCache } from '../utils/urls';
 import FacturaPreview from '../components/FacturaPreview';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
@@ -250,6 +251,19 @@ export default function FacturaForm() {
       };
       if (editMode && id) {
         await updateFactura(id, body);
+        
+        // Intentar regenerar el PDF usando el endpoint específico
+        try {
+          await regenerateFacturaPDF(id);
+          clearFacturaCache(id);
+          toast.success('PDF regenerado exitosamente');
+        } catch (pdfError) {
+          console.warn('Error al regenerar PDF:', pdfError);
+          // Fallback: limpiar caché del navegador
+          if (id) {
+            clearFacturaCache(id);
+          }
+        }
       } else {
         await createFactura(body);
         setClienteId('');

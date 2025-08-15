@@ -1,8 +1,8 @@
-import { Dialog } from '@headlessui/react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { getNegocioConfig, updateNegocioConfig, uploadNegocioLogo } from '../services/api';
 import { NegocioConfig } from '../types';
+import { FiX, FiUpload, FiFileText, FiPhone, FiMapPin, FiHome, FiDroplet } from 'react-icons/fi';
 
 interface InfoNegocioModalProps {
   open: boolean;
@@ -12,6 +12,7 @@ interface InfoNegocioModalProps {
 function validarTelefono(telefono: string) {
   return /^\d{10}$/.test(telefono);
 }
+
 function validarEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
@@ -140,148 +141,294 @@ export default function InfoNegocioModal({ open, onClose }: InfoNegocioModalProp
   if (!open) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} className="relative z-[100]">
-      <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
-      <div className="fixed inset-0 flex items-center justify-center p-2 sm:p-4">
-        <Dialog.Panel className="mx-auto max-w-lg w-full rounded-2xl bg-white p-0 shadow-lg relative flex flex-col max-h-[90vh]">
-          <form className="flex flex-col flex-1 min-h-0" onSubmit={handleSubmit}>
-            <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-6 pb-4 bg-white">
-              <h2 className="text-xl font-bold mb-4 text-center text-gray-800">Información del Negocio</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block mb-1 font-semibold">Logo del negocio</label>
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center overflow-hidden border">
-                      {logoPreview ? (
-                        <img src={logoPreview} alt="Logo" className="object-contain w-full h-full" />
-                      ) : (
-                        <span className="text-gray-400 text-xs">Sin logo</span>
-                      )}
-                    </div>
-                    <label className="px-3 py-2 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition text-sm font-medium">
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex items-center justify-center min-h-screen px-2 pt-2 pb-16 text-center sm:block sm:p-0 sm:px-4">
+        <div className="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75" onClick={onClose}></div>
+
+        <div className="relative inline-block w-full max-w-2xl p-4 my-4 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-2xl rounded-3xl sm:p-6 sm:my-8 flex flex-col max-h-[92vh] sm:max-h-[95vh] md:max-h-[98vh]">
+          {/* Header moderno */}
+          <div className="flex items-center justify-between mb-4 sm:mb-6 flex-shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                <FiHome className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">
+                  Información del Negocio
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                  Configura los datos de tu negocio
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+            >
+              <FiX className="h-4 w-4 sm:h-5 sm:w-5" />
+            </button>
+          </div>
+
+          {/* Contenido principal */}
+          <div className="overflow-y-auto flex-1 min-h-0">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+              {/* Logo del negocio */}
+              <div className="p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-2xl">
+                <div className="flex items-center gap-2 mb-3">
+                  <FiUpload className="h-4 w-4 text-blue-500" />
+                  <h4 className="font-semibold text-blue-900 dark:text-blue-100 text-sm sm:text-base">Logo del Negocio</h4>
+                </div>
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white dark:bg-gray-700 flex items-center justify-center overflow-hidden border-2 border-gray-200 dark:border-gray-600 shadow-lg">
+                    {logoPreview ? (
+                      <img src={logoPreview} alt="Logo" className="object-contain w-full h-full" />
+                    ) : (
+                      <div className="text-gray-400 text-center">
+                        <FiUpload className="h-4 w-4 sm:h-6 sm:w-6 mx-auto mb-1" />
+                        <span className="text-xs">Sin logo</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <label className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-3 bg-blue-600 text-white rounded-xl cursor-pointer hover:bg-blue-700 transition-colors font-medium text-xs sm:text-sm">
+                      <FiUpload className="h-3 w-3 sm:h-4 sm:w-4" />
                       {loadingLogo ? 'Subiendo...' : 'Subir logo'}
                       <input type="file" accept="image/png,image/jpeg,image/jpg" className="hidden" onChange={handleLogoChange} disabled={loadingLogo} />
                     </label>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">PNG/JPG, máx 1MB</p>
                   </div>
-                  <div className="text-xs text-gray-400 mt-1">PNG/JPG, máx 1MB</div>
                 </div>
-                <div>
-                  <label className="block mb-1 font-semibold">Color principal</label>
-                  <div className="flex items-center gap-3">
-                    <input type="color" value={negocioForm.color_personalizado || '#2563eb'} onChange={handleColorChange} className="w-10 h-10 rounded-lg border" />
-                    <input type="text" value={negocioForm.color_personalizado || ''} onChange={handleHexInput} className="w-28 px-2 py-1 border rounded focus:outline-none" maxLength={7} />
+              </div>
+
+              {/* Color principal */}
+              <div className="p-3 sm:p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700 rounded-2xl">
+                <div className="flex items-center gap-2 mb-3">
+                  <FiDroplet className="h-4 w-4 text-purple-500" />
+                  <h4 className="font-semibold text-purple-900 dark:text-purple-100 text-sm sm:text-base">Color Principal</h4>
+                </div>
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="relative">
+                    <input 
+                      type="color" 
+                      value={negocioForm.color_personalizado || '#2563eb'} 
+                      onChange={handleColorChange} 
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl border-2 border-gray-200 dark:border-gray-600 cursor-pointer" 
+                    />
+                    <div className="absolute inset-0 rounded-xl border-2 border-white dark:border-gray-800 pointer-events-none"></div>
                   </div>
-                  <div className="text-xs text-gray-400 mt-1">Ejemplo: #2563eb</div>
+                  <div className="flex-1">
+                    <input 
+                      type="text" 
+                      value={negocioForm.color_personalizado || ''} 
+                      onChange={handleHexInput} 
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none transition-colors font-mono text-xs sm:text-sm" 
+                      maxLength={7} 
+                      placeholder="#2563eb"
+                    />
+                    <p className="text-xs text-purple-600 dark:text-purple-400 mt-2">Ejemplo: #2563eb</p>
+                  </div>
                 </div>
+              </div>
+
+              {/* Información básica */}
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block mb-1 font-semibold">Nota para factura</label>
-                  <textarea
-                    name="nota_factura"
-                    placeholder="Ejemplo: Gracias por su compra"
-                    className="w-full px-3 py-2 border rounded focus:outline-none bg-white text-gray-900 min-h-[48px]"
-                    value={negocioForm.nota_factura || ''}
-                    onChange={handleChange}
-                  />
-                  <div className="text-xs text-gray-400 mt-1">Esta nota aparecerá en las facturas.</div>
-                </div>
-                <div>
-                  <label className="block mb-1 font-semibold">Términos y condiciones</label>
-                  <textarea
-                    name="terminos_condiciones"
-                    placeholder="Términos y condiciones del negocio"
-                    className="w-full px-3 py-2 border rounded focus:outline-none bg-white text-gray-900 min-h-[64px]"
-                    value={negocioForm.terminos_condiciones || ''}
-                    onChange={handleChange}
-                  />
-                  <div className="text-xs text-gray-400 mt-1">Opcional. Puedes dejarlo vacío.</div>
-                </div>
-                <div>
-                  <label className="block mb-1 font-semibold">Nombre del negocio</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <FiHome className="h-4 w-4 inline mr-2 text-blue-500" />
+                    Nombre del Negocio *
+                  </label>
                   <input
                     type="text"
                     name="nombre_negocio"
-                    placeholder="Nombre del negocio"
-                    className={`w-full px-3 py-2 border rounded focus:outline-none bg-white text-gray-900 ${errores.nombre_negocio ? 'border-red-500' : ''}`}
+                    placeholder="Ej: Tu Guía Digital"
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none transition-colors text-sm ${
+                      errores.nombre_negocio 
+                        ? 'border-red-500 focus:border-red-500' 
+                        : 'border-gray-200 dark:border-gray-600 focus:border-blue-500'
+                    }`}
                     value={negocioForm.nombre_negocio}
                     onChange={handleChange}
                     required
                   />
-                  {errores.nombre_negocio && <div className="text-xs text-red-600 mt-1">{errores.nombre_negocio}</div>}
+                  {errores.nombre_negocio && (
+                    <p className="text-xs text-red-600 mt-2 flex items-center gap-1">
+                      <span>⚠️</span> {errores.nombre_negocio}
+                    </p>
+                  )}
                 </div>
+
                 <div>
-                  <label className="block mb-1 font-semibold">Tipo de negocio</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <FiHome className="h-4 w-4 inline mr-2 text-green-500" />
+                    Tipo de Negocio *
+                  </label>
                   <input
                     type="text"
                     name="tipo_negocio"
-                    placeholder="Tipo de negocio"
-                    className={`w-full px-3 py-2 border rounded focus:outline-none bg-white text-gray-900 ${errores.tipo_negocio ? 'border-red-500' : ''}`}
+                    placeholder="Ej: Cursos Online, Consultoría, etc."
+                    className={`w-full px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none transition-colors text-sm ${
+                      errores.tipo_negocio 
+                        ? 'border-red-500 focus:border-red-500' 
+                        : 'border-gray-200 dark:border-gray-600 focus:border-green-500'
+                    }`}
                     value={negocioForm.tipo_negocio}
                     onChange={handleChange}
                     required
                   />
-                  {errores.tipo_negocio && <div className="text-xs text-red-600 mt-1">{errores.tipo_negocio}</div>}
-                </div>
-                <div>
-                  <label className="block mb-1 font-semibold">Teléfono de WhatsApp</label>
-                  <input
-                    type="tel"
-                    name="telefono"
-                    placeholder="Teléfono de WhatsApp"
-                    className={`w-full px-3 py-2 border rounded focus:outline-none bg-white text-gray-900 ${errores.telefono ? 'border-red-500' : ''}`}
-                    value={negocioForm.telefono}
-                    onChange={handleChange}
-                    required
-                  />
-                  {errores.telefono && <div className="text-xs text-red-600 mt-1">{errores.telefono}</div>}
-                </div>
-                <div>
-                  <label className="block mb-1 font-semibold">Email del negocio</label>
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="Email del negocio"
-                    className={`w-full px-3 py-2 border rounded focus:outline-none bg-white text-gray-900 ${errores.email ? 'border-red-500' : ''}`}
-                    value={negocioForm.email}
-                    onChange={handleChange}
-                    required
-                  />
-                  {errores.email && <div className="text-xs text-red-600 mt-1">{errores.email}</div>}
-                </div>
-                <div>
-                  <label className="block mb-1 font-semibold">Dirección</label>
-                  <input
-                    type="text"
-                    name="direccion"
-                    placeholder="Dirección"
-                    className={`w-full px-3 py-2 border rounded focus:outline-none bg-white text-gray-900 ${errores.direccion ? 'border-red-500' : ''}`}
-                    value={negocioForm.direccion}
-                    onChange={handleChange}
-                    required
-                  />
-                  {errores.direccion && <div className="text-xs text-red-600 mt-1">{errores.direccion}</div>}
+                  {errores.tipo_negocio && (
+                    <p className="text-xs text-red-600 mt-2 flex items-center gap-1">
+                      <span>⚠️</span> {errores.tipo_negocio}
+                    </p>
+                  )}
                 </div>
               </div>
-            </div>
-            <div className="flex gap-3 p-4 border-t bg-gray-50 rounded-b-2xl">
+
+              {/* Información de contacto */}
+              <div className="p-3 sm:p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-2xl">
+                <h4 className="font-semibold text-green-900 dark:text-green-100 mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
+                  <FiPhone className="h-4 w-4" />
+                  Información de Contacto
+                </h4>
+                <div className="space-y-3 sm:space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Teléfono de WhatsApp *
+                    </label>
+                    <input
+                      type="tel"
+                      name="telefono"
+                      placeholder="9392283101"
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none transition-colors text-sm ${
+                        errores.telefono 
+                          ? 'border-red-500 focus:border-red-500' 
+                          : 'border-gray-200 dark:border-gray-600 focus:border-green-500'
+                      }`}
+                      value={negocioForm.telefono}
+                      onChange={handleChange}
+                      required
+                    />
+                    {errores.telefono && (
+                      <p className="text-xs text-red-600 mt-2 flex items-center gap-1">
+                        <span>⚠️</span> {errores.telefono}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Email del Negocio *
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="negocio@ejemplo.com"
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none transition-colors text-sm ${
+                        errores.email 
+                          ? 'border-red-500 focus:border-red-500' 
+                          : 'border-gray-200 dark:border-gray-600 focus:border-green-500'
+                      }`}
+                      value={negocioForm.email}
+                      onChange={handleChange}
+                      required
+                    />
+                    {errores.email && (
+                      <p className="text-xs text-red-600 mt-2 flex items-center gap-1">
+                        <span>⚠️</span> {errores.email}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <FiMapPin className="h-4 w-4 inline mr-2" />
+                      Dirección *
+                    </label>
+                    <input
+                      type="text"
+                      name="direccion"
+                      placeholder="Dirección completa del negocio"
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-3 border-2 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none transition-colors text-sm ${
+                        errores.direccion 
+                          ? 'border-red-500 focus:border-red-500' 
+                          : 'border-gray-200 dark:border-gray-600 focus:border-green-500'
+                      }`}
+                      value={negocioForm.direccion}
+                      onChange={handleChange}
+                      required
+                    />
+                    {errores.direccion && (
+                      <p className="text-xs text-red-600 mt-2 flex items-center gap-1">
+                        <span>⚠️</span> {errores.direccion}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Notas y términos */}
+              <div className="space-y-3 sm:space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <FiFileText className="h-4 w-4 inline mr-2 text-orange-500" />
+                    Nota para Factura
+                  </label>
+                  <textarea
+                    name="nota_factura"
+                    placeholder="Ej: Gracias por su compra, esperamos verlo pronto..."
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-orange-500 focus:outline-none transition-colors resize-none text-sm"
+                    rows={2}
+                    value={negocioForm.nota_factura || ''}
+                    onChange={handleChange}
+                  />
+                  <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
+                    Esta nota aparecerá en las facturas.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <FiFileText className="h-4 w-4 inline mr-2 text-purple-500" />
+                    Términos y Condiciones
+                  </label>
+                  <textarea
+                    name="terminos_condiciones"
+                    placeholder="Términos y condiciones del negocio (opcional)"
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none transition-colors resize-none text-sm"
+                    rows={3}
+                    value={negocioForm.terminos_condiciones || ''}
+                    onChange={handleChange}
+                  />
+                  <p className="text-xs text-purple-600 dark:text-purple-400 mt-2">
+                    Opcional. Puedes dejarlo vacío.
+                  </p>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          {/* Botones fijos en la parte inferior */}
+          <div className="bg-white dark:bg-gray-800 pt-3 sm:pt-4 mt-4 sm:mt-6 border-t border-gray-200 dark:border-gray-600 flex-shrink-0">
+            <div className="flex gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
+                className="flex-1 px-3 sm:px-6 py-2 sm:py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
                 disabled={loading}
               >
                 Cancelar
               </button>
               <button
                 type="submit"
+                onClick={handleSubmit}
                 disabled={loading}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium"
+                className="flex-1 px-3 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 text-sm"
               >
-                {loading ? 'Guardando...' : 'Guardar'}
+                {loading ? 'Guardando...' : 'Guardar Cambios'}
               </button>
             </div>
-          </form>
-        </Dialog.Panel>
+          </div>
+        </div>
       </div>
-    </Dialog>
+    </div>
   );
 } 

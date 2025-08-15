@@ -1,7 +1,8 @@
-import { Dialog } from '@headlessui/react';
-import { XMarkIcon, PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { FiPlus, FiEdit, FiTrash2, FiFolder, FiPackage, FiX, FiMenu, FiDollarSign } from 'react-icons/fi';
+import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
+import { useOutletContext } from 'react-router-dom';
 import {
   getCategoriasNegocio,
   createCategoriaNegocio,
@@ -13,9 +14,7 @@ import {
   deleteServicioNegocio,
 } from '../services/api';
 import { CategoriaNegocio, ServicioNegocio } from '../types';
-import { DragDropContext, Droppable, Draggable, DropResult, DroppableProvided, DraggableProvided } from 'react-beautiful-dnd';
-import Modal from './Modal';
-import Swal from 'sweetalert2';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 
 interface Props {
   open: boolean;
@@ -23,11 +22,14 @@ interface Props {
 }
 
 export default function GestionCategoriasServiciosModal({ open, onClose }: Props) {
+  const outletContext = useOutletContext() as { color_personalizado?: string } | null;
+  const color_personalizado = outletContext?.color_personalizado || '#2563eb';
+
   const [categorias, setCategorias] = useState<CategoriaNegocio[]>([]);
   const [loadingCategorias, setLoadingCategorias] = useState(false);
   const [editCategoria, setEditCategoria] = useState<CategoriaNegocio | null>(null);
   const [formCategoria, setFormCategoria] = useState({ nombre: '', orden: '' });
-  const [showCategoriaModal, setShowCategoriaModal] = useState(false);
+  const [showCategoriaForm, setShowCategoriaForm] = useState(false);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<CategoriaNegocio | null>(null);
 
   // Estados para servicios
@@ -35,22 +37,14 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
   const [loadingServicios, setLoadingServicios] = useState(false);
   const [editServicio, setEditServicio] = useState<ServicioNegocio | null>(null);
   const [formServicio, setFormServicio] = useState({ nombre: '', precio: '' });
-  const [showServicioModal, setShowServicioModal] = useState(false);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      const timer = setTimeout(() => setReady(true), 30);
-      return () => clearTimeout(timer);
-    } else {
-      setReady(false);
-    }
-  }, [open]);
+  const [showServicioForm, setShowServicioForm] = useState(false);
+  const [showServiciosModal, setShowServiciosModal] = useState(false);
 
   // Cargar categorías al abrir
   useEffect(() => {
-    if (open) cargarCategorias();
-    // eslint-disable-next-line
+    if (open) {
+      cargarCategorias();
+    }
   }, [open]);
 
   const cargarCategorias = async () => {
@@ -92,7 +86,7 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
       }
       setFormCategoria({ nombre: '', orden: '' });
       setEditCategoria(null);
-      setShowCategoriaModal(false);
+      setShowCategoriaForm(false);
       cargarCategorias();
     } catch {
       toast.error('Error al guardar la categoría');
@@ -102,18 +96,21 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
   const handleEditCategoria = (cat: CategoriaNegocio) => {
     setEditCategoria(cat);
     setFormCategoria({ nombre: cat.nombre, orden: cat.orden?.toString() || '' });
-    setShowCategoriaModal(true);
+    setShowCategoriaForm(true);
   };
   
   const handleDeleteCategoria = async (cat: CategoriaNegocio) => {
     const result = await Swal.fire({
       title: '¿Eliminar categoría?',
-      text: 'Esta acción no se puede deshacer.',
+      text: `¿Estás seguro de que deseas eliminar "${cat.nombre}"? Esta acción no se puede deshacer.`,
       icon: 'warning',
       showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
       confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
+      cancelButtonText: 'Cancelar'
     });
+    
     if (!result.isConfirmed) return;
     try {
       await deleteCategoriaNegocio(cat.id);
@@ -146,13 +143,9 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
 
   // Manejar selección de categoría para servicios
   const handleSeleccionarCategoria = (categoria: CategoriaNegocio) => {
-    if (categoriaSeleccionada?.id === categoria.id) {
-      setCategoriaSeleccionada(null);
-      setServicios([]);
-    } else {
-      setCategoriaSeleccionada(categoria);
-      cargarServicios(categoria.id);
-    }
+    setCategoriaSeleccionada(categoria);
+    cargarServicios(categoria.id);
+    setShowServiciosModal(true);
   };
 
   // --- Funciones para servicios ---
@@ -207,7 +200,7 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
       // Limpiar formulario y cerrar modal
       setFormServicio({ nombre: '', precio: '' });
       setEditServicio(null);
-      setShowServicioModal(false);
+      setShowServicioForm(false);
       
       // Recargar servicios
       await cargarServicios(categoriaSeleccionada!.id);
@@ -223,7 +216,7 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
       nombre: servicio.nombre, 
       precio: servicio.precio.toString() 
     });
-    setShowServicioModal(true);
+    setShowServicioForm(true);
   };
 
   const handleDeleteServicio = async (servicio: ServicioNegocio) => {
@@ -232,10 +225,10 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
       text: `¿Estás seguro de que quieres eliminar "${servicio.nombre}"? Esta acción no se puede deshacer.`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#6b7280',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
       confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
+      cancelButtonText: 'Cancelar'
     });
 
     if (!result.isConfirmed) return;
@@ -253,324 +246,460 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
   const handleNuevoServicio = () => {
     setEditServicio(null);
     setFormServicio({ nombre: '', precio: '' });
-    setShowServicioModal(true);
+    setShowServicioForm(true);
+  };
+
+  // Resetear formularios
+  const resetCategoriaForm = () => {
+    setFormCategoria({ nombre: '', orden: '' });
+    setEditCategoria(null);
+  };
+
+  const resetServicioForm = () => {
+    setFormServicio({ nombre: '', precio: '' });
+    setEditServicio(null);
   };
 
   if (!open) return null;
-  
+
   return (
     <>
-      <Dialog open={open} onClose={onClose} className="relative z-[100]">
-        <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
-        <div className="fixed inset-0 flex items-center justify-center p-2 sm:p-4">
-          <Dialog.Panel className="mx-auto max-w-4xl w-full rounded-2xl bg-white p-0 shadow-lg relative flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between px-6 pt-6 pb-2 border-b">
-              <h2 className="text-xl font-bold text-gray-800">Gestión de Categorías y Servicios</h2>
-              <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100">
-                <XMarkIcon className="h-6 w-6 text-gray-500" />
-              </button>
+      {/* Modal Principal de Categorías */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: color_personalizado + '20' }}>
+                <FiFolder className="h-5 w-5" style={{ color: color_personalizado }} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  Categorías y Servicios
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Organiza tus servicios por categorías
+                </p>
+              </div>
             </div>
-            <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 bg-white">
-              {/* Categorías */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="font-semibold text-lg text-gray-700">Categorías</h3>
-                    <p className="text-sm text-gray-500">Haz clic en una categoría para gestionar sus servicios</p>
-                  </div>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors"
+            >
+              <FiX className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Contenido */}
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+            {showCategoriaForm ? (
+              /* Formulario de Categoría */
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    {editCategoria ? 'Editar Categoría' : 'Nueva Categoría'}
+                  </h3>
                   <button
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                    onClick={() => setShowCategoriaModal(true)}
+                    onClick={() => {
+                      setShowCategoriaForm(false);
+                      resetCategoriaForm();
+                    }}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                   >
-                    <PlusIcon className="h-4 w-4" /> Nueva categoría
+                    <FiX className="h-5 w-5" />
                   </button>
                 </div>
-                {ready && (
+
+                <form onSubmit={handleSubmitCategoria} className="space-y-4">
+                  {/* Nombre */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Nombre de la Categoría *
+                    </label>
+                    <input
+                      type="text"
+                      name="nombre"
+                      value={formCategoria.nombre}
+                      onChange={handleCategoriaForm}
+                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none transition-colors"
+                      style={{ borderColor: 'transparent', '--tw-ring-color': color_personalizado } as any}
+                      placeholder="Ej: Diseño Web, Consultoría, Mantenimiento"
+                      required
+                    />
+                  </div>
+
+                  {/* Orden */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Orden de Visualización (Opcional)
+                    </label>
+                    <input
+                      type="number"
+                      name="orden"
+                      value={formCategoria.orden}
+                      onChange={handleCategoriaForm}
+                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none transition-colors"
+                      style={{ borderColor: 'transparent', '--tw-ring-color': color_personalizado } as any}
+                      placeholder="1, 2, 3..."
+                      min="1"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Número menor = aparece primero
+                    </p>
+                  </div>
+
+                  {/* Botones */}
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCategoriaForm(false);
+                        resetCategoriaForm();
+                      }}
+                      className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 px-4 py-3 text-white rounded-xl font-medium transition-colors"
+                      style={{ backgroundColor: color_personalizado }}
+                    >
+                      {editCategoria ? 'Actualizar' : 'Crear'} Categoría
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              /* Vista Principal de Categorías */
+              <div className="space-y-4">
+                {/* Header de Categorías */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Categorías
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Haz clic en una categoría para gestionar sus servicios
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowCategoriaForm(true)}
+                    className="flex items-center gap-2 px-4 py-2 text-white rounded-xl transition-colors font-medium"
+                    style={{ backgroundColor: color_personalizado }}
+                  >
+                    <FiPlus className="h-4 w-4" />
+                    Nueva Categoría
+                  </button>
+                </div>
+
+                {/* Lista de Categorías */}
+                {loadingCategorias ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto" style={{ borderColor: color_personalizado }}></div>
+                    <p className="text-gray-500 mt-2">Cargando categorías...</p>
+                  </div>
+                ) : categorias.length === 0 ? (
+                  <div className="text-center py-8">
+                    <FiFolder className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                      No hay categorías
+                    </h3>
+                    <p className="text-gray-500 dark:text-gray-400 mb-4">
+                      Crea categorías para organizar tus servicios
+                    </p>
+                    <button
+                      onClick={() => setShowCategoriaForm(true)}
+                      className="px-4 py-2 text-white rounded-xl font-medium transition-colors"
+                      style={{ backgroundColor: color_personalizado }}
+                    >
+                      Crear Primera Categoría
+                    </button>
+                  </div>
+                ) : (
                   <DragDropContext onDragEnd={handleDragEnd}>
-                    <Droppable droppableId="categorias-droppable">
-                      {(provided: DroppableProvided) => (
-                        <div ref={provided.innerRef} {...provided.droppableProps} className="overflow-x-auto rounded-xl border">
-                          <table className="min-w-full text-sm">
-                            <thead>
-                              <tr className="bg-gray-50">
-                                <th className="px-2 py-2 w-8"></th>
-                                <th className="px-4 py-2 text-left font-semibold">Nombre</th>
-                                <th className="px-4 py-2 text-center font-semibold">Acciones</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {loadingCategorias ? (
-                                <tr><td colSpan={3} className="text-center py-4">Cargando...</td></tr>
-                              ) : categorias.length === 0 ? (
-                                <tr><td colSpan={3} className="text-center py-4 text-gray-400">Sin categorías</td></tr>
-                              ) : (
-                                categorias.map((cat, idx) => (
-                                  <Draggable key={cat.id} draggableId={cat.id} index={idx}>
-                                    {(provided: DraggableProvided) => (
-                                      <tr
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        {...provided.dragHandleProps}
-                                        className={`hover:bg-gray-50 cursor-pointer ${categoriaSeleccionada?.id === cat.id ? 'bg-blue-50' : ''}`}
+                    <Droppable droppableId="categorias">
+                      {(provided) => (
+                        <div
+                          {...provided.droppableProps}
+                          ref={provided.innerRef}
+                          className="space-y-3"
+                        >
+                          {categorias.map((categoria, index) => (
+                            <Draggable key={categoria.id} draggableId={categoria.id} index={index}>
+                              {(provided) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  className="p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-200 cursor-pointer"
+                                  onClick={() => handleSeleccionarCategoria(categoria)}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <div {...provided.dragHandleProps}>
+                                        <FiMenu className="h-4 w-4 text-gray-400" />
+                                      </div>
+                                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: color_personalizado + '20' }}>
+                                        <FiFolder className="h-4 w-4" style={{ color: color_personalizado }} />
+                                      </div>
+                                      <div>
+                                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">
+                                          {categoria.nombre}
+                                        </h4>
+                                        {categoria.orden && (
+                                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            Orden: {categoria.orden}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleEditCategoria(categoria);
+                                        }}
+                                        className="p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors"
+                                        title="Editar categoría"
+                                        style={{ color: color_personalizado }}
                                       >
-                                        <td className="px-2 py-2 cursor-grab">
-                                          <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><circle cx="5" cy="6" r="1.5" fill="#888"/><circle cx="5" cy="12" r="1.5" fill="#888"/><circle cx="5" cy="18" r="1.5" fill="#888"/><circle cx="12" cy="6" r="1.5" fill="#888"/><circle cx="12" cy="12" r="1.5" fill="#888"/><circle cx="12" cy="18" r="1.5" fill="#888"/></svg>
-                                        </td>
-                                        <td 
-                                          className="px-4 py-3 font-medium text-gray-900 cursor-pointer" 
-                                          onClick={() => handleSeleccionarCategoria(cat)}
-                                        >
-                                          {cat.nombre}
-                                        </td>
-                                        <td className="px-4 py-2 text-center flex gap-2 justify-center">
-                                          <button 
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleEditCategoria(cat);
-                                            }} 
-                                            className="p-1 rounded hover:bg-blue-100"
-                                            title="Editar categoría"
-                                          >
-                                            <PencilIcon className="h-4 w-4 text-blue-600" />
-                                          </button>
-                                          <button 
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleDeleteCategoria(cat);
-                                            }} 
-                                            className="p-1 rounded hover:bg-red-100"
-                                            title="Eliminar categoría"
-                                          >
-                                            <TrashIcon className="h-4 w-4 text-red-600" />
-                                          </button>
-                                        </td>
-                                      </tr>
-                                    )}
-                                  </Draggable>
-                                ))
+                                        <FiEdit className="h-4 w-4" />
+                                      </button>
+                                      
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteCategoria(categoria);
+                                        }}
+                                        className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+                                        title="Eliminar categoría"
+                                      >
+                                        <FiTrash2 className="h-4 w-4" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
                               )}
-                              {provided.placeholder}
-                            </tbody>
-                          </table>
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
                         </div>
                       )}
                     </Droppable>
                   </DragDropContext>
                 )}
               </div>
+            )}
+          </div>
+        </div>
+      </div>
 
-              {/* Servicios de la categoría seleccionada */}
-              {categoriaSeleccionada && (
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-4">
+      {/* Modal de Servicios */}
+      {showServiciosModal && categoriaSeleccionada && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: color_personalizado + '20' }}>
+                  <FiPackage className="h-5 w-5" style={{ color: color_personalizado }} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                    Servicios de "{categoriaSeleccionada.nombre}"
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Gestiona los servicios de esta categoría
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowServiciosModal(false)}
+                className="w-8 h-8 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors"
+              >
+                <FiX className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Contenido */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+              {showServicioForm ? (
+                /* Formulario de Servicio */
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      {editServicio ? 'Editar Servicio' : 'Nuevo Servicio'}
+                    </h3>
+                    <button
+                      onClick={() => {
+                        setShowServicioForm(false);
+                        resetServicioForm();
+                      }}
+                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      <FiX className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSubmitServicio} className="space-y-4">
+                    {/* Nombre */}
                     <div>
-                      <h3 className="font-semibold text-lg text-gray-700">
-                        Servicios de "{categoriaSeleccionada.nombre}"
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Nombre del Servicio *
+                      </label>
+                      <input
+                        type="text"
+                        name="nombre"
+                        value={formServicio.nombre}
+                        onChange={handleServicioForm}
+                        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none transition-colors"
+                        style={{ borderColor: 'transparent', '--tw-ring-color': color_personalizado } as any}
+                        placeholder="Ej: Diseño de logo, Consulta inicial"
+                        required
+                      />
+                    </div>
+
+                    {/* Precio */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Precio *
+                      </label>
+                      <div className="relative">
+                        <FiDollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="number"
+                          name="precio"
+                          value={formServicio.precio}
+                          onChange={handleServicioForm}
+                          className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none transition-colors"
+                          style={{ borderColor: 'transparent', '--tw-ring-color': color_personalizado } as any}
+                          placeholder="0.00"
+                          step="0.01"
+                          min="0"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Botones */}
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowServicioForm(false);
+                          resetServicioForm();
+                        }}
+                        className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 px-4 py-3 text-white rounded-xl font-medium transition-colors"
+                        style={{ backgroundColor: color_personalizado }}
+                      >
+                        {editServicio ? 'Actualizar' : 'Crear'} Servicio
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              ) : (
+                /* Lista de Servicios */
+                <div className="space-y-4">
+                  {/* Header de Servicios */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        Servicios
                       </h3>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         Gestiona los servicios de esta categoría
                       </p>
                     </div>
                     <button
                       onClick={handleNuevoServicio}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                      className="flex items-center gap-2 px-4 py-2 text-white rounded-xl transition-colors font-medium"
+                      style={{ backgroundColor: color_personalizado }}
                     >
-                      <PlusIcon className="h-4 w-4" />
+                      <FiPlus className="h-4 w-4" />
                       Nuevo Servicio
                     </button>
                   </div>
 
-                  {/* Tabla de servicios */}
-                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                    {loadingServicios ? (
-                      <div className="flex items-center justify-center py-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        <span className="ml-3 text-gray-600">Cargando servicios...</span>
-                      </div>
-                    ) : servicios.length === 0 ? (
-                      <div className="text-center py-12">
-                        <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                          <PlusIcon className="h-8 w-8 text-gray-400" />
-                        </div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
-                          No hay servicios aún
-                        </h3>
-                        <p className="text-gray-500 mb-4">
-                          Comienza agregando el primer servicio a esta categoría
-                        </p>
-                        <button
-                          onClick={handleNuevoServicio}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                          <PlusIcon className="h-4 w-4" />
-                          Agregar Primer Servicio
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Servicio
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Precio
-                              </th>
-                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Acciones
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {servicios.map((servicio) => (
-                              <tr key={servicio.id} className="hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm font-medium text-gray-900">
-                                    {servicio.nombre}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="text-sm text-gray-900 font-semibold">
-                                    ${servicio.precio.toFixed(2)}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                  <div className="flex items-center justify-end gap-2">
-                                    <button
-                                      onClick={() => handleEditServicio(servicio)}
-                                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                      title="Editar servicio"
-                                    >
-                                      <PencilIcon className="h-4 w-4" />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteServicio(servicio)}
-                                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                      title="Eliminar servicio"
-                                    >
-                                      <TrashIcon className="h-4 w-4" />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Modal para nueva categoría */}
-              {showCategoriaModal && (
-                <Modal open={showCategoriaModal} onClose={() => { setShowCategoriaModal(false); setEditCategoria(null); }}>
-                  <form onSubmit={handleSubmitCategoria} className="flex flex-col gap-4 p-6 w-full max-w-xs mx-auto">
-                    <h3 className="font-semibold text-lg mb-2">{editCategoria ? 'Editar categoría' : 'Nueva categoría'}</h3>
-                    <input
-                      name="nombre"
-                      type="text"
-                      placeholder="Nombre"
-                      className="px-3 py-2 border rounded focus:outline-none"
-                      value={formCategoria.nombre}
-                      onChange={handleCategoriaForm}
-                      required
-                    />
-                    <div className="flex gap-2 mt-2">
+                  {/* Lista de Servicios */}
+                  {loadingServicios ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto" style={{ borderColor: color_personalizado }}></div>
+                      <p className="text-gray-500 mt-2">Cargando servicios...</p>
+                    </div>
+                  ) : servicios.length === 0 ? (
+                    <div className="text-center py-8">
+                      <FiPackage className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                        No hay servicios
+                      </h3>
+                      <p className="text-gray-500 dark:text-gray-400 mb-4">
+                        Comienza agregando el primer servicio a esta categoría
+                      </p>
                       <button
-                        type="submit"
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                        onClick={handleNuevoServicio}
+                        className="px-4 py-2 text-white rounded-xl font-medium transition-colors"
+                        style={{ backgroundColor: color_personalizado }}
                       >
-                        {editCategoria ? 'Actualizar' : 'Crear'}
-                      </button>
-                      <button
-                        type="button"
-                        className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium"
-                        onClick={() => { setShowCategoriaModal(false); setEditCategoria(null); }}
-                      >
-                        Cancelar
+                        Agregar Primer Servicio
                       </button>
                     </div>
-                  </form>
-                </Modal>
+                  ) : (
+                    <div className="space-y-3">
+                      {servicios.map((servicio) => (
+                        <div
+                          key={servicio.id}
+                          className="p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-200"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: color_personalizado + '20' }}>
+                                <FiPackage className="h-4 w-4" style={{ color: color_personalizado }} />
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-gray-900 dark:text-gray-100">
+                                  {servicio.nombre}
+                                </h4>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                  ${servicio.precio.toFixed(2)}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleEditServicio(servicio)}
+                                className="p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors"
+                                title="Editar servicio"
+                                style={{ color: color_personalizado }}
+                              >
+                                <FiEdit className="h-4 w-4" />
+                              </button>
+                              
+                              <button
+                                onClick={() => handleDeleteServicio(servicio)}
+                                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+                                title="Eliminar servicio"
+                              >
+                                <FiTrash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
-          </Dialog.Panel>
-        </div>
-      </Dialog>
-
-      {/* Modal para crear/editar servicio */}
-      {showServicioModal && (
-        <Modal open={showServicioModal} onClose={() => { 
-          setShowServicioModal(false); 
-          setEditServicio(null); 
-          setFormServicio({ nombre: '', precio: '' }); 
-        }}>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-auto">
-            <div className="mb-6">
-              <h3 className="text-lg font-bold text-gray-900">
-                {editServicio ? 'Editar Servicio' : 'Nuevo Servicio'}
-              </h3>
-              <p className="text-sm text-gray-500">
-                {editServicio ? 'Modifica los datos del servicio' : 'Agrega un nuevo servicio a la categoría'}
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmitServicio} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre del Servicio
-                </label>
-                <input
-                  type="text"
-                  name="nombre"
-                  value={formServicio.nombre}
-                  onChange={handleServicioForm}
-                  placeholder="Ej: Diseño de logo"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Precio
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2 text-gray-500">$</span>
-                  <input
-                    type="number"
-                    name="precio"
-                    value={formServicio.precio}
-                    onChange={handleServicioForm}
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  {editServicio ? 'Actualizar' : 'Crear'} Servicio
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowServicioModal(false); setEditServicio(null); setFormServicio({ nombre: '', precio: '' }); }}
-                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
           </div>
-        </Modal>
+        </div>
       )}
     </>
   );

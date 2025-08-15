@@ -65,6 +65,7 @@ export const createFactura = (data: any) => api.post('/api/facturas', data);
 export const updateFactura = (id: string, data: any) => api.put(`/api/facturas/${id}`, data);
 export const deleteFactura = (id: string) => api.delete(`/api/facturas/${id}`);
 export const getUltimaFactura = () => api.get('/api/facturas?limit=1&order=numero_factura.desc');
+export const regenerateFacturaPDF = (id: string) => api.post(`/api/facturas/${id}/regenerate-pdf`);
 
 // --- Clientes ---
 export const getClientes = () => api.get('/api/clientes');

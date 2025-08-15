@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { buildPDFUrl } from '../utils/urls';
 
 export default function FacturaPDFPublica() {
   const { id } = useParams();
 
   useEffect(() => {
     if (id) {
-      window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/factura/${id}/pdf`;
+      window.location.href = buildPDFUrl(id);
     }
   }, [id]);
 

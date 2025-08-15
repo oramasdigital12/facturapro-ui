@@ -122,9 +122,9 @@ export default function Clientes() {
         </svg>
       </div>
 
-      <div className="relative flex-1 flex flex-col px-4 pb-24">
-        <div className="text-center mb-8 mt-8">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Clientes</h1>
+      <div className="relative flex-1 flex flex-col px-3 sm:px-4 pb-24">
+        <div className="text-center mb-6 mt-6 md:mb-8 md:mt-8">
+          <h1 className="text-xl md:text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">Clientes</h1>
           <div className="w-16 h-1 mx-auto rounded-full" style={{ background: color_personalizado }}></div>
         </div>
 

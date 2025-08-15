@@ -3,6 +3,7 @@ import { Dialog } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { FiCheckSquare, FiSquare } from 'react-icons/fi';
 import MetodosPagoModal from './MetodosPagoModal';
+import { buildPublicFacturaUrl } from '../utils/urls';
 
 interface Cliente {
   id: string;
@@ -72,7 +73,7 @@ export default function EnviarEmailModal({
 
   // Generar mensaje automático basado en el estado de la factura
   const generarMensajeAutomatico = (factura: any, metodo?: MetodoPago | null) => {
-    const linkPublico = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/factura/${factura.id}`;
+    const linkPublico = buildPublicFacturaUrl(factura.id);
     
     if (factura.estado === 'pendiente') {
       let titulo = `Factura #${factura.numero_factura} - Pendiente de Pago`;
@@ -224,9 +225,9 @@ export default function EnviarEmailModal({
       <Dialog open={open} onClose={onClose} className="relative z-[100]">
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-2 sm:p-4">
-          <Dialog.Panel className="mx-auto max-w-md w-full rounded-xl bg-white p-0 shadow-lg relative flex flex-col max-h-[90vh]">
+          <Dialog.Panel className="mx-auto max-w-md w-full rounded-xl bg-white p-0 shadow-lg relative flex flex-col max-h-[95vh] sm:max-h-[90vh]">
             <form className="flex flex-col flex-1 min-h-0">
-              <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-6 pb-4">
+              <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pt-4 sm:pt-6 pb-4">
                 {/* Botón de cerrar */}
                 <button
                   type="button"
@@ -399,18 +400,18 @@ export default function EnviarEmailModal({
                   </div>
                 )}
               </div>
-              <div className="p-4 border-t bg-white flex gap-3">
+              <div className="p-3 sm:p-4 border-t bg-white flex gap-2 sm:gap-3 flex-shrink-0">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={handleEnviarEmail}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium"
+                  className="flex-1 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium text-sm sm:text-base"
                   disabled={!titulo || !descripcion || seleccionados.length === 0}
                 >
                   Enviar email

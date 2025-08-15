@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getFacturaById } from '../services/api';
 import { useParams } from 'react-router-dom';
+import { buildPDFUrl } from '../utils/urls';
 
 export default function FacturaDetalle() {
   const { id } = useParams();
@@ -38,7 +39,7 @@ export default function FacturaDetalle() {
   if (!factura) return <div className="text-center py-8 text-gray-500">Factura no encontrada.</div>;
 
   // Construir link público PDF
-  const linkPublicoPDF = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/factura/${id}/pdf`;
+  const linkPublicoPDF = id ? buildPDFUrl(id) : '';
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col md:items-center md:justify-center md:max-w-3xl md:mx-auto md:px-8 md:pl-28">

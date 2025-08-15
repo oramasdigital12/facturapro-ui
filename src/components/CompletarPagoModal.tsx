@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { FiDollarSign, FiLink, FiFileText, FiX, FiCheck, FiRotateCcw } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
-import { getMetodosPago, updateFactura } from '../services/api';
+import { getMetodosPago, updateFactura, regenerateFacturaPDF } from '../services/api';
+import { clearFacturaCache } from '../utils/urls';
 
 interface MetodoPago {
   id: string;
@@ -74,6 +75,20 @@ export default function CompletarPagoModal({ open, onClose, factura, onPagoCompl
     if (!result.isConfirmed) return;
 
     setProcesando(true);
+    
+    // Mostrar alert de loading
+    Swal.fire({
+      title: 'Completando pago...',
+      text: 'Por favor espera mientras procesamos el pago',
+      icon: 'info',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      showConfirmButton: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+    
     try {
       // Actualizar la factura con el pago completado
       await updateFactura(factura.id, {
@@ -83,13 +98,34 @@ export default function CompletarPagoModal({ open, onClose, factura, onPagoCompl
         balance_restante: 0 // Cambiar balance pendiente a 0
       });
       
-      // El backend debería regenerar el PDF con el estado pagado
-      // y actualizar el pdfUrl automáticamente
+      // Intentar regenerar el PDF usando el endpoint específico
+      try {
+        await regenerateFacturaPDF(factura.id);
+        clearFacturaCache(factura.id);
+      } catch (pdfError) {
+        console.warn('Error al regenerar PDF:', pdfError);
+        // Fallback: limpiar caché del navegador
+        clearFacturaCache(factura.id);
+      }
+      
+      // Cerrar el alert de loading
+      Swal.close();
       
       setPagoCompletado(true);
-      toast.success('Pago completado exitosamente');
+      
+      // Mostrar alert de éxito arriba
+      Swal.fire({
+        title: '¡Pago Completado!',
+        text: `El pago se ha completado exitosamente mediante ${metodoSeleccionado.nombre}`,
+        icon: 'success',
+        confirmButtonColor: '#10b981',
+        confirmButtonText: 'Entendido'
+      });
+      
       onPagoCompletado();
     } catch (error) {
+      // Cerrar el alert de loading en caso de error
+      Swal.close();
       toast.error('Error al completar el pago');
     } finally {
       setProcesando(false);
@@ -121,6 +157,17 @@ export default function CompletarPagoModal({ open, onClose, factura, onPagoCompl
         balance_restante: facturaOriginal?.balance_restante || factura.total
       });
       
+      // Intentar regenerar el PDF usando el endpoint específico
+      try {
+        await regenerateFacturaPDF(factura.id);
+        clearFacturaCache(factura.id);
+        toast.success('PDF regenerado exitosamente');
+      } catch (pdfError) {
+        console.warn('Error al regenerar PDF:', pdfError);
+        // Fallback: limpiar caché del navegador
+        clearFacturaCache(factura.id);
+      }
+      
       setPagoCompletado(false);
       setMetodoSeleccionado(null);
       toast.success('Pago revertido exitosamente');
@@ -135,39 +182,39 @@ export default function CompletarPagoModal({ open, onClose, factura, onPagoCompl
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-1 sm:p-2 md:p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] sm:max-h-[95vh] md:max-h-[98vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-xl flex items-center justify-center">
-              <FiDollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+        <div className="flex items-center justify-between p-2 sm:p-3 md:p-4 lg:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 bg-green-100 dark:bg-green-900/20 rounded-xl flex items-center justify-center">
+              <FiDollarSign className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">
                 {pagoCompletado ? 'Pago Completado' : 'Completar Pago'}
               </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                 {pagoCompletado ? 'El pago ha sido procesado exitosamente' : 'Selecciona el método de pago utilizado'}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors"
+            className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors"
           >
-            <FiX className="h-4 w-4" />
+            <FiX className="h-3 w-3 sm:h-4 sm:w-4" />
           </button>
         </div>
 
         {/* Contenido */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+        <div className="p-2 sm:p-3 md:p-6 overflow-y-auto flex-1 min-h-0">
           {/* Información de la factura */}
-          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
-            <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+          <div className="mb-3 sm:mb-4 md:mb-6 p-2 sm:p-3 md:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+            <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2 text-sm sm:text-base">
               Factura #{factura?.numero_factura || factura?.id}
             </h3>
-            <div className="text-sm text-blue-700 dark:text-blue-300">
+            <div className="text-xs sm:text-sm text-blue-700 dark:text-blue-300">
               <p><strong>Cliente:</strong> {factura?.cliente?.nombre}</p>
               <p><strong>Total:</strong> ${factura?.total?.toFixed(2)}</p>
               {!pagoCompletado && (
@@ -184,35 +231,35 @@ export default function CompletarPagoModal({ open, onClose, factura, onPagoCompl
 
           {!pagoCompletado ? (
             /* Selección de método */
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <div className="space-y-2 sm:space-y-3 md:space-y-4">
+              <h3 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 dark:text-gray-100">
                 Método de Pago
               </h3>
               
               {loading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="text-gray-500 mt-2">Cargando métodos...</p>
+                <div className="text-center py-6 sm:py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-gray-500 mt-2 text-sm">Cargando métodos...</p>
                 </div>
               ) : metodos.length === 0 ? (
-                <div className="text-center py-8">
-                  <FiDollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                <div className="text-center py-6 sm:py-8">
+                  <FiDollarSign className="h-8 w-8 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                     No hay métodos de pago disponibles
                   </h3>
-                  <p className="text-gray-500 dark:text-gray-400">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
                     Configura métodos de pago en la sección de configuración
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {metodos
                     .sort((a, b) => a.orden - b.orden)
                     .map((metodo) => (
                     <div
                       key={metodo.id}
                       onClick={() => setMetodoSeleccionado(metodo)}
-                      className={`p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${
+                      className={`p-2 sm:p-3 md:p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${
                         metodoSeleccionado?.id === metodo.id
                           ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                           : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-blue-300 dark:hover:border-blue-500'
@@ -220,25 +267,25 @@ export default function CompletarPagoModal({ open, onClose, factura, onPagoCompl
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h4 className="font-semibold text-gray-900 dark:text-gray-100">
+                          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                            <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
                               {metodo.nombre}
                             </h4>
                             {metodoSeleccionado?.id === metodo.id && (
-                              <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                                <FiCheck className="h-3 w-3 text-white" />
+                              <div className="w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full flex items-center justify-center">
+                                <FiCheck className="h-2 w-2 sm:h-3 sm:w-3 text-white" />
                               </div>
                             )}
                           </div>
                           
                           {metodo.link && (
                             <div className="flex items-center gap-2 mb-2">
-                              <FiLink className="h-4 w-4 text-blue-500" />
+                              <FiLink className="h-3 w-3 sm:h-4 sm:w-4 text-blue-500" />
                               <a
                                 href={metodo.link}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                                className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 Pagar con {metodo.nombre}
@@ -248,8 +295,8 @@ export default function CompletarPagoModal({ open, onClose, factura, onPagoCompl
                           
                           {metodo.descripcion && (
                             <div className="flex items-start gap-2">
-                              <FiFileText className="h-4 w-4 text-gray-400 mt-0.5" />
-                              <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">
+                              <FiFileText className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 mt-0.5" />
+                              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line">
                                 {metodo.descripcion}
                               </p>
                             </div>
@@ -263,14 +310,14 @@ export default function CompletarPagoModal({ open, onClose, factura, onPagoCompl
             </div>
           ) : (
             /* Estado de pago completado */
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FiCheck className="h-8 w-8 text-green-600 dark:text-green-400" />
+            <div className="text-center py-6 sm:py-8">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FiCheck className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 dark:text-green-400" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                 ¡Pago Completado!
               </h3>
-              <p className="text-gray-500 dark:text-gray-400">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 El pago ha sido procesado exitosamente mediante {metodoSeleccionado?.nombre}
               </p>
             </div>
@@ -278,20 +325,20 @@ export default function CompletarPagoModal({ open, onClose, factura, onPagoCompl
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex gap-2 sm:gap-3 p-2 sm:p-3 md:p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 bg-white dark:bg-gray-800">
           {pagoCompletado ? (
             <>
               <button
                 onClick={handleRevertirPago}
                 disabled={procesando}
-                className="flex-1 px-4 py-3 bg-orange-600 text-white rounded-xl font-medium hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 bg-orange-600 text-white rounded-xl font-medium hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-xs sm:text-sm md:text-base"
               >
-                <FiRotateCcw className="h-4 w-4" />
+                <FiRotateCcw className="h-3 w-3 sm:h-4 sm:w-4" />
                 {procesando ? 'Revirtiendo...' : 'Revertir Pago'}
               </button>
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                className="flex-1 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-xs sm:text-sm md:text-base"
               >
                 Cerrar
               </button>
@@ -300,14 +347,14 @@ export default function CompletarPagoModal({ open, onClose, factura, onPagoCompl
             <>
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                className="flex-1 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-xs sm:text-sm md:text-base"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleCompletarPago}
                 disabled={!metodoSeleccionado || procesando}
-                className="flex-1 px-4 py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm md:text-base"
               >
                 {procesando ? 'Completando...' : 'Completar Pago'}
               </button>

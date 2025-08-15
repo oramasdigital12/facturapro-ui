@@ -9,8 +9,9 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { deleteFactura, updateFactura } from '../services/api';
+import { deleteFactura, updateFactura, regenerateFacturaPDF } from '../services/api';
 import { showDeleteConfirmation } from '../utils/alerts';
+import { buildPDFUrl, clearFacturaCache } from '../utils/urls';
 import Swal from 'sweetalert2';
 import { FiDollarSign, FiCalendar, FiUser } from 'react-icons/fi';
 import CompletarPagoModal from './CompletarPagoModal';
@@ -30,7 +31,7 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
   // Validación de UUID
   const esUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(id);
   const idValido = factura.id && typeof factura.id === 'string' && esUUID(factura.id);
-  const pdfUrl = factura.pdfUrl;
+  const pdfUrl = buildPDFUrl(factura.id);
 
   // Función para obtener el estado en español
   const getEstadoTexto = (estado: string) => {
@@ -73,30 +74,45 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
 
     // Confirmar antes de deshacer el estado pagado
     const result = await Swal.fire({
-      title: '¿Deshacer estado pagado?',
-      text: '¿Deseas cambiar esta factura de pagada a pendiente?',
-      icon: 'question',
+      title: '¿Revertir pago?',
+      text: '¿Estás seguro de que quieres revertir el pago? Esto restaurará el estado original de la factura.',
+      icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Sí, deshacer',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, revertir',
       cancelButtonText: 'Cancelar'
     });
 
     if (!result.isConfirmed) return;
 
     try {
-      toast.loading('Deshaciendo estado...', { id: 'deshacerPagada' });
+      toast.loading('Revertiendo pago...', { id: 'deshacerPagada' });
       
-      await updateFactura(factura.id, { estado: 'pendiente' });
+      // Restaurar estado original con balance restante
+      await updateFactura(factura.id, {
+        estado: 'pendiente',
+        balance_restante: factura.total // Restaurar el balance al total original
+      });
+      
+      // Intentar regenerar el PDF usando el endpoint específico
+      try {
+        await regenerateFacturaPDF(factura.id);
+        clearFacturaCache(factura.id);
+        toast.success('PDF regenerado exitosamente');
+      } catch (pdfError) {
+        console.warn('Error al regenerar PDF:', pdfError);
+        // Fallback: limpiar caché del navegador
+        clearFacturaCache(factura.id);
+      }
       
       toast.dismiss('deshacerPagada');
-      toast.success('Estado deshecho correctamente');
+      toast.success('Pago revertido exitosamente');
       
       onChange && onChange();
     } catch (err: any) {
       toast.dismiss('deshacerPagada');
-      toast.error(err.message || 'Error al deshacer estado');
+      toast.error(err.message || 'Error al revertir el pago');
     }
   };
 
@@ -320,7 +336,7 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
 
         {/* Acciones de documento */}
         <div className="flex gap-3 mb-6">
-          {idValido && pdfUrl && (
+          {idValido && (
             <a 
               href={pdfUrl} 
               target="_blank" 
@@ -334,7 +350,7 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
           )}
           <button 
             onClick={() => {
-              if (pdfUrl) {
+              if (idValido) {
                 navigator.clipboard.writeText(pdfUrl); 
                 toast.success('Link público copiado');
               } else {
@@ -343,7 +359,7 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
             }} 
             className="flex-1 flex items-center justify-center gap-3 py-3 bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors font-medium"
             title="Copiar link PDF"
-            disabled={!idValido || !pdfUrl}
+            disabled={!idValido}
           >
             <LinkIcon className="h-5 w-5" />
             Copiar Link

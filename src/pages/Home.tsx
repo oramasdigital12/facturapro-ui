@@ -1,5 +1,6 @@
 import { useAuth, useDarkMode } from '../contexts/AuthContext';
 import { useOutletContext } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useState, useEffect } from 'react';
 import ClienteModal from '../components/ClienteModal';
@@ -10,6 +11,7 @@ import Swal from 'sweetalert2';
 
 export default function Home() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [clientes, setClientes] = useState([]);
   const [negocio, setNegocio] = useState({ nombre_negocio: '', email: '', logo_url: '' });
   const [clienteEditando, setClienteEditando] = useState<any>(null);
@@ -96,6 +98,32 @@ export default function Home() {
       setCotizacionesPendientes(0);
     } catch (error) {
       console.error('Error fetching métricas:', error);
+    }
+  };
+
+  // Funciones de redirección para las métricas
+  const handleMetricaClick = (tipo: string) => {
+    switch (tipo) {
+      case 'totalFacturado':
+        // Redirige a facturas con filtro "todas" (por defecto)
+        navigate('/facturas');
+        break;
+      case 'pendientePagar':
+        // Redirige a facturas con filtro "pendientes"
+        navigate('/facturas?estado=pendiente');
+        break;
+      case 'facturas':
+        // No hace nada, no tiene redirección
+        break;
+      case 'cotizaciones':
+        // Por ahora no hace nada, se implementará después
+        break;
+      case 'aPuntoDeVencer':
+        // Redirige a facturas con filtro "a punto de vencer"
+        navigate('/facturas?estado=aPuntoDeVencer');
+        break;
+      default:
+        break;
     }
   };
 
@@ -210,13 +238,16 @@ export default function Home() {
       `;
     }
 
-    if (cliente.sexo) {
-      infoHTML += `
-        <div class="flex items-center gap-2">
-          <span class="font-semibold text-gray-700">Sexo:</span>
-          <span>${cliente.sexo}</span>
-        </div>
-      `;
+    if (cliente.fecha_nacimiento) {
+      const edad = calcularEdad(cliente.fecha_nacimiento);
+      if (edad) {
+        infoHTML += `
+          <div class="flex items-center gap-2">
+            <span class="font-semibold text-gray-700">Edad:</span>
+            <span>${edad} años</span>
+          </div>
+        `;
+      }
     }
 
     if (cliente.direccion) {
@@ -228,75 +259,18 @@ export default function Home() {
       `;
     }
 
-    if (cliente.fecha_nacimiento && cliente.fecha_nacimiento !== '9999-12-31') {
-      const edad = calcularEdad(cliente.fecha_nacimiento);
-      infoHTML += `
-        <div class="flex items-center gap-2">
-          <span class="font-semibold text-gray-700">Fecha de nacimiento:</span>
-          <span>${cliente.fecha_nacimiento} (${edad} años)</span>
-        </div>
-      `;
-    }
-
-    if (cliente.fecha_inicio && cliente.fecha_inicio !== '9999-12-31') {
-      infoHTML += `
-        <div class="flex items-center gap-2">
-          <span class="font-semibold text-gray-700">Fecha de inicio:</span>
-          <span>${cliente.fecha_inicio}</span>
-        </div>
-      `;
-    }
-
-    if (cliente.fecha_vencimiento && cliente.fecha_vencimiento !== '9999-12-31') {
-      infoHTML += `
-        <div class="flex items-center gap-2">
-          <span class="font-semibold text-gray-700">Fecha de vencimiento:</span>
-          <span>${cliente.fecha_vencimiento}</span>
-        </div>
-      `;
-    }
-
-    if (cliente.notas) {
-      infoHTML += `
-        <div class="flex items-start gap-2">
-          <span class="font-semibold text-gray-700">Notas:</span>
-          <span>${cliente.notas}</span>
-      </div>
-      `;
-    }
-
-    infoHTML += `
-        <div class="flex items-center gap-2">
-          <span class="font-semibold text-gray-700">Estado:</span>
-          <span class="px-2 py-1 rounded-full text-xs font-medium ${
-            cliente.categoria === 'activo' ? 'bg-green-100 text-green-800' :
-            cliente.categoria === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
-            cliente.categoria === 'por_vencer' ? 'bg-orange-100 text-orange-800' :
-            cliente.categoria === 'Vencido' ? 'bg-red-100 text-red-800' :
-            'bg-gray-100 text-gray-800'
-          }">${cliente.categoria}</span>
-        </div>
-          </div>
-    `;
+    infoHTML += '</div>';
 
     Swal.fire({
       title: 'Información del Cliente',
       html: infoHTML,
       icon: 'info',
       confirmButtonText: 'Cerrar',
-      showCancelButton: true,
-      cancelButtonText: 'Editar',
-      reverseButtons: true,
-    }).then((result) => {
-      if (result.dismiss === Swal.DismissReason.cancel) {
-        setClienteEditando(cliente);
-        setShowClienteModal(true);
-      }
+      confirmButtonColor: color_personalizado,
     });
   };
 
   const getRangoFechasTexto = () => {
-    if (!fechaDesde && !fechaHasta) return 'Este mes';
     if (fechaDesde && fechaHasta) {
       return `${format(new Date(fechaDesde), 'dd/MM/yyyy', { locale: es })} - ${format(new Date(fechaHasta), 'dd/MM/yyyy', { locale: es })}`;
     }
@@ -322,9 +296,12 @@ export default function Home() {
         </div>
 
       {/* Métricas Modernas */}
-      <div className="grid grid-cols-2 gap-4 mb-8 px-4 md:grid-cols-6 md:gap-6 md:px-0">
-        {/* Total Facturado */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
+      <div className="grid grid-cols-2 gap-3 mb-6 px-3 sm:px-4 md:grid-cols-6 md:gap-6 md:px-0">
+        {/* Total Facturado - Clickeable */}
+        <div 
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-3 md:p-4 border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105"
+          onClick={() => handleMetricaClick('totalFacturado')}
+        >
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center">
               <span className="text-white text-lg">💰</span>
@@ -341,8 +318,11 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Pendiente a Pagar */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
+        {/* Pendiente a Pagar - Clickeable */}
+        <div 
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-3 md:p-4 border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105"
+          onClick={() => handleMetricaClick('pendientePagar')}
+        >
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center">
               <span className="text-white text-lg">📥</span>
@@ -359,8 +339,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Total Facturas */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
+        {/* Total Facturas - No clickeable */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-3 md:p-4 border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center">
               <span className="text-white text-lg">📄</span>
@@ -377,8 +357,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Cotizaciones Pendientes */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
+        {/* Cotizaciones Pendientes - No clickeable por ahora */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-3 md:p-4 border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center">
               <span className="text-white text-lg">📋</span>
@@ -395,8 +375,11 @@ export default function Home() {
           </div>
         </div>
 
-        {/* A Punto de Vencer */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
+        {/* A Punto de Vencer - Clickeable */}
+        <div 
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-3 md:p-4 border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105"
+          onClick={() => handleMetricaClick('aPuntoDeVencer')}
+        >
           <div className="flex items-center justify-between mb-3">
             <div className="w-10 h-10 bg-gradient-to-br from-red-400 to-red-600 rounded-xl flex items-center justify-center">
               <span className="text-white text-lg">⚠️</span>
@@ -410,12 +393,12 @@ export default function Home() {
           </div>
           <div className="text-xs text-red-600 dark:text-red-400 mt-1">
             Próximos 7 días
-                    </div>
-                  </div>
-                </div>
+          </div>
+        </div>
+      </div>
 
       {/* Métrica Principal - Pagadas con Filtros */}
-      <div className="w-full max-w-4xl mx-auto px-4 md:px-0 mb-8">
+      <div className="w-full max-w-4xl mx-auto px-3 sm:px-4 md:px-0 mb-6 md:mb-8">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
             <div>
