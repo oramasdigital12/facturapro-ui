@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface FacturaProLogoProps {
   size?: number;
   className?: string;
