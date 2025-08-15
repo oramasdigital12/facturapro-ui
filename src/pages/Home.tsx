@@ -283,6 +283,8 @@ export default function Home() {
     return 'Este mes';
   };
 
+
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col md:items-center md:justify-center md:max-w-6xl md:mx-auto md:px-8 md:pl-28">
       <div className="text-center mb-8 mt-8">
@@ -585,6 +587,8 @@ export default function Home() {
           )}
         </div>
       </div>
+
+
 
       {/* Modal de Cliente */}
       <ClienteModal

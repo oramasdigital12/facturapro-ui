@@ -173,7 +173,7 @@ export default function EmailFacturaModal({ open, onClose, factura }: Props) {
         <div className="flex items-center justify-center min-h-screen px-1 sm:px-2 pt-2 sm:pt-4 pb-16 sm:pb-20 text-center sm:block sm:p-0 sm:px-4">
           <div className="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75" onClick={onClose}></div>
 
-          <div className="relative inline-block w-full max-w-2xl p-3 sm:p-4 my-4 sm:my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-2xl rounded-3xl sm:p-6 flex flex-col max-h-[92vh] sm:max-h-[95vh] md:max-h-[98vh]">
+          <div className="relative inline-block w-full max-w-3xl p-3 sm:p-4 my-4 sm:my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-2xl rounded-3xl sm:p-6 flex flex-col max-h-[92vh] sm:max-h-[95vh] md:max-h-[98vh]">
             {/* Header moderno */}
             <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6 flex-shrink-0">
               <div className="flex items-center gap-2 sm:gap-3">
@@ -353,7 +353,7 @@ export default function EmailFacturaModal({ open, onClose, factura }: Props) {
                         className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none transition-colors resize-none text-sm"
                         value={descripcion}
                         onChange={e => setDescripcion(e.target.value)}
-                        rows={4}
+                        rows={8}
                         placeholder="Escribe el mensaje del email"
                       />
                     </div>
