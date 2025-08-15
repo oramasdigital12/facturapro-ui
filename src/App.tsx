@@ -8,8 +8,7 @@ import Clientes from './pages/Clientes';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Configuracion from './pages/Configuracion';
-
-
+import FacturaPDFPublica from './pages/FacturaPDFPublica';
 import Facturas from './pages/Facturas';
 import FacturaForm from './pages/FacturaForm';
 import FacturaDetalle from './pages/FacturaDetalle';
@@ -24,16 +23,16 @@ function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              {/* Ruta pública para facturas - no requiere autenticación */}
+              <Route path="/factura/:id" element={<FacturaPDFPublica />} />
               <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
                 <Route path="/home" element={<Home />} />
                 <Route path="/clientes" element={<Clientes />} />
                 <Route path="/configuracion" element={<Configuracion />} />
-
-
                 <Route path="/facturas" element={<Facturas />} />
                 <Route path="/facturas/nueva" element={<FacturaForm />} />
                 <Route path="/facturas/:id" element={<FacturaForm />} />
-                <Route path="/factura/:id" element={<FacturaDetalle />} />
+                <Route path="/factura-detalle/:id" element={<FacturaDetalle />} />
               </Route>
               <Route path="*" element={<Navigate to="/home" />} />
             </Routes>
