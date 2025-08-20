@@ -46,7 +46,13 @@ export default function Facturas() {
       if (fechaDesde) params.fecha_inicio = fechaDesde;
       if (fechaHasta) params.fecha_fin = fechaHasta;
       const res = await getFacturas(params);
-      setFacturas(res.data.facturas || res.data || []);
+      const facturasData = res.data.facturas || res.data || [];
+      // Debug: Verificar qué campos llegan de la API
+      if (facturasData.length > 0) {
+        console.log('Primera factura - campos disponibles:', Object.keys(facturasData[0]));
+        console.log('Primera factura - numero_factura:', facturasData[0].numero_factura);
+      }
+      setFacturas(facturasData);
       setTotalFacturas(res.data.total || (res.data.facturas ? res.data.facturas.length : res.data.length));
       setTotalPages(res.data.totalPages || Math.ceil((res.data.total || res.data.length || 1) / PAGE_SIZE));
     } catch (err: any) {
@@ -62,7 +68,15 @@ export default function Facturas() {
 
   const filtrarPorNombre = (factura: any) => {
     if (!busqueda.trim()) return true;
-    const nombreCliente = factura.cliente?.nombre?.trim().toLowerCase() || '';
+    
+    // Obtener nombre del cliente (maneja clientes eliminados)
+    let nombreCliente = '';
+    if (factura.cliente && factura.cliente.nombre) {
+      nombreCliente = factura.cliente.nombre.trim().toLowerCase();
+    } else {
+      nombreCliente = 'cliente eliminado'; // Para búsquedas de clientes eliminados
+    }
+    
     return nombreCliente.startsWith(busqueda.trim().toLowerCase());
   };
 

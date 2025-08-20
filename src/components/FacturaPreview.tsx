@@ -1,3 +1,5 @@
+import { getNumeroFactura } from '../utils/facturaHelpers';
+
 type FacturaPreviewProps = {
   factura: any;
   mostrarStatus?: boolean;
@@ -26,11 +28,16 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
   const clienteDireccion = factura?.cliente?.direccion || factura?.cliente?.address || '';
 
   // Datos de la factura
-  const numeroFactura = factura?.numero_factura || '';
+  const numeroFactura = getNumeroFactura(factura);
   const fechaFactura = factura?.fecha_factura || '';
   const fechaVencimiento = factura?.fecha_vencimiento || '';
   const nota = factura?.nota || '';
   const terminos = factura?.terminos || '';
+  
+  // Verificar si los campos opcionales tienen contenido
+  const tieneFechaVencimiento = fechaVencimiento && fechaVencimiento.trim() !== '' && fechaVencimiento !== '1999-99-99' && fechaVencimiento !== 'mm/dd/yyyy';
+  const tieneNota = nota && nota.trim() !== '';
+  const tieneTerminos = terminos && terminos.trim() !== '';
 
   // Totales
   const subtotal = factura?.subtotal || 0;
@@ -655,9 +662,11 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
             <div className="detail-row">
               <span className="detail-label">Date of Issue:</span> {fechaFactura || 'MM/DD/YYYY'}
             </div>
-            <div className="detail-row">
-              <span className="detail-label">Due Date:</span> {fechaVencimiento || 'MM/DD/YYYY'}
-            </div>
+            {tieneFechaVencimiento && (
+              <div className="detail-row">
+                <span className="detail-label">Due Date:</span> {fechaVencimiento || 'MM/DD/YYYY'}
+              </div>
+            )}
           </div>
           <div className="bill-to">
             <div className="section-title">BILL TO:</div>
@@ -702,13 +711,23 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
         
         {/* Bottom Section */}
         <div className="bottom-section">
-          <div className="terms-section">
-            <div className="section-title">TERMS</div>
-            <div className="terms-content">{terminos || 'Text Here'}</div>
-            
-            <div className="section-title" style={{ marginTop: '20px' }}>CONDITIONS/INSTRUCTIONS</div>
-            <div className="terms-content">{nota || 'Text Here'}</div>
-          </div>
+                      {(tieneTerminos || tieneNota) && (
+              <div className="terms-section">
+                {tieneTerminos && (
+                  <>
+                    <div className="section-title">TERMS</div>
+                    <div className="terms-content">{terminos}</div>
+                  </>
+                )}
+                
+                {tieneNota && (
+                  <>
+                    <div className="section-title" style={{ marginTop: tieneTerminos ? '20px' : '0' }}>CONDITIONS/INSTRUCTIONS</div>
+                    <div className="terms-content">{nota}</div>
+                  </>
+                )}
+              </div>
+            )}
           
           <div className="totals-section">
             <div className="total-row">

@@ -30,7 +30,7 @@ interface Cliente {
 const categorias = [
   { label: 'Todos', value: '', color: 'blue', icon: '👥' },
   { label: 'Activos', value: 'activo', color: 'green', icon: '✅' },
-  { label: 'Pendientes', value: 'pendiente', color: 'yellow', icon: '⏳' },
+  { label: 'Inactivos', value: 'inactivo', color: 'red', icon: '❌' },
 ];
 
 export default function Clientes() {
@@ -48,6 +48,21 @@ export default function Clientes() {
   const { dark } = useDarkMode();
   const outletContext = useOutletContext() as { color_personalizado?: string } | null;
   const color_personalizado = outletContext?.color_personalizado || '#2563eb';
+
+  // Debug: Monitorear cambios en el modal
+  useEffect(() => {
+    console.log('Estado del modal cambiado:', { showModal, clienteEditando });
+  }, [showModal, clienteEditando]);
+
+  // Debug: Monitorear cambios en clienteParaEmail
+  useEffect(() => {
+    console.log('clienteParaEmail cambiado:', clienteParaEmail);
+  }, [clienteParaEmail]);
+
+  // Debug: Monitorear cambios en showEmailModal
+  useEffect(() => {
+    console.log('showEmailModal cambiado:', showEmailModal);
+  }, [showEmailModal]);
 
   useEffect(() => {
     fetchClientes();
@@ -77,7 +92,7 @@ export default function Clientes() {
   const contadores = {
     '': clientes.length,
     'activo': clientes.filter(c => c.categoria === 'activo').length,
-    'pendiente': clientes.filter(c => c.categoria === 'pendiente').length,
+    'inactivo': clientes.filter(c => c.categoria === 'inactivo').length,
   };
 
   // Filtrado por categoría (solo para el listado)
@@ -158,6 +173,7 @@ export default function Clientes() {
                 <span className={`text-lg font-bold mt-1 ${
                   cat.color === 'blue' ? 'text-blue-600' :
                   cat.color === 'green' ? 'text-green-600' :
+                  cat.color === 'red' ? 'text-red-600' :
                   'text-yellow-600'
                 }`}>
                   {contadores[cat.value as keyof typeof contadores]}
@@ -253,10 +269,10 @@ export default function Clientes() {
                       </h3>
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                         cliente.categoria === 'activo' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                        cliente.categoria === 'pendiente' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                        cliente.categoria === 'inactivo' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
                         'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
                       }`}>
-                        {cliente.categoria === 'activo' ? '✅ Activo' : '⏳ Pendiente'}
+                        {cliente.categoria === 'activo' ? '✅ Activo' : '❌ Inactivo'}
                       </span>
                     </div>
                   </div>
@@ -438,18 +454,24 @@ export default function Clientes() {
         <ClienteModal
           open={showModal}
           onClose={() => {
+            console.log('ClienteModal onClose llamado');
             setShowModal(false);
+            // Si hay un cliente para email, volver al modal de email después de un delay
             if (clienteParaEmail) {
               setTimeout(() => {
+                console.log('Volviendo al modal de email');
                 setShowEmailModal(true);
               }, 300);
             }
             setClienteParaEmail(null);
           }}
           onCreated={() => {
+            console.log('ClienteModal onCreated llamado');
             fetchClientes();
+            // Si hay un cliente para email, volver al modal de email después de guardar
             if (clienteParaEmail) {
               setTimeout(() => {
+                console.log('Volviendo al modal de email después de crear/actualizar');
                 setShowEmailModal(true);
               }, 300);
             }
@@ -468,16 +490,17 @@ export default function Clientes() {
             onClose={() => setShowEmailModal(false)}
             clientes={clientes}
             onEditCliente={(cliente: Cliente, ids: string[]) => {
+              console.log('onEditCliente llamado con:', { cliente, ids });
+              // Cerrar el modal de email
               setShowEmailModal(false);
+              // Configurar el cliente para editar
               setClienteEditando(cliente);
+              // Abrir el modal de edición
               setShowModal(true);
+              // Guardar el cliente para volver al modal de email después de editar
               setClienteParaEmail(cliente);
-              setTimeout(() => {
-                setShowEmailModal(true);
-              }, 300);
-              setTimeout(() => {
-                setClientesPreseleccionados(ids);
-              }, 350);
+              // Guardar los IDs de clientes preseleccionados
+              setClientesPreseleccionados(ids);
             }}
             clientesPreseleccionados={clientesPreseleccionados}
           />

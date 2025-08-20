@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { getClientes, getServiciosNegocio, createFactura, getFacturaById, updateFactura, getNegocioConfig, getUltimaFactura, getMetodosPago, regenerateFacturaPDF } from '../services/api';
 import { clearFacturaCache } from '../utils/urls';
+import { getNumeroFactura, getNumeroFacturaOriginal, getSiguienteNumeroFactura } from '../utils/facturaHelpers';
 import FacturaPreview from '../components/FacturaPreview';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
@@ -100,9 +101,11 @@ export default function FacturaForm() {
     try {
       const res = await getUltimaFactura();
       const ultima = res.data && res.data.length > 0 ? res.data[0] : null;
-      setNumeroFactura(ultima && ultima.numero_factura ? ultima.numero_factura + 1 : 1);
+      
+      const siguienteNumero = getSiguienteNumeroFactura(ultima);
+      setNumeroFactura(siguienteNumero);
     } catch {
-      setNumeroFactura(1);
+      setNumeroFactura('1001'); // Primera factura será 1001
     }
   };
 
@@ -115,6 +118,8 @@ export default function FacturaForm() {
       setFechaFactura(f.fecha_factura);
       setFechaVencimiento(f.fecha_vencimiento || '');
       setMetodoPagoId(f.metodo_pago_id || '');
+
+      setNumeroFactura(getNumeroFactura(f) || '1001'); // Establecer el número de factura
       setItems(f.items.map((i: any) => ({
         categoria: i.categoria,
         descripcion: i.descripcion,
@@ -154,7 +159,7 @@ export default function FacturaForm() {
 
   // Validación antes de enviar
   const validateForm = () => {
-    const errors: {cliente?: string; items?: string; itemsDetalle?: string; fecha?: string; impuesto?: string; deposito?: string; nota?: string; terminos?: string; numero_factura?: string; fecha_vencimiento?: string} = {};
+    const errors: {cliente?: string; items?: string; itemsDetalle?: string; fecha?: string; impuesto?: string; deposito?: string; numero_factura?: string; fecha_vencimiento?: string} = {};
     
     // Validar cliente
     if (!clienteId) errors.cliente = 'Selecciona un cliente.';
@@ -168,6 +173,7 @@ export default function FacturaForm() {
     
     // Validar fecha de vencimiento (completamente opcional)
     if (fechaVencimiento && fechaVencimiento.trim() !== '') {
+      // Verificar si es una fecha válida (no es el placeholder del navegador)
       const fechaVenc = new Date(fechaVencimiento);
       if (isNaN(fechaVenc.getTime())) {
         errors.fecha_vencimiento = 'La fecha de vencimiento debe ser válida.';
@@ -180,11 +186,7 @@ export default function FacturaForm() {
     // Validar depósito
     if (deposito === null || deposito === undefined || deposito < 0) errors.deposito = 'El depósito debe ser un número válido mayor o igual a 0.';
     
-    // Validar nota
-    if (!nota || nota.trim() === '') errors.nota = 'La nota es obligatoria.';
-    
-    // Validar términos
-    if (!terminos || terminos.trim() === '') errors.terminos = 'Los términos son obligatorios.';
+    // NOTA: Se removieron las validaciones obligatorias de nota y términos
     
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -229,18 +231,17 @@ export default function FacturaForm() {
           telefono: negocioConfig?.telefono,
           logo_url: negocioConfig?.logo_url,
           nota: negocioConfig?.nota_factura,
-          terminos: negocioConfig?.terminos_condiciones,
-        }, // Incluir datos completos del negocio
+        }, // Incluir datos completos del negocio (sin términos)
         fecha_factura: fechaFactura,
-        fecha_vencimiento: fechaVencimiento && fechaVencimiento.trim() !== '' ? fechaVencimiento : null,
-        numero_factura: editMode && id && facturaCargada ? facturaCargada.numero_factura : numeroFactura,
+        fecha_vencimiento: fechaVencimiento && fechaVencimiento.trim() !== '' ? fechaVencimiento : undefined,
+        numero_factura: getNumeroFacturaOriginal(facturaCargada) || numeroFactura,
         subtotal,
         impuesto: totalImpuesto,
         total,
         deposito,
         balance_restante: balance,
-        nota,
-        terminos,
+        nota: nota && nota.trim() !== '' ? nota : undefined,
+        terminos: terminos && terminos.trim() !== '' ? terminos : undefined,
         items: items.map(i => ({
           categoria: i.categoria,
           descripcion: i.descripcion,
@@ -327,18 +328,17 @@ export default function FacturaForm() {
           telefono: negocioConfig?.telefono,
           logo_url: negocioConfig?.logo_url,
           nota: negocioConfig?.nota_factura,
-          terminos: negocioConfig?.terminos_condiciones,
-        }, // Incluir datos completos del negocio
+        }, // Incluir datos completos del negocio (sin términos)
         fecha_factura: fechaFactura,
-        fecha_vencimiento: fechaVencimiento && fechaVencimiento.trim() !== '' ? fechaVencimiento : null,
-        numero_factura: editMode && id && facturaCargada ? facturaCargada.numero_factura : numeroFactura,
+        fecha_vencimiento: fechaVencimiento && fechaVencimiento.trim() !== '' ? fechaVencimiento : undefined,
+        numero_factura: getNumeroFacturaOriginal(facturaCargada) || numeroFactura,
         subtotal,
         impuesto: totalImpuesto,
         total,
         deposito,
         balance_restante: balance,
-        nota,
-        terminos,
+        nota: nota && nota.trim() !== '' ? nota : undefined,
+        terminos: terminos && terminos.trim() !== '' ? terminos : undefined,
         estado: 'borrador',
         items: items.map(i => ({
           categoria: i.categoria,
@@ -462,19 +462,29 @@ export default function FacturaForm() {
         >
           ×
         </button>
-        <div className="flex items-center mb-2 md:mb-4">
-          {/* Flecha back solo en móvil/tablet */}
-          <button
-            type="button"
-            className="md:hidden mr-2 p-2 rounded-full bg-gray-100 hover:bg-gray-200 shadow"
-            onClick={() => navigate('/facturas')}
-            aria-label="Volver a facturas"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-7 h-7">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-            </svg>
-          </button>
-          <h2 className="text-2xl md:text-3xl font-bold text-center w-full">{editMode ? 'Editar Factura' : 'Nueva Factura'}</h2>
+        {/* Header moderno con gradiente */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-100 p-6 rounded-2xl border-2 border-blue-200 mb-6">
+          <div className="flex items-center mb-4">
+            {/* Flecha back solo en móvil/tablet */}
+            <button
+              type="button"
+              className="md:hidden mr-3 p-3 rounded-full bg-white hover:bg-gray-50 shadow-md transition-all duration-200 hover:scale-110"
+              onClick={() => navigate('/facturas')}
+              aria-label="Volver a facturas"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-blue-600">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+              </svg>
+            </button>
+            <div className="flex-1 text-center">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
+                {editMode ? '✏️ Editar Factura' : '🚀 Nueva Factura'}
+              </h1>
+              <p className="text-sm md:text-base text-gray-600">
+                {editMode ? 'Modifica los datos de tu factura' : 'Completa la información para generar tu factura'}
+              </p>
+            </div>
+          </div>
         </div>
         
         {error && <div className="text-red-500 text-center mb-2 text-base">{error}</div>}
@@ -538,94 +548,136 @@ export default function FacturaForm() {
           {formErrors.cliente && <div className="text-xs text-red-500 mt-1">{formErrors.cliente}</div>}
         </div>
 
-        {/* Servicios / Items */}
-        <div className="mb-2 relative servicio-dropdown">
-          <label className="block text-base font-semibold mb-1">Servicios / Items *</label>
-          <input
-            type="text"
-            className="mb-2 px-4 py-2 rounded-xl bg-blue-50 text-blue-700 text-base w-full focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
-            placeholder="Buscar servicio..."
-            value={servicioSearch}
-            onChange={e => {
-              setServicioSearch(e.target.value);
-              setShowServicioSuggestions(true);
-            }}
-            onFocus={() => setShowServicioSuggestions(true)}
-            disabled={!isEditable}
-            autoComplete="off"
-          />
-          {showServicioSuggestions && serviciosFiltrados.length > 0 && (
-            <div className="absolute z-20 bg-white border rounded-2xl shadow max-h-52 overflow-y-auto w-full mt-1">
-              {serviciosFiltrados.map(s => (
-                <div
-                  key={s.id}
-                  className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-base"
-                  onClick={() => {
-                    handleAddServicio(s.id);
-                    setServicioSearch('');
-                    setShowServicioSuggestions(false);
-                  }}
-                >
-                  {s.nombre} (${s.precio})
-                </div>
-              ))}
-            </div>
-          )}
-          
-          {/* Items/servicios: tarjetas en móvil, tabla en desktop */}
-          <div className="mb-2">
-            <div className="font-semibold mb-2 text-base">Servicios / Items</div>
-            {/* Vista de tarjetas apiladas en móvil */}
-            <div className="flex flex-col gap-3 md:hidden">
-              {items.length === 0 && <div className="text-gray-400 text-center py-4">Agrega servicios a la factura</div>}
-              {items.map((item, idx) => (
-                <div key={idx} className="bg-gray-50 rounded-2xl shadow border p-4 w-full flex flex-col gap-2 relative">
-                  <div className="absolute top-2 right-2">
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteItem(idx)}
-                      className="text-xs px-3 py-1 rounded-full bg-red-100 text-red-600 hover:bg-red-200"
-                    >
-                      Eliminar
-                    </button>
+        {/* Servicios / Items - Modernizado */}
+        <div className="mb-6 relative servicio-dropdown">
+          <label className="block text-sm font-semibold mb-3 text-gray-700">Servicios / Items *</label>
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-2xl border-2 border-blue-100 mb-4">
+            <input
+              type="text"
+              className="w-full px-4 py-3 rounded-xl bg-white border-2 border-blue-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-base transition-all duration-200"
+              placeholder="🔍 Buscar y agregar servicio..."
+              value={servicioSearch}
+              onChange={e => {
+                setServicioSearch(e.target.value);
+                setShowServicioSuggestions(true);
+              }}
+              onFocus={() => setShowServicioSuggestions(true)}
+              disabled={!isEditable}
+              autoComplete="off"
+            />
+            {showServicioSuggestions && serviciosFiltrados.length > 0 && (
+              <div className="absolute z-20 bg-white border-2 border-blue-200 rounded-2xl shadow-xl max-h-52 overflow-y-auto w-full mt-2 left-0 right-0">
+                {serviciosFiltrados.map(s => (
+                  <div
+                    key={s.id}
+                    className="px-4 py-3 hover:bg-blue-50 cursor-pointer text-base border-b border-gray-100 last:border-b-0 transition-colors"
+                    onClick={() => {
+                      handleAddServicio(s.id);
+                      setServicioSearch('');
+                      setShowServicioSuggestions(false);
+                    }}
+                  >
+                    <div className="font-medium text-gray-800">{s.nombre}</div>
+                    <div className="text-sm text-blue-600 font-semibold">${s.precio}</div>
                   </div>
-                  <div><span className="font-semibold">Descripción:</span> {item.descripcion}</div>
-                  <div><span className="font-semibold">Categoría:</span> {item.categoria}</div>
-                  <div><span className="font-semibold">Precio Unitario:</span> ${item.precio_unitario}</div>
-                  <div><span className="font-semibold">Cantidad:</span> {item.cantidad}</div>
-                  <div><span className="font-semibold">Total:</span> <span className="text-blue-700 font-bold">${item.total}</span></div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Items/servicios agregados - Modernizado */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-lg text-gray-800">Items agregados</h3>
+              <div className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                {items.length} {items.length === 1 ? 'item' : 'items'}
+              </div>
+            </div>
+            
+            {/* Vista de tarjetas modernas en móvil */}
+            <div className="flex flex-col gap-4 md:hidden">
+              {items.length === 0 && (
+                <div className="text-center py-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300">
+                  <div className="text-gray-400 text-base mb-2">📋 No hay servicios agregados</div>
+                  <div className="text-sm text-gray-500">Busca y agrega servicios arriba</div>
+                </div>
+              )}
+              {items.map((item, idx) => (
+                <div key={idx} className="bg-white rounded-2xl shadow-lg border-2 border-gray-100 p-4 relative hover:shadow-xl transition-shadow duration-200">
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteItem(idx)}
+                    className="absolute top-3 right-3 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md transition-all duration-200 hover:scale-110"
+                  >
+                    ×
+                  </button>
+                  <div className="pr-12">
+                    <div className="font-bold text-gray-800 text-base mb-2">{item.descripcion}</div>
+                    <div className="text-sm text-gray-600 mb-1">📁 {item.categoria}</div>
+                    <div className="flex justify-between items-center mt-3">
+                      <div className="text-sm">
+                        <span className="text-gray-500">Cantidad:</span> 
+                        <span className="font-semibold ml-1">{item.cantidad}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-gray-500">Precio:</span> 
+                        <span className="font-semibold ml-1">${item.precio_unitario}</span>
+                      </div>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-700 font-medium">Total:</span>
+                        <span className="text-blue-700 font-bold text-lg">${item.total}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
             
-            {/* Tabla tradicional solo en desktop/tablet */}
-            <div className="hidden md:block rounded-2xl border border-gray-200 bg-gray-50 relative">
-              <table className="w-full text-base">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="p-3 font-semibold">Categoría</th>
-                    <th className="p-3 font-semibold">Descripción</th>
-                    <th className="p-3 font-semibold">Precio Unitario</th>
-                    <th className="p-3 font-semibold">Cantidad</th>
-                    <th className="p-3 font-semibold">Total</th>
-                    <th className="p-3 font-semibold"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item, idx) => (
-                    <tr key={idx} className="border-t">
-                      <td className="p-3 whitespace-nowrap">{item.categoria}</td>
-                      <td className="p-3 whitespace-nowrap">{item.descripcion}</td>
-                      <td className="p-3 whitespace-nowrap">${item.precio_unitario}</td>
-                      <td className="p-3 whitespace-nowrap">{item.cantidad}</td>
-                      <td className="p-3 whitespace-nowrap">${item.total}</td>
-                      <td className="p-3 whitespace-nowrap">
-                        <button type="button" onClick={() => handleDeleteItem(idx)} className="text-xs px-3 py-1 rounded-full bg-red-100 text-red-600 hover:bg-red-200">Eliminar</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* Tabla moderna para desktop/tablet */}
+            <div className="hidden md:block">
+              {items.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300">
+                  <div className="text-gray-400 text-lg mb-2">📋 No hay servicios agregados</div>
+                  <div className="text-sm text-gray-500">Busca y agrega servicios arriba</div>
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-100 overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-bold text-gray-700">📁 Categoría</th>
+                        <th className="px-4 py-3 text-left font-bold text-gray-700">📝 Descripción</th>
+                        <th className="px-4 py-3 text-left font-bold text-gray-700">💰 Precio Unit.</th>
+                        <th className="px-4 py-3 text-left font-bold text-gray-700">📊 Cantidad</th>
+                        <th className="px-4 py-3 text-left font-bold text-gray-700">💳 Total</th>
+                        <th className="px-4 py-3 text-center font-bold text-gray-700">🗑️ Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.map((item, idx) => (
+                        <tr key={idx} className="border-t border-gray-200 hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3 text-gray-600">{item.categoria}</td>
+                          <td className="px-4 py-3 font-medium text-gray-800">{item.descripcion}</td>
+                          <td className="px-4 py-3 font-semibold text-gray-700">${item.precio_unitario}</td>
+                          <td className="px-4 py-3 font-semibold text-gray-700">{item.cantidad}</td>
+                          <td className="px-4 py-3 font-bold text-blue-700">${item.total}</td>
+                          <td className="px-4 py-3 text-center">
+                            <button 
+                              type="button" 
+                              onClick={() => handleDeleteItem(idx)} 
+                              className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md transition-all duration-200 hover:scale-110 mx-auto"
+                            >
+                              ×
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
           {formErrors.items && <div className="text-xs text-red-500 mt-1">{formErrors.items}</div>}
@@ -640,16 +692,13 @@ export default function FacturaForm() {
               <label className="block text-sm font-semibold mb-2 text-gray-700">Número de Factura</label>
               <input 
                 type="text" 
-                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base ${formErrors.numero_factura ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
-                value={editMode && id && facturaCargada ? facturaCargada.numero_factura : numeroFactura} 
-                onChange={e => {
-                  const value = e.target.value.replace(/[^0-9]/g, '');
-                  setNumeroFactura(value);
-                  if (formErrors.numero_factura) setFormErrors({...formErrors, numero_factura: ''});
-                }}
-                placeholder="Número de factura"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 bg-gray-100 text-gray-600 text-base font-medium cursor-not-allowed" 
+                value={facturaCargada?.numero_factura_formateado || numeroFactura} 
+                readOnly
+                disabled
+                placeholder="Número de factura automático"
               />
-              {formErrors.numero_factura && <div className="text-xs text-red-500 mt-1">{formErrors.numero_factura}</div>}
+              <p className="text-xs text-gray-500 mt-1">Generado automáticamente</p>
             </div>
             <div>
               <label className="block text-sm font-semibold mb-2 text-gray-700">Fecha de Creación *</label>
@@ -684,11 +733,25 @@ export default function FacturaForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold mb-2 text-gray-700">Subtotal</label>
-              <input type="text" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-base font-medium" value={subtotal.toFixed(2)} readOnly />
+              <input 
+                type="text" 
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 bg-gray-100 text-gray-600 text-base font-medium cursor-not-allowed" 
+                value={`$${subtotal.toFixed(2)}`} 
+                readOnly 
+                disabled
+              />
+              <p className="text-xs text-gray-500 mt-1">Calculado automáticamente</p>
             </div>
             <div>
               <label className="block text-sm font-semibold mb-2 text-gray-700">Total</label>
-              <input type="text" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-base font-medium text-blue-600" value={total.toFixed(2)} readOnly />
+              <input 
+                type="text" 
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 bg-blue-50 text-blue-700 text-base font-bold cursor-not-allowed" 
+                value={`$${total.toFixed(2)}`} 
+                readOnly 
+                disabled
+              />
+              <p className="text-xs text-blue-600 mt-1">Total final con impuestos</p>
             </div>
           </div>
 
@@ -741,13 +804,20 @@ export default function FacturaForm() {
           {/* Balance restante */}
           <div>
             <label className="block text-sm font-semibold mb-2 text-gray-700">Balance restante</label>
-            <input type="text" className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-base font-medium text-green-600" value={balance.toFixed(2)} readOnly />
+            <input 
+              type="text" 
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 bg-green-50 text-green-700 text-base font-bold cursor-not-allowed" 
+              value={`$${balance.toFixed(2)}`} 
+              readOnly 
+              disabled
+            />
+            <p className="text-xs text-green-600 mt-1">Monto pendiente por pagar</p>
           </div>
 
           {/* Nota y términos en una fila */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-700">Nota *</label>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">Nota</label>
               <textarea 
                 className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base min-h-[100px] resize-none ${formErrors.nota ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
                 value={nota} 
@@ -759,7 +829,7 @@ export default function FacturaForm() {
               {formErrors.nota && <div className="text-xs text-red-500 mt-1">{formErrors.nota}</div>}
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-700">Términos *</label>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">Términos</label>
               <textarea 
                 className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base min-h-[100px] resize-none ${formErrors.terminos ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
                 value={terminos} 
@@ -772,30 +842,34 @@ export default function FacturaForm() {
             </div>
           </div>
 
-          {/* Botones finales modernos */}
-          <div className="flex flex-col gap-3 mt-8 md:flex-row md:gap-4 md:justify-end">
-            <button
-              type="button"
-              className="w-full md:w-auto px-6 py-3 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition-all duration-200 border-2 border-gray-200"
-              onClick={handleCancelar}
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              className="w-full md:w-auto px-6 py-3 rounded-xl bg-blue-50 text-blue-700 font-semibold hover:bg-blue-100 transition-all duration-200 border-2 border-blue-200"
-              onClick={handleGuardarBorrador}
-              disabled={loading}
-            >
-              Guardar borrador
-            </button>
-            <button
-              type="submit"
-              className="w-full md:w-auto px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-              disabled={loading}
-            >
-              {editMode ? 'Actualizar factura' : 'Crear factura'}
-            </button>
+          {/* Botones finales modernos y profesionales */}
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-2xl border-2 border-gray-200 mt-8">
+            <div className="flex flex-col gap-3 md:flex-row md:gap-4 md:justify-end">
+              <button
+                type="button"
+                className="w-full md:w-auto px-8 py-4 rounded-xl bg-white text-gray-700 font-bold hover:bg-gray-50 transition-all duration-200 border-2 border-gray-300 shadow-md hover:shadow-lg transform hover:scale-105"
+                onClick={handleCancelar}
+                disabled={loading}
+              >
+                ❌ Cancelar
+              </button>
+              <button
+                type="button"
+                className="w-full md:w-auto px-8 py-4 rounded-xl bg-yellow-500 text-white font-bold hover:bg-yellow-600 transition-all duration-200 border-2 border-yellow-600 shadow-md hover:shadow-lg transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+                onClick={handleGuardarBorrador}
+                disabled={loading}
+              >
+                📝 Guardar Borrador
+              </button>
+              <button
+                type="submit"
+                className="w-full md:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+                disabled={loading}
+                style={{ background: loading ? '#9ca3af' : undefined }}
+              >
+                {loading ? '⏳ Procesando...' : (editMode ? '✅ Actualizar Factura' : '🚀 Crear Factura')}
+              </button>
+            </div>
           </div>
         </div>
       </form>
@@ -879,11 +953,10 @@ export default function FacturaForm() {
                     telefono: negocioConfig?.telefono,
                     logo_url: negocioConfig?.logo_url,
                     nota: negocioConfig?.nota_factura,
-                    terminos: negocioConfig?.terminos_condiciones,
                   },
-                  numero_factura: editMode && id && facturaCargada ? facturaCargada.numero_factura : numeroFactura,
-                  nota,
-                  terminos,
+                  numero_factura: numeroFactura,
+                  nota: nota && nota.trim() !== '' ? nota : undefined,
+                  terminos: terminos && terminos.trim() !== '' ? terminos : undefined,
                   cliente: clientes.find(c => c.id === clienteId) || { nombre: '', email: '', telefono: '' },
                   items: items.map(item => ({
                     ...item,
@@ -895,7 +968,7 @@ export default function FacturaForm() {
                   deposito,
                   balance_restante: balance,
                   fecha_factura: fechaFactura,
-                  fecha_vencimiento: fechaVencimiento,
+                  fecha_vencimiento: fechaVencimiento && fechaVencimiento.trim() !== '' ? fechaVencimiento : undefined,
                   estado: facturaEstado,
                 }} mostrarStatus={editMode} />
               </div>
@@ -905,4 +978,4 @@ export default function FacturaForm() {
       )}
     </div>
   );
-} 
+}

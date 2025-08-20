@@ -5,6 +5,10 @@ import api from '../services/api';
 import { useState, useEffect } from 'react';
 import ClienteModal from '../components/ClienteModal';
 import MensajeWhatsappModal from '../components/MensajeWhatsappModal';
+import WhatsAppFacturaModal from '../components/WhatsAppFacturaModal';
+import EmailFacturaModal from '../components/EmailFacturaModal';
+import CompletarPagoModal from '../components/CompletarPagoModal';
+import { buildPDFUrl } from '../utils/urls';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Swal from 'sweetalert2';
@@ -27,8 +31,14 @@ export default function Home() {
   const [totalPendiente, setTotalPendiente] = useState(0);
   const [totalPagadas, setTotalPagadas] = useState(0);
   const [totalFacturas, setTotalFacturas] = useState(0);
-  const [cotizacionesPendientes, setCotizacionesPendientes] = useState(0);
   const [aPuntoDeVencer, setAPuntoDeVencer] = useState(0);
+
+  // Estado para facturas recientes
+  const [facturas, setFacturas] = useState([]);
+  const [showWhatsAppFacturaModal, setShowWhatsAppFacturaModal] = useState(false);
+  const [showEmailFacturaModal, setShowEmailFacturaModal] = useState(false);
+  const [showCompletarPagoModal, setShowCompletarPagoModal] = useState(false);
+  const [facturaSeleccionada, setFacturaSeleccionada] = useState<any>(null);
 
   // Filtros de fecha para métricas
   const [fechaDesde, setFechaDesde] = useState('');
@@ -39,6 +49,7 @@ export default function Home() {
     fetchClientes();
     fetchNegocio();
     fetchMetricas();
+    fetchFacturasRecientes();
   }, [fechaDesde, fechaHasta]);
 
   const fetchClientes = async () => {
@@ -95,9 +106,23 @@ export default function Home() {
       setTotalFacturas(facturas.length);
       setAPuntoDeVencer(aVencer);
       // Por ahora cotizaciones pendientes es 0, se implementará después
-      setCotizacionesPendientes(0);
+      // setCotizacionesPendientes(0); // Eliminado
     } catch (error) {
       console.error('Error fetching métricas:', error);
+    }
+  };
+
+  const fetchFacturasRecientes = async () => {
+    try {
+      const res = await api.get('/api/facturas');
+      const facturasData = res.data.facturas || res.data || [];
+      // Ordenar por fecha de creación (más recientes primero) y tomar las últimas 10
+      const facturasOrdenadas = facturasData
+        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 10);
+      setFacturas(facturasOrdenadas);
+    } catch (error) {
+      console.error('Error fetching facturas recientes:', error);
     }
   };
 
@@ -114,9 +139,6 @@ export default function Home() {
         break;
       case 'facturas':
         // No hace nada, no tiene redirección
-        break;
-      case 'cotizaciones':
-        // Por ahora no hace nada, se implementará después
         break;
       case 'aPuntoDeVencer':
         // Redirige a facturas con filtro "a punto de vencer"
@@ -196,6 +218,79 @@ export default function Home() {
     }
     setClienteParaMensaje(cliente);
     setShowMensajeModal(true);
+  };
+
+  // Funciones para facturas recientes
+  const handleVerInfoFactura = (factura: any) => {
+    let infoHTML = `
+      <div class="text-left space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-gray-700">Número de Factura:</span>
+          <span>${String(factura.numero_factura || 'N/A')}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-gray-700">Cliente:</span>
+          <span>${factura.cliente?.nombre || 'N/A'}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-gray-700">Total:</span>
+          <span>$${factura.total?.toFixed(2) || '0.00'}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-gray-700">Estado:</span>
+          <span class="px-2 py-1 rounded-full text-xs font-medium ${
+            factura.estado === 'pagada' ? 'bg-green-100 text-green-800' :
+            factura.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
+            factura.estado === 'vencida' ? 'bg-red-100 text-red-800' :
+            'bg-gray-100 text-gray-800'
+          }">${factura.estado || 'N/A'}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-gray-700">Fecha:</span>
+          <span>${factura.fecha ? format(new Date(factura.fecha), 'dd/MM/yyyy', { locale: es }) : (factura.created_at ? format(new Date(factura.created_at), 'dd/MM/yyyy', { locale: es }) : 'N/A')}</span>
+        </div>
+        ${factura.due_date ? `
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-gray-700">Vence:</span>
+          <span>${format(new Date(factura.due_date), 'dd/MM/yyyy', { locale: es })}</span>
+        </div>
+        ` : ''}
+      </div>
+    `;
+
+    Swal.fire({
+      title: 'Información de la Factura',
+      html: infoHTML,
+      icon: 'info',
+      confirmButtonText: 'Cerrar',
+      confirmButtonColor: color_personalizado,
+    });
+  };
+
+  const handleVerPDFFactura = (factura: any) => {
+    // Usar buildPDFUrl para generar la URL correcta del PDF
+    const pdfUrl = buildPDFUrl(factura.id);
+    window.open(pdfUrl, '_blank');
+  };
+
+  const handleCompletarPagoFactura = (factura: any) => {
+    setFacturaSeleccionada(factura);
+    setShowCompletarPagoModal(true);
+  };
+
+  const handlePagoCompletado = () => {
+    // Recargar las facturas cuando se complete el pago
+    fetchFacturasRecientes();
+  };
+
+  const handleWhatsappFactura = (factura: any) => {
+    setFacturaSeleccionada(factura);
+    setShowWhatsAppFacturaModal(true);
+  };
+
+  const handleEmailFactura = (factura: any) => {
+    setFacturaSeleccionada(factura);
+    setShowEmailFacturaModal(true);
   };
 
   const handleVerInfoCliente = (cliente: any) => {
@@ -298,7 +393,7 @@ export default function Home() {
         </div>
 
       {/* Métricas Modernas */}
-      <div className="grid grid-cols-2 gap-3 mb-6 px-3 sm:px-4 md:grid-cols-6 md:gap-6 md:px-0">
+      <div className="grid grid-cols-2 gap-3 mb-6 px-3 sm:px-4 md:grid-cols-4 md:gap-6 md:px-0 md:max-w-4xl md:mx-auto">
         {/* Total Facturado - Clickeable */}
         <div 
           className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-3 md:p-4 border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105"
@@ -356,24 +451,6 @@ export default function Home() {
           </div>
           <div className="text-xs text-purple-600 dark:text-purple-400 mt-1">
             Total emitidas
-          </div>
-        </div>
-
-        {/* Cotizaciones Pendientes - No clickeable por ahora */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-3 md:p-4 border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300">
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center">
-              <span className="text-white text-lg">📋</span>
-            </div>
-            <div className="text-right">
-              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Cotizaciones</span>
-            </div>
-          </div>
-          <div className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-            {cotizacionesPendientes}
-          </div>
-          <div className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-            Pendientes de aprobación
           </div>
         </div>
 
@@ -460,8 +537,153 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Sección de Facturas Recientes */}
+      <div className="w-full max-w-4xl mx-auto px-4 md:px-0 mb-8">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+              Facturas Recientes
+            </h2>
+            <button
+              onClick={() => navigate('/facturas/nueva')}
+              className="px-4 py-2 rounded-xl font-semibold shadow-lg transition-all duration-200 flex items-center gap-2"
+              style={{ background: color_personalizado, color: 'white' }}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Nueva Factura
+            </button>
+          </div>
+          
+          {facturas.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                No hay facturas aún
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Comienza creando tu primera factura para empezar a facturar
+              </p>
+              <button
+                onClick={() => navigate('/facturas/nueva')}
+                className="px-6 py-3 rounded-xl font-semibold shadow-lg transition-all duration-200"
+                style={{ background: color_personalizado, color: 'white' }}
+              >
+                Crear Primera Factura
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {facturas.slice(0, 6).map((factura: any) => (
+                <div
+                  key={factura.id}
+                  className="p-4 rounded-xl border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200 cursor-pointer"
+                  onClick={() => handleVerInfoFactura(factura)}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center">
+                      <span className="text-white font-semibold text-sm">
+                        {String(factura.numero_factura || 'F').charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-800 dark:text-gray-200 truncate">
+                        #{String(factura.numero_factura || 'N/A')}
+                      </h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          factura.estado === 'pagada' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                          factura.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                          factura.estado === 'vencida' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                          'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
+                        }`}>
+                          {factura.estado || 'N/A'}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          ${factura.total?.toFixed(2) || '0.00'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+                        {factura.cliente?.nombre || 'Cliente N/A'}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Botones de acción */}
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleVerPDFFactura(factura);
+                      }}
+                      className="flex-1 min-w-0 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm flex items-center justify-center gap-1"
+                      title="Ver PDF"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      PDF
+                    </button>
+                    
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEmailFactura(factura);
+                      }}
+                      className="flex-1 min-w-0 px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm flex items-center justify-center gap-1"
+                      title="Enviar Email"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Email
+                    </button>
+                    
+                    {factura.estado === 'pendiente' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCompletarPagoFactura(factura);
+                        }}
+                        className="flex-1 min-w-0 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center justify-center gap-1"
+                        title="Completar Pago"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        </svg>
+                        Pagar
+                      </button>
+                    )}
+                    
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleWhatsappFactura(factura);
+                      }}
+                      className="flex-1 min-w-0 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm flex items-center justify-center gap-1"
+                      title="WhatsApp"
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M20.52 3.48A12.07 12.07 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.16 1.6 5.97L0 24l6.18-1.62A12.07 12.07 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.21-1.25-6.23-3.48-8.52zM12 22c-1.85 0-3.68-.5-5.25-1.45l-.37-.22-3.67.96.98-3.58-.24-.37A9.94 9.94 0 0 1 2 12c0-5.52 4.48-10 10-10s10 4.48 10 10-4.48 10-10 10zm5.2-7.8c-.28-.14-1.65-.81-1.9-.9-.25-.09-.43-.14-.61.14-.18.28-.28.9-.86 1.08-.16.18-.32.2-.6.07-.28-.14-1.18-.44-2.25-1.4-.83-.74-1.39-1.65-1.55-1.93-.16-.28-.02-.43.12-.57.13-.13.28-.34.42-.51.14-.17.18-.29.28-.48.09-.19.05-.36-.02-.5-.07-.14-.61-1.47-.84-2.01-.22-.53-.45-.46-.61-.47-.16-.01-.35-.01-.54-.01-.19 0-.5.07-.76.34-.26.27-1 1-.97 2.43.03 1.43 1.03 2.81 1.18 3.01.15.2 2.03 3.1 4.93 4.23.69.3 1.23.48 1.65.61.69.22 1.32.19 1.81.12.55-.08 1.65-.67 1.88-1.32.23-.65.23-1.21.16-1.32-.07-.11-.25-.18-.53-.32z"/>
+                      </svg>
+                      WA
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Sección de Clientes Recientes */}
-      <div className="w-full max-w-4xl mx-auto px-4 md:px-0">
+      <div className="w-full max-w-4xl mx-auto px-4 md:px-0 mb-6">
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
@@ -604,6 +826,34 @@ export default function Home() {
         onClose={() => setShowMensajeModal(false)}
         cliente={clienteParaMensaje}
       />
+
+      {/* Modal de WhatsApp Factura */}
+      {showWhatsAppFacturaModal && facturaSeleccionada && (
+        <WhatsAppFacturaModal
+          open={showWhatsAppFacturaModal}
+          onClose={() => setShowWhatsAppFacturaModal(false)}
+          factura={facturaSeleccionada}
+        />
+      )}
+
+      {/* Modal de Email Factura */}
+      {showEmailFacturaModal && facturaSeleccionada && (
+        <EmailFacturaModal
+          open={showEmailFacturaModal}
+          onClose={() => setShowEmailFacturaModal(false)}
+          factura={facturaSeleccionada}
+        />
+      )}
+
+      {/* Modal de Completar Pago */}
+      {showCompletarPagoModal && facturaSeleccionada && (
+        <CompletarPagoModal
+          open={showCompletarPagoModal}
+          onClose={() => setShowCompletarPagoModal(false)}
+          factura={facturaSeleccionada}
+          onPagoCompletado={handlePagoCompletado}
+        />
+      )}
     </div>
   );
 } 

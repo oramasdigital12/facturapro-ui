@@ -17,6 +17,8 @@ import { FiDollarSign, FiCalendar, FiUser } from 'react-icons/fi';
 import CompletarPagoModal from './CompletarPagoModal';
 import WhatsAppFacturaModal from './WhatsAppFacturaModal';
 import EmailFacturaModal from './EmailFacturaModal';
+import RestaurarClienteModal from './RestaurarClienteModal';
+import { getNumeroFactura } from '../utils/facturaHelpers';
 
 type FacturaItemProps = {
   factura: any;
@@ -27,6 +29,7 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
   const [showCompletarPagoModal, setShowCompletarPagoModal] = useState(false);
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showRestaurarClienteModal, setShowRestaurarClienteModal] = useState(false);
 
   // Validación de UUID
   const esUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(id);
@@ -43,6 +46,62 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
     }
   };
 
+  // Función para obtener información del cliente (maneja clientes eliminados)
+  const getClienteInfo = (factura: any) => {
+    // Verificar si hay datos del cliente guardados en la factura
+    const tieneDatosCliente = factura.cliente && 
+      (factura.cliente.nombre || factura.cliente.email || factura.cliente.telefono);
+    
+    // Verificar si el cliente está eliminado (no tiene cliente_id pero tiene datos guardados)
+    const clienteEliminado = !factura.cliente_id && tieneDatosCliente;
+    
+    if (tieneDatosCliente) {
+      return {
+        nombre: factura.cliente.nombre || 'Cliente sin nombre',
+        email: factura.cliente.email || '',
+        telefono: factura.cliente.telefono || '',
+        eliminado: clienteEliminado,
+        datosGuardados: true
+      };
+    }
+    
+    // Si no hay datos del cliente, mostrar información de cliente eliminado
+    return {
+      nombre: 'Cliente Eliminado',
+      email: '',
+      telefono: '',
+      eliminado: true,
+      datosGuardados: false
+    };
+  };
+
+  const clienteInfo = getClienteInfo(factura);
+
+  // Función para restaurar cliente eliminado
+  const handleRestaurarCliente = () => {
+    // Si no hay datos del cliente guardados, mostrar modal para crear uno nuevo
+    if (!factura.cliente || !factura.cliente.nombre) {
+      setShowRestaurarClienteModal(true);
+      return;
+    }
+    setShowRestaurarClienteModal(true);
+  };
+
+  // Función para manejar cuando se restaura un cliente
+  const handleClienteRestaurado = async (nuevoCliente: any) => {
+    try {
+      // Actualizar la factura con el nuevo cliente_id
+      await updateFactura(factura.id, {
+        cliente_id: nuevoCliente.id,
+        cliente: nuevoCliente
+      });
+      
+      // Recargar la lista de facturas
+      onChange && onChange();
+    } catch (err: any) {
+      toast.error('Error al actualizar la factura con el cliente restaurado');
+    }
+  };
 
 
   // Función para obtener el icono del estado
@@ -141,7 +200,12 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
   };
 
   const handleLlamar = () => {
-    const tel = factura.cliente?.telefono?.replace(/[^\d]/g, '');
+    if (clienteInfo.eliminado) {
+      toast.error('No se puede llamar a un cliente eliminado');
+      return;
+    }
+    
+    const tel = clienteInfo.telefono?.replace(/[^\d]/g, '');
     if (tel) {
       window.open(`tel:${tel}`);
     } else {
@@ -150,10 +214,18 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
   };
 
   const handleWhatsapp = () => {
+    if (clienteInfo.eliminado) {
+      toast.error('No se puede enviar WhatsApp a un cliente eliminado');
+      return;
+    }
     setShowWhatsAppModal(true);
   };
 
   const handleEmail = () => {
+    if (clienteInfo.eliminado) {
+      toast.error('No se puede enviar email a un cliente eliminado');
+      return;
+    }
     setShowEmailModal(true);
   };
 
@@ -172,14 +244,27 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
         {/* Header de la factura */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+              clienteInfo.eliminado 
+                ? 'bg-gradient-to-br from-red-400 to-red-600' 
+                : 'bg-gradient-to-br from-blue-400 to-blue-600'
+            }`}>
               <span className="text-white font-bold text-lg">
-                {factura.cliente?.nombre?.charAt(0)?.toUpperCase() || 'F'}
+                {clienteInfo.eliminado ? '🗑️' : clienteInfo.nombre.charAt(0).toUpperCase()}
               </span>
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
-                {factura.cliente?.nombre || 'Cliente'}
+              <h3 className={`text-xl font-bold mb-1 ${
+                clienteInfo.eliminado 
+                  ? 'text-red-600 dark:text-red-400' 
+                  : 'text-gray-900 dark:text-gray-100'
+              }`}>
+                {clienteInfo.nombre}
+                {clienteInfo.eliminado && (
+                  <span className="ml-2 text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
+                    Eliminado
+                  </span>
+                )}
               </h3>
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                 factura.estado === 'activo' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
@@ -230,7 +315,7 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
                 Información de Factura
               </h4>
               <span className="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-full">
-                #{factura.numero_factura || 'N/A'}
+                #{getNumeroFactura(factura)}
               </span>
             </div>
             <div className="space-y-2">
@@ -311,12 +396,32 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
               
               <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
                 <FiUser className="h-5 w-5 text-purple-500" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm text-gray-500 dark:text-gray-400">Cliente</p>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">
-                    {factura.cliente?.nombre || 'Sin nombre'}
+                  <p className={`font-medium ${
+                    clienteInfo.eliminado 
+                      ? 'text-red-600 dark:text-red-400' 
+                      : 'text-gray-900 dark:text-gray-100'
+                  }`}>
+                    {clienteInfo.nombre}
+                    {clienteInfo.eliminado && (
+                      <span className="ml-2 text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
+                        Eliminado
+                      </span>
+                    )}
                   </p>
                 </div>
+
+                {clienteInfo.eliminado && (
+                  <button
+                    onClick={handleRestaurarCliente}
+                    className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
+                    title="Restaurar cliente"
+                  >
+                    <ArrowUturnLeftIcon className="h-3 w-3" />
+                    Restaurar
+                  </button>
+                )}
               </div>
               
               {factura.estado === 'pagada' && factura.metodo_pago && (
@@ -370,24 +475,39 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
         <div className="flex gap-3">
           <button
             onClick={handleLlamar}
-            className="flex-1 flex items-center justify-center gap-3 py-3 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400 rounded-xl transition-colors font-medium"
-            title="Llamar al cliente"
+            className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-xl transition-colors font-medium ${
+              clienteInfo.eliminado
+                ? 'text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed'
+                : 'text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-400'
+            }`}
+            title={clienteInfo.eliminado ? "Cliente eliminado" : "Llamar al cliente"}
+            disabled={clienteInfo.eliminado}
           >
             <PhoneIcon className="h-5 w-5" />
             Llamar
           </button>
           <button
             onClick={handleWhatsapp}
-            className="flex-1 flex items-center justify-center gap-3 py-3 text-green-600 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400 rounded-xl transition-colors font-medium"
-            title="Enviar WhatsApp"
+            className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-xl transition-colors font-medium ${
+              clienteInfo.eliminado
+                ? 'text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed'
+                : 'text-green-600 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-400'
+            }`}
+            title={clienteInfo.eliminado ? "Cliente eliminado" : "Enviar WhatsApp"}
+            disabled={clienteInfo.eliminado}
           >
             <ChatBubbleLeftIcon className="h-5 w-5" />
             WhatsApp
           </button>
           <button
             onClick={handleEmail}
-            className="flex-1 flex items-center justify-center gap-3 py-3 text-purple-600 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:text-purple-400 rounded-xl transition-colors font-medium"
-            title="Enviar Email"
+            className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-xl transition-colors font-medium ${
+              clienteInfo.eliminado
+                ? 'text-gray-400 bg-gray-100 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed'
+                : 'text-purple-600 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:text-purple-400'
+            }`}
+            title={clienteInfo.eliminado ? "Cliente eliminado" : "Enviar Email"}
+            disabled={clienteInfo.eliminado}
           >
             <span className="text-lg">📧</span>
             Email
@@ -420,6 +540,14 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
           factura={factura}
         />
       )}
+
+      {/* Modal de Restaurar Cliente */}
+      <RestaurarClienteModal
+        open={showRestaurarClienteModal}
+        onClose={() => setShowRestaurarClienteModal(false)}
+        clienteData={factura.cliente}
+        onClienteRestaurado={handleClienteRestaurado}
+      />
     </>
   );
 } 

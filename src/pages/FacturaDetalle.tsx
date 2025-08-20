@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getFacturaById } from '../services/api';
 import { useParams } from 'react-router-dom';
 import { buildPDFUrl } from '../utils/urls';
+import { getNumeroFactura } from '../utils/facturaHelpers';
 
 export default function FacturaDetalle() {
   const { id } = useParams();
@@ -48,7 +49,7 @@ export default function FacturaDetalle() {
         <div className="flex justify-end mb-4">
           <a href={linkPublicoPDF} target="_blank" rel="noopener noreferrer" className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold text-lg hover:bg-blue-700 transition">Descargar PDF</a>
         </div>
-        <h2 className="text-2xl font-bold mb-4 text-center">Factura #{factura.numero_factura}</h2>
+        <h2 className="text-2xl font-bold mb-4 text-center">Factura #{getNumeroFactura(factura)}</h2>
         {/* Info del negocio y cliente */}
         <div className="flex flex-col md:flex-row md:justify-between mb-4">
           <div>
@@ -58,7 +59,14 @@ export default function FacturaDetalle() {
           </div>
           <div className="mt-2 md:mt-0">
             <div className="font-semibold text-sm">Cliente:</div>
-            <div className="text-sm">{factura.cliente?.nombre}</div>
+            <div className={`text-sm ${!factura.cliente_id && factura.cliente?.nombre ? 'text-red-600' : ''}`}>
+              {factura.cliente?.nombre || 'Cliente Eliminado'}
+              {!factura.cliente_id && factura.cliente?.nombre && (
+                <span className="ml-2 text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
+                  Eliminado
+                </span>
+              )}
+            </div>
             <div className="text-xs text-gray-500">{factura.cliente?.email}</div>
             <div className="text-xs text-gray-500">{factura.cliente?.telefono}</div>
           </div>
@@ -66,6 +74,9 @@ export default function FacturaDetalle() {
         {/* Fechas y estado */}
         <div className="flex gap-4 mb-4">
           <div className="text-xs text-gray-500">Fecha: {factura.fecha_factura}</div>
+          {factura.fecha_vencimiento && factura.fecha_vencimiento !== '1999-99-99' && factura.fecha_vencimiento !== 'mm/dd/yyyy' && (
+            <div className="text-xs text-gray-500">Vencimiento: {factura.fecha_vencimiento}</div>
+          )}
           <div className="text-xs text-gray-500">Estado: <span className={factura.estado === 'pendiente' ? 'font-bold text-yellow-600' : factura.estado === 'pagada' ? 'font-bold text-green-600' : 'font-bold text-gray-600'}>{factura.estado}</span></div>
         </div>
         {/* Servicios/items */}
@@ -91,15 +102,19 @@ export default function FacturaDetalle() {
           <div>Depósito: <span className="font-semibold">${factura.deposito?.toFixed(2)}</span></div>
           <div>Balance: <span className="font-semibold">${factura.balance_restante?.toFixed(2)}</span></div>
         </div>
-        {/* Nota y términos */}
-        <div className="mb-4">
-          <div className="font-semibold">Nota:</div>
-          <div className="text-xs text-gray-500">{factura.nota}</div>
-        </div>
-        <div className="mb-4">
-          <div className="font-semibold">Términos y condiciones:</div>
-          <div className="text-xs text-gray-500">{factura.terminos}</div>
-        </div>
+        {/* Nota y términos - solo mostrar si tienen contenido */}
+        {factura.nota && factura.nota.trim() !== '' && (
+          <div className="mb-4">
+            <div className="font-semibold">Nota:</div>
+            <div className="text-xs text-gray-500">{factura.nota}</div>
+          </div>
+        )}
+        {factura.terminos && factura.terminos.trim() !== '' && (
+          <div className="mb-4">
+            <div className="font-semibold">Términos y condiciones:</div>
+            <div className="text-xs text-gray-500">{factura.terminos}</div>
+          </div>
+        )}
       </div>
     </div>
   );
