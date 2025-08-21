@@ -6,6 +6,8 @@ import { getNumeroFactura, getNumeroFacturaOriginal, getSiguienteNumeroFactura }
 import FacturaPreview from '../components/FacturaPreview';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
+import { crearMensajePredefinido, obtenerMensajePredefinido } from '../utils/mensajeHelpers';
+import { buildPublicFacturaUrl } from '../utils/urls';
 
 export default function FacturaForm() {
   const { id } = useParams();
@@ -266,7 +268,7 @@ export default function FacturaForm() {
           }
         }
       } else {
-        await createFactura(body);
+        const facturaCreada = await createFactura(body);
         setClienteId('');
         setItems([]);
         setImpuesto(0);
@@ -275,6 +277,34 @@ export default function FacturaForm() {
         setTerminos('');
         setFechaVencimiento('');
         setFormErrors({});
+        
+        // Crear mensajes predefinidos automáticamente SOLO si no existen
+        try {
+          const facturaData = facturaCreada.data || facturaCreada;
+          const linkFactura = buildPublicFacturaUrl(facturaData.id, facturaData);
+          
+          // Verificar si ya existen mensajes predefinidos antes de crear
+          const mensajeWhatsAppExistente = await obtenerMensajePredefinido('pendiente', 'whatsapp');
+          const mensajeEmailExistente = await obtenerMensajePredefinido('pendiente', 'email');
+          
+          // Solo crear si no existen
+          if (!mensajeWhatsAppExistente) {
+            await crearMensajePredefinido('pendiente', 'whatsapp', facturaData, linkFactura);
+            console.log('Mensaje predefinido WhatsApp creado automáticamente');
+          }
+          
+          if (!mensajeEmailExistente) {
+            await crearMensajePredefinido('pendiente', 'email', facturaData, linkFactura);
+            console.log('Mensaje predefinido Email creado automáticamente');
+          }
+          
+          if (mensajeWhatsAppExistente && mensajeEmailExistente) {
+            console.log('Mensajes predefinidos ya existen, usando los guardados');
+          }
+        } catch (mensajeError) {
+          console.warn('Error verificando/creando mensajes predefinidos:', mensajeError);
+          // No fallar la creación de la factura por errores en mensajes
+        }
       }
       
       // Cerrar loading y mostrar éxito

@@ -82,6 +82,15 @@ export default function GestionMetodosPagoModal({ open, onClose }: GestionMetodo
       return;
     }
 
+    // Validar que al menos un campo adicional esté completado
+    const tieneLink = formData.link && formData.link.trim() !== '';
+    const tieneDescripcion = formData.descripcion && formData.descripcion.trim() !== '';
+    
+    if (!tieneLink && !tieneDescripcion) {
+      toast.error('Debe completar al menos un campo: Link de Pago o Descripción/Instrucciones');
+      return;
+    }
+
     if (formData.link && !isValidUrl(formData.link)) {
       toast.error('El link debe ser una URL válida');
       return;
@@ -222,7 +231,7 @@ export default function GestionMetodosPagoModal({ open, onClose }: GestionMetodo
                   {/* Link */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Link de Pago (Opcional)
+                      Link de Pago <span className="text-orange-500">*</span>
                     </label>
                     <div className="relative">
                       <FiLink className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -242,7 +251,7 @@ export default function GestionMetodosPagoModal({ open, onClose }: GestionMetodo
                   {/* Descripción */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Descripción / Instrucciones (Opcional)
+                      Descripción / Instrucciones <span className="text-orange-500">*</span>
                     </label>
                     <textarea
                       value={formData.descripcion}
@@ -268,6 +277,20 @@ export default function GestionMetodosPagoModal({ open, onClose }: GestionMetodo
                     <label htmlFor="activo" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Método activo
                     </label>
+                  </div>
+
+                  {/* Nota de validación */}
+                  <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-3">
+                    <div className="flex items-start gap-2">
+                      <div className="flex-shrink-0 w-4 h-4 rounded-full bg-orange-500 flex items-center justify-center mt-0.5">
+                        <span className="text-white text-xs font-bold">!</span>
+                      </div>
+                      <div className="text-xs text-orange-700 dark:text-orange-300">
+                        <p className="font-medium mb-1">Campos obligatorios:</p>
+                        <p>• <strong>Nombre:</strong> Siempre requerido</p>
+                        <p>• <strong>Al menos uno:</strong> Link de Pago O Descripción/Instrucciones</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

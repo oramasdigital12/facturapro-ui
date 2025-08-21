@@ -66,9 +66,9 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ logo_url, nombre_negocio, class
               className={({ isActive: navActive }) =>
                 [
                   "flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 relative",
-                  `hover:bg-[${transparent}] hover:text-[${color_personalizado}]`,
+                  `hover:bg-[${transparent}] hover:text-[${color_personalizado}] dark:hover:text-white`,
                   (isActive || navActive)
-                    ? `bg-[${transparent}] text-[${color_personalizado}] shadow-sm`
+                    ? `bg-[${transparent}] text-[${color_personalizado}] dark:text-white shadow-sm`
                     : "text-slate-700 dark:text-slate-200 bg-transparent"
                 ].join(" ")
               }

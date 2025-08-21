@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
-import { FiEdit, FiCheck, FiX, FiMessageCircle, FiSmartphone } from 'react-icons/fi';
+import { FiEdit, FiCheck, FiX, FiMessageCircle, FiSmartphone, FiSettings } from 'react-icons/fi';
 import MetodosPagoModal from './MetodosPagoModal';
 import { buildPublicFacturaUrl } from '../utils/urls';
 import { openWhatsApp } from '../utils/urls';
+import GestionMensajesPredefinidosModal from './GestionMensajesPredefinidosModal';
+import { 
+  obtenerMensajePredefinido, 
+  generarMensajeConDatosActuales,
+  TipoMensaje
+} from '../utils/mensajeHelpers';
 
 interface MetodoPago {
   id: string;
@@ -29,6 +35,7 @@ export default function WhatsAppFacturaModal({ open, onClose, factura }: Props) 
   const [showMetodosPago, setShowMetodosPago] = useState(false);
   const [metodoSeleccionado, setMetodoSeleccionado] = useState<MetodoPago | null>(null);
   const [showEditCliente, setShowEditCliente] = useState(false);
+  const [showGestionMensajes, setShowGestionMensajes] = useState(false);
   const [clienteEditado, setClienteEditado] = useState({
     nombre: factura?.cliente?.nombre || '',
     telefono: factura?.cliente?.telefono || '',
@@ -48,13 +55,38 @@ export default function WhatsAppFacturaModal({ open, onClose, factura }: Props) 
       });
       fetchNegocioConfig();
       
-      // Generar mensaje automático al abrir el modal
+      // Cargar mensaje predefinido al abrir el modal
       if (factura) {
-        const mensajeAutomatico = generarMensajeAutomatico(factura);
-        setMensaje(mensajeAutomatico);
+        cargarMensajePredefinido();
       }
     }
   }, [open, factura]);
+
+  // Función para cargar mensaje predefinido
+  const cargarMensajePredefinido = async () => {
+    try {
+      const tipo: TipoMensaje = factura.estado === 'pagada' ? 'pagada' : 'pendiente';
+      const mensajePredefinido = await obtenerMensajePredefinido(tipo, 'whatsapp');
+      
+      if (mensajePredefinido) {
+        const linkFactura = buildPublicFacturaUrl(factura.id, factura);
+        // Si ya hay un método seleccionado, usar su link o descripción, sino usar un placeholder
+        const linkPago = metodoSeleccionado?.link;
+        const descripcionPago = metodoSeleccionado?.descripcion;
+        const mensajeGenerado = generarMensajeConDatosActuales(mensajePredefinido, factura, linkFactura, linkPago, descripcionPago);
+        setMensaje(mensajeGenerado);
+      } else {
+        // Fallback al mensaje automático si no hay predefinido
+        const mensajeAutomatico = generarMensajeAutomatico(factura, metodoSeleccionado || undefined);
+        setMensaje(mensajeAutomatico);
+      }
+    } catch (error) {
+      console.error('Error cargando mensaje predefinido:', error);
+      // Fallback al mensaje automático
+      const mensajeAutomatico = generarMensajeAutomatico(factura, metodoSeleccionado || undefined);
+      setMensaje(mensajeAutomatico);
+    }
+  };
 
   const fetchNegocioConfig = async () => {
     try {
@@ -117,9 +149,31 @@ export default function WhatsAppFacturaModal({ open, onClose, factura }: Props) 
     setMetodoSeleccionado(metodo);
     setShowMetodosPago(false);
     
-    // Generar mensaje automático con el método seleccionado
-    const mensajeAutomatico = generarMensajeAutomatico(factura, metodo);
-    setMensaje(mensajeAutomatico);
+    // Actualizar mensaje con el método seleccionado
+    actualizarMensajeConMetodo(metodo);
+  };
+
+  const actualizarMensajeConMetodo = async (metodo: MetodoPago) => {
+    try {
+      const tipo: TipoMensaje = factura.estado === 'pagada' ? 'pagada' : 'pendiente';
+      const mensajePredefinido = await obtenerMensajePredefinido(tipo, 'whatsapp');
+      
+      if (mensajePredefinido) {
+        const linkFactura = buildPublicFacturaUrl(factura.id, factura);
+        const linkPago = metodo.link;
+        const descripcionPago = metodo.descripcion;
+        const mensajeGenerado = generarMensajeConDatosActuales(mensajePredefinido, factura, linkFactura, linkPago, descripcionPago);
+        setMensaje(mensajeGenerado);
+      } else {
+        // Fallback al mensaje automático con método
+        const mensajeAutomatico = generarMensajeAutomatico(factura, metodo);
+        setMensaje(mensajeAutomatico);
+      }
+    } catch (error) {
+      console.error('Error actualizando mensaje con método:', error);
+      const mensajeAutomatico = generarMensajeAutomatico(factura, metodo);
+      setMensaje(mensajeAutomatico);
+    }
   };
 
   const handleEnviar = () => {
@@ -226,7 +280,9 @@ export default function WhatsAppFacturaModal({ open, onClose, factura }: Props) 
                 </div>
                 <div className="space-y-1 text-xs sm:text-sm text-blue-800 dark:text-blue-200">
                   <p><strong>Total:</strong> ${factura?.total?.toFixed(2)}</p>
-                  <p><strong>Balance:</strong> ${factura?.balance_restante?.toFixed(2)}</p>
+                  <p><strong>{factura?.estado === 'pagada' ? 'Balance' : 'Saldo'}:</strong> ${
+                    factura?.estado === 'pagada' ? '0.00' : factura?.balance_restante?.toFixed(2)
+                  }</p>
                 </div>
               </div>
 
@@ -350,9 +406,6 @@ export default function WhatsAppFacturaModal({ open, onClose, factura }: Props) 
 
               {/* Mensaje */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Mensaje
-                </label>
                 {factura.estado === 'pendiente' && !metodoSeleccionado ? (
                   <div className="p-3 sm:p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-2xl">
                     <p className="text-xs sm:text-sm text-yellow-700 dark:text-yellow-300">
@@ -360,13 +413,27 @@ export default function WhatsAppFacturaModal({ open, onClose, factura }: Props) 
                     </p>
                   </div>
                 ) : (
-                  <textarea
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none transition-colors resize-none text-sm"
-                    placeholder="Escribe o selecciona un mensaje..."
-                    value={mensaje}
-                    onChange={e => setMensaje(e.target.value)}
-                    rows={8}
-                  />
+                  <>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Mensaje
+                      </label>
+                      <button
+                        onClick={() => setShowGestionMensajes(true)}
+                        className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
+                      >
+                        <FiSettings className="h-3 w-3" />
+                        Gestionar
+                      </button>
+                    </div>
+                    <textarea
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none transition-colors resize-none text-sm"
+                      placeholder="Escribe o selecciona un mensaje..."
+                      value={mensaje}
+                      onChange={e => setMensaje(e.target.value)}
+                      rows={8}
+                    />
+                  </>
                 )}
               </div>
             </div>
@@ -402,6 +469,22 @@ export default function WhatsAppFacturaModal({ open, onClose, factura }: Props) 
           factura={factura}
           onMetodoSeleccionado={handleMetodoSeleccionado}
           tipoMensaje="whatsapp"
+        />
+      )}
+
+      {/* Modal de gestión de mensajes predefinidos */}
+      {showGestionMensajes && factura && (
+        <GestionMensajesPredefinidosModal
+          isOpen={showGestionMensajes}
+          onClose={() => setShowGestionMensajes(false)}
+          factura={factura}
+          tipo={factura.estado === 'pagada' ? 'pagada' : 'pendiente'}
+          canal="whatsapp"
+          metodoSeleccionado={metodoSeleccionado}
+          onMensajeActualizado={(mensajeActualizado) => {
+            setMensaje(mensajeActualizado);
+            setShowGestionMensajes(false);
+          }}
         />
       )}
     </>

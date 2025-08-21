@@ -10,11 +10,18 @@ import {
   ExclamationTriangleIcon,
   PaperAirplaneIcon,
   DocumentTextIcon,
-  UserIcon
+  UserIcon,
+  Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 import { FiCheckSquare, FiSquare } from 'react-icons/fi';
 import MetodosPagoModal from './MetodosPagoModal';
+import GestionMensajesPredefinidosModal from './GestionMensajesPredefinidosModal';
 import { buildPublicFacturaUrl } from '../utils/urls';
+import { 
+  obtenerMensajePredefinido, 
+  generarMensajeConDatosActuales,
+  TipoMensaje
+} from '../utils/mensajeHelpers';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
 
@@ -62,6 +69,7 @@ export default function EnviarEmailModal({
   const [showMetodosPago, setShowMetodosPago] = useState(false);
   const [metodoSeleccionado, setMetodoSeleccionado] = useState<MetodoPago | null>(null);
   const [portalMounted, setPortalMounted] = useState(false);
+  const [showGestionMensajes, setShowGestionMensajes] = useState(false);
 
   // Controlar el montaje del portal
   useEffect(() => {
@@ -91,45 +99,7 @@ export default function EnviarEmailModal({
     }
   }, [clientesPreseleccionados, clientes]);
 
-  // Generar mensaje automático basado en el estado de la factura
-  const generarMensajeAutomatico = (factura: any, metodo?: MetodoPago | null) => {
-    const linkPublico = buildPublicFacturaUrl(factura.id, factura);
-    
-    if (factura.estado === 'pendiente') {
-      let titulo = `Factura #${factura.numero_factura} - Pendiente de Pago`;
-      let descripcion = `Hola ${factura.cliente?.nombre},\n\n`;
-      descripcion += `Te enviamos tu factura pendiente:\n\n`;
-      descripcion += `📄 Factura #${factura.numero_factura}\n`;
-      descripcion += `💰 Total: $${factura.total?.toFixed(2)}\n`;
-      descripcion += `⚖️ Balance Pendiente: $${factura.balance_restante?.toFixed(2)}\n\n`;
-      descripcion += `🔗 Ver factura: ${linkPublico}\n\n`;
-      
-      if (metodo) {
-        descripcion += `💳 Método de Pago: ${metodo.nombre}\n`;
-        if (metodo.link) {
-          descripcion += `🔗 Pagar aquí: ${metodo.link}\n\n`;
-        }
-        if (metodo.descripcion) {
-          descripcion += `📝 Instrucciones:\n${metodo.descripcion}\n\n`;
-        }
-      }
-      
-      descripcion += `Gracias por tu preferencia.\n\nSaludos cordiales.`;
-      return { titulo, descripcion };
-    } else if (factura.estado === 'pagada') {
-      let titulo = `Factura #${factura.numero_factura} - Pago Confirmado`;
-      let descripcion = `Hola ${factura.cliente?.nombre},\n\n`;
-      descripcion += `¡Gracias por tu pago!\n\n`;
-      descripcion += `✅ Factura #${factura.numero_factura} - PAGADA\n`;
-      descripcion += `💰 Total pagado: $${factura.total?.toFixed(2)}\n`;
-      descripcion += `📅 Fecha de pago: ${new Date(factura.fecha_pago).toLocaleDateString()}\n\n`;
-      descripcion += `🔗 Ver factura completa: ${linkPublico}\n\n`;
-      descripcion += `¡Esperamos verte pronto!\n\nSaludos cordiales.`;
-      return { titulo, descripcion };
-    }
-    
-    return { titulo: '', descripcion: '' };
-  };
+
 
   // Seleccionar todos los clientes del sistema
   const handleSeleccionarTodos = () => {
@@ -265,24 +235,72 @@ export default function EnviarEmailModal({
     onClose();
   };
 
+  // Cargar mensaje predefinido si hay factura
+  const cargarMensajePredefinido = async () => {
+    if (!factura) return;
+    
+    try {
+      const linkFactura = buildPublicFacturaUrl(factura.id, factura);
+      const linkPago = metodoSeleccionado?.link || 'https://stripe.com/payments/link';
+      
+      // Determinar el tipo de mensaje basado en el estado de la factura
+      const tipo: TipoMensaje = factura.estado === 'pendiente' ? 'pendiente' : 
+                               factura.estado === 'pagada' ? 'pagada' : 'vencida';
+      
+      const mensaje = await obtenerMensajePredefinido(tipo, 'email');
+      
+      if (mensaje) {
+        const mensajeGenerado = generarMensajeConDatosActuales(mensaje, factura, linkFactura, linkPago);
+        // Separar título y descripción (primera línea como título, resto como descripción)
+        const lineas = mensajeGenerado.split('\n');
+        const nuevoTitulo = lineas[0] || '';
+        const nuevaDescripcion = lineas.slice(1).join('\n').trim();
+        
+        setTitulo(nuevoTitulo);
+        setDescripcion(nuevaDescripcion);
+      }
+    } catch (error) {
+      console.error('Error cargando mensaje predefinido:', error);
+    }
+  };
+
+  // Actualizar mensaje con método seleccionado
+  const actualizarMensajeConMetodo = async (metodo: MetodoPago) => {
+    if (!factura) return;
+    
+    try {
+      const linkFactura = buildPublicFacturaUrl(factura.id, factura);
+      const linkPago = metodo.link || 'https://stripe.com/payments/link';
+      
+      const tipo: TipoMensaje = factura.estado === 'pendiente' ? 'pendiente' : 
+                               factura.estado === 'pagada' ? 'pagada' : 'vencida';
+      
+      const mensaje = await obtenerMensajePredefinido(tipo, 'email');
+      
+      if (mensaje) {
+        const mensajeGenerado = generarMensajeConDatosActuales(mensaje, factura, linkFactura, linkPago);
+        const lineas = mensajeGenerado.split('\n');
+        const nuevoTitulo = lineas[0] || '';
+        const nuevaDescripcion = lineas.slice(1).join('\n').trim();
+        
+        setTitulo(nuevoTitulo);
+        setDescripcion(nuevaDescripcion);
+      }
+    } catch (error) {
+      console.error('Error actualizando mensaje con método:', error);
+    }
+  };
+
   const handleMetodoSeleccionado = (metodo: MetodoPago) => {
     setMetodoSeleccionado(metodo);
-    // Generar mensaje automático con el método seleccionado
-    if (factura) {
-      const mensajeAutomatico = generarMensajeAutomatico(factura, metodo);
-      setTitulo(mensajeAutomatico.titulo);
-      setDescripcion(mensajeAutomatico.descripcion);
-    }
+    // Actualizar mensaje con el método seleccionado
+    actualizarMensajeConMetodo(metodo);
   };
 
   // Generar mensaje automático al abrir si hay factura
   useEffect(() => {
     if (open && factura && !titulo && !descripcion) {
-      const mensajeAutomatico = generarMensajeAutomatico(factura, metodoSeleccionado);
-      if (mensajeAutomatico.titulo && mensajeAutomatico.descripcion) {
-        setTitulo(mensajeAutomatico.titulo);
-        setDescripcion(mensajeAutomatico.descripcion);
-      }
+      cargarMensajePredefinido();
     }
   }, [open, factura, metodoSeleccionado]);
 
@@ -572,9 +590,20 @@ export default function EnviarEmailModal({
 
                       {/* Descripción del email */}
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                          Mensaje del Email *
-                        </label>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Mensaje del Email *
+                          </label>
+                          {factura && (
+                            <button
+                              onClick={() => setShowGestionMensajes(true)}
+                              className="flex items-center space-x-1 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-lg text-xs font-semibold transition-colors"
+                            >
+                              <Cog6ToothIcon className="w-3 h-3" />
+                              <span>Gestionar</span>
+                            </button>
+                          )}
+                        </div>
                         <textarea
                           className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 focus:border-purple-500 transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none min-h-[120px]"
                           value={descripcion}
@@ -718,6 +747,25 @@ export default function EnviarEmailModal({
           factura={factura}
           onMetodoSeleccionado={handleMetodoSeleccionado}
           tipoMensaje="email"
+        />
+      )}
+
+      {/* Modal de gestión de mensajes predefinidos */}
+      {showGestionMensajes && factura && (
+        <GestionMensajesPredefinidosModal
+          isOpen={showGestionMensajes}
+          onClose={() => setShowGestionMensajes(false)}
+          factura={factura}
+          tipo={factura.estado === 'pendiente' ? 'pendiente' : 
+                factura.estado === 'pagada' ? 'pagada' : 'vencida'}
+          canal="email"
+          onMensajeActualizado={(mensaje) => {
+            const lineas = mensaje.split('\n');
+            const nuevoTitulo = lineas[0] || '';
+            const nuevaDescripcion = lineas.slice(1).join('\n').trim();
+            setTitulo(nuevoTitulo);
+            setDescripcion(nuevaDescripcion);
+          }}
         />
       )}
     </>

@@ -277,14 +277,17 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
             </div>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={handleEditar}
-              className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-colors"
-              title="Editar factura"
-              disabled={!idValido}
-            >
-              <PencilIcon className="h-5 w-5" />
-            </button>
+            {/* Botón de editar solo para facturas NO pagadas */}
+            {factura.estado !== 'pagada' && (
+              <button
+                onClick={handleEditar}
+                className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-colors"
+                title="Editar factura"
+                disabled={!idValido}
+              >
+                <PencilIcon className="h-5 w-5" />
+              </button>
+            )}
             {factura.estado === 'pagada' && (
               <button 
                 onClick={handleDeshacerPagada} 
