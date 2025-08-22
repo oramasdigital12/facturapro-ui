@@ -25,9 +25,10 @@ interface Props {
   onClose: () => void;
   cliente: { nombre: string; telefono: string } | null;
   factura?: any; // Añadir factura como prop opcional
+  color_personalizado?: string;
 }
 
-export default function MensajeWhatsappModal({ open, onClose, cliente, factura }: Props) {
+export default function MensajeWhatsappModal({ open, onClose, cliente, factura, color_personalizado = '#2563eb' }: Props) {
   const [mensaje, setMensaje] = useState('');
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [loading, setLoading] = useState(false);
@@ -208,7 +209,7 @@ export default function MensajeWhatsappModal({ open, onClose, cliente, factura }
         <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
           <div className="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75" onClick={onClose}></div>
 
-          <div className="relative inline-block w-full max-w-2xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-2xl rounded-3xl flex flex-col max-h-[95vh] sm:max-h-[98vh]">
+          <div className="relative mx-auto w-full max-w-2xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-2xl rounded-3xl flex flex-col max-h-[95vh] sm:max-h-[98vh]">
             {/* Header moderno */}
             <div className="flex items-center justify-between mb-4 sm:mb-6 flex-shrink-0">
               <div className="flex items-center gap-3">
@@ -321,7 +322,8 @@ export default function MensajeWhatsappModal({ open, onClose, cliente, factura }
                   </h4>
                   <button
                     onClick={() => setShowCrearModal(true)}
-                    className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                    className="flex items-center gap-2 px-3 py-2 text-white rounded-lg transition-colors text-sm font-medium"
+                    style={{ backgroundColor: color_personalizado }}
                   >
                     <FiPlus className="h-4 w-4" />
                     Crear
@@ -355,7 +357,8 @@ export default function MensajeWhatsappModal({ open, onClose, cliente, factura }
                     <p className="text-gray-500 dark:text-gray-400 mb-4">No hay mensajes predefinidos</p>
                     <button
                       onClick={() => setShowCrearModal(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
+                      className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-colors mx-auto"
+                    style={{ backgroundColor: color_personalizado }}
                     >
                       <FiPlus className="h-4 w-4" />
                       Crear Primer Mensaje
@@ -438,7 +441,8 @@ export default function MensajeWhatsappModal({ open, onClose, cliente, factura }
                   Cancelar
                 </button>
                 <button
-                  className="flex-1 px-4 py-2.5 sm:px-6 sm:py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm sm:text-base"
+                                        className="flex-1 px-4 py-2.5 sm:px-6 sm:py-3 text-white rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm sm:text-base"
+                      style={{ backgroundColor: color_personalizado }}
                   onClick={handleEnviar}
                   disabled={loading || !negocioConfig?.telefono || !validarTelefono(negocioConfig.telefono) || !mensaje.trim()}
                 >
@@ -507,7 +511,8 @@ export default function MensajeWhatsappModal({ open, onClose, cliente, factura }
                   Cancelar
                 </button>
                 <button
-                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="flex-1 px-6 py-3 text-white rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      style={{ backgroundColor: color_personalizado }}
                   onClick={handleGuardar}
                   disabled={loading || !nuevoMensaje.trim()}
                 >

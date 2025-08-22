@@ -478,11 +478,13 @@ export default function Clientes() {
             setClienteParaEmail(null);
           }}
           cliente={clienteEditando}
+          color_personalizado={color_personalizado}
         />
         <MensajeWhatsappModal
           open={showMensajeModal}
           onClose={() => setShowMensajeModal(false)}
           cliente={clienteParaMensaje}
+          color_personalizado={color_personalizado}
         />
         {showEmailModal && (
           <EnviarEmailModal

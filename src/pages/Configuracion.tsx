@@ -73,9 +73,9 @@ const Configuracion: React.FC = () => {
         </div>
       </div>
 
-      <InfoNegocioModal open={showInfoModal} onClose={() => setShowInfoModal(false)} />
+      <InfoNegocioModal open={showInfoModal} onClose={() => setShowInfoModal(false)} color_personalizado={color_personalizado} />
       <GestionCategoriasServiciosModal open={showGestionModal} onClose={() => setShowGestionModal(false)} />
-      <GestionMetodosPagoModal open={showMetodosPagoModal} onClose={() => setShowMetodosPagoModal(false)} />
+      <GestionMetodosPagoModal open={showMetodosPagoModal} onClose={() => setShowMetodosPagoModal(false)} color_personalizado={color_personalizado} />
     </div>
   );
 };

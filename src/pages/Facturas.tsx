@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useNavigate, useOutletContext, useLocation } from 'react-router-dom';
 import { getFacturas } from '../services/api';
 import { FiSearch, FiFileText, FiCalendar, FiX } from 'react-icons/fi';
 import FacturaItem from '../components/FacturaItem';
@@ -11,6 +11,8 @@ const estados = [
   { label: 'Todas', value: '', color: 'blue', icon: '📄' },
   { label: 'Pagadas', value: 'pagada', color: 'green', icon: '✅' },
   { label: 'Pendientes', value: 'pendiente', color: 'yellow', icon: '⏳' },
+  { label: 'Por Vencer', value: 'por_vencer', color: 'orange', icon: '⚠️' },
+  { label: 'Vencidas', value: 'vencida', color: 'red', icon: '🚨' },
   { label: 'Borradores', value: 'borrador', color: 'purple', icon: '📝' },
 ];
 
@@ -28,8 +30,18 @@ export default function Facturas() {
   const [mostrarFiltrosFecha, setMostrarFiltrosFecha] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
   const outletContext = useOutletContext() as { color_personalizado?: string } | null;
   const color_personalizado = outletContext?.color_personalizado || '#2563eb';
+
+  // Leer parámetros de la URL al cargar
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const estadoParam = searchParams.get('estado');
+    if (estadoParam) {
+      setEstado(estadoParam);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     fetchFacturas();
@@ -40,21 +52,34 @@ export default function Facturas() {
     setLoading(true);
     setError(null);
     try {
-      const params: any = { page, limit: PAGE_SIZE };
+      // Para filtros especiales o "Todas", cargar todas las facturas sin paginación
+      const needAllData = estado === '' || ['por_vencer', 'vencida'].includes(estado);
+      
+      const params: any = needAllData ? {} : { page, limit: PAGE_SIZE };
       if (busqueda) params.q = busqueda;
-      if (estado) params.estado = estado;
+      
+      // Solo enviar estado a la API si es un estado real de la base de datos
+      if (estado && !['por_vencer', 'vencida'].includes(estado)) {
+        params.estado = estado;
+      }
+      
       if (fechaDesde) params.fecha_inicio = fechaDesde;
       if (fechaHasta) params.fecha_fin = fechaHasta;
+      
       const res = await getFacturas(params);
       const facturasData = res.data.facturas || res.data || [];
-      // Debug: Verificar qué campos llegan de la API
-      if (facturasData.length > 0) {
-        console.log('Primera factura - campos disponibles:', Object.keys(facturasData[0]));
-        console.log('Primera factura - numero_factura:', facturasData[0].numero_factura);
-      }
+      
       setFacturas(facturasData);
       setTotalFacturas(res.data.total || (res.data.facturas ? res.data.facturas.length : res.data.length));
-      setTotalPages(res.data.totalPages || Math.ceil((res.data.total || res.data.length || 1) / PAGE_SIZE));
+      
+      // Calcular paginación correctamente
+      if (needAllData) {
+        // Para filtros especiales, calcular páginas después del filtrado
+        const totalFiltered = getFilteredCount(facturasData);
+        setTotalPages(Math.ceil(totalFiltered / PAGE_SIZE));
+      } else {
+        setTotalPages(res.data.totalPages || Math.ceil((res.data.total || res.data.length || 1) / PAGE_SIZE));
+      }
     } catch (err: any) {
       setError(err.message || 'Error al cargar facturas');
     } finally {
@@ -64,6 +89,29 @@ export default function Facturas() {
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) setPage(newPage);
+  };
+
+  // Funciones para calcular estado de vencimiento
+  const calcularDiasHastaVencimiento = (fechaVencimiento: string) => {
+    if (!fechaVencimiento) return null;
+    const hoy = new Date();
+    const vencimiento = new Date(fechaVencimiento);
+    hoy.setHours(0, 0, 0, 0);
+    vencimiento.setHours(0, 0, 0, 0);
+    const diferencia = Math.ceil((vencimiento.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+    return diferencia;
+  };
+
+  const esFacturaPorVencer = (factura: any) => {
+    if (factura.estado !== 'pendiente' || !factura.fecha_vencimiento) return false;
+    const dias = calcularDiasHastaVencimiento(factura.fecha_vencimiento);
+    return dias !== null && dias >= 0 && dias <= 3;
+  };
+
+  const esFacturaVencida = (factura: any) => {
+    if (factura.estado !== 'pendiente' || !factura.fecha_vencimiento) return false;
+    const dias = calcularDiasHastaVencimiento(factura.fecha_vencimiento);
+    return dias !== null && dias < 0;
   };
 
   const filtrarPorNombre = (factura: any) => {
@@ -80,11 +128,47 @@ export default function Facturas() {
     return nombreCliente.startsWith(busqueda.trim().toLowerCase());
   };
 
-  // Calcular contadores
+  // Función para contar facturas filtradas
+  const getFilteredCount = (facturasData: any[]) => {
+    return facturasData
+      .filter(filtrarPorNombre)
+      .filter(factura => {
+        if (!estado) return true;
+        if (estado === 'por_vencer') return esFacturaPorVencer(factura);
+        if (estado === 'vencida') return esFacturaVencida(factura);
+        return factura.estado === estado;
+      }).length;
+  };
+
+  // Funciones para obtener facturas filtradas según el estado de vencimiento
+  const getFacturasFiltradas = () => {
+    const filtered = facturas
+      .filter(filtrarPorNombre)
+      .filter(factura => {
+        if (!estado) return true;
+        if (estado === 'por_vencer') return esFacturaPorVencer(factura);
+        if (estado === 'vencida') return esFacturaVencida(factura);
+        return factura.estado === estado;
+      });
+
+    // Para filtros especiales, aplicar paginación manual
+    const needAllData = estado === '' || ['por_vencer', 'vencida'].includes(estado);
+    if (needAllData) {
+      const startIndex = (page - 1) * PAGE_SIZE;
+      const endIndex = startIndex + PAGE_SIZE;
+      return filtered.slice(startIndex, endIndex);
+    }
+
+    return filtered;
+  };
+
+  // Calcular contadores basados en todas las facturas disponibles
   const contadores = {
     '': facturas.length,
     'pagada': facturas.filter(f => f.estado === 'pagada').length,
     'pendiente': facturas.filter(f => f.estado === 'pendiente').length,
+    'por_vencer': facturas.filter(f => esFacturaPorVencer(f)).length,
+    'vencida': facturas.filter(f => esFacturaVencida(f)).length,
     'borrador': facturas.filter(f => f.estado === 'borrador').length,
   };
 
@@ -147,33 +231,33 @@ export default function Facturas() {
              />
           </div>
 
-          {/* Filtros modernos - Scroll horizontal en móvil */}
-                     <div className="overflow-x-auto pb-2 md:pb-0">
-             <div className="flex gap-1.5 md:gap-3 justify-start md:justify-center min-w-max md:min-w-0">
-               {estados.map(est => (
-                 <button
-                   key={est.value}
-                   className={`flex flex-col items-center px-3 md:px-6 py-2.5 md:py-4 rounded-2xl border-2 transition-all duration-300 min-w-[70px] md:min-w-[100px] flex-shrink-0 focus:outline-none transform hover:scale-105 ${
-                     estado === est.value 
-                       ? `border-${est.color}-500 bg-${est.color}-50 text-${est.color}-700 shadow-lg` 
-                       : `border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-${est.color}-400 hover:text-${est.color}-600 hover:shadow-md`
-                   }`}
-                   onClick={() => { setEstado(est.value); setPage(1); }}
-                 >
-                   <span className="text-lg md:text-2xl mb-1 md:mb-2">{est.icon}</span>
-                   <span className="text-xs md:text-sm font-semibold text-center">{est.label}</span>
-                   <span className={`text-sm md:text-lg font-bold mt-1 ${
-                     est.color === 'blue' ? 'text-blue-600' :
-                     est.color === 'green' ? 'text-green-600' :
-                     est.color === 'yellow' ? 'text-yellow-600' :
-                     'text-purple-600'
-                   }`}>
-                     {contadores[est.value as keyof typeof contadores]}
-                   </span>
-                 </button>
-               ))}
-             </div>
-           </div>
+          {/* Filtros modernos - Responsive sin scroll horizontal */}
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 md:gap-3">
+            {estados.map(est => (
+              <button
+                key={est.value}
+                className={`flex flex-col items-center px-2 md:px-4 py-3 md:py-4 rounded-xl border-2 transition-all duration-300 focus:outline-none transform hover:scale-105 ${
+                  estado === est.value 
+                    ? `border-${est.color}-500 bg-${est.color}-50 text-${est.color}-700 shadow-lg` 
+                    : `border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-${est.color}-400 hover:text-${est.color}-600 hover:shadow-md`
+                }`}
+                onClick={() => { setEstado(est.value); setPage(1); }}
+              >
+                <span className="text-base md:text-lg mb-1">{est.icon}</span>
+                <span className="text-xs font-semibold text-center leading-tight">{est.label}</span>
+                <span className={`text-xs md:text-sm font-bold mt-1 ${
+                  est.color === 'blue' ? 'text-blue-600' :
+                  est.color === 'green' ? 'text-green-600' :
+                  est.color === 'yellow' ? 'text-yellow-600' :
+                  est.color === 'orange' ? 'text-orange-600' :
+                  est.color === 'red' ? 'text-red-600' :
+                  'text-purple-600'
+                }`}>
+                  {contadores[est.value as keyof typeof contadores]}
+                </span>
+              </button>
+            ))}
+          </div>
 
           {/* Botón para mostrar/ocultar filtros de fecha */}
           <div className="flex justify-center">
@@ -293,7 +377,7 @@ export default function Facturas() {
             <div className="text-center py-8">
               <p className="text-red-500">{error}</p>
             </div>
-          ) : facturas.length === 0 ? (
+          ) : getFacturasFiltradas().length === 0 ? (
             <div className="text-center py-8">
               <FiFileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
@@ -316,11 +400,37 @@ export default function Facturas() {
             </div>
           ) : (
             <>
-              {facturas.filter(filtrarPorNombre).map((factura) => (
+              {getFacturasFiltradas()
+                .sort((a, b) => {
+                  // Solo aplicar ordenamiento personalizado para el filtro "Todas"
+                  if (estado === '') {
+                    const aVencida = esFacturaVencida(a);
+                    const bVencida = esFacturaVencida(b);
+                    const aPorVencer = esFacturaPorVencer(a);
+                    const bPorVencer = esFacturaPorVencer(b);
+
+                    // 1. Vencidas primero (prioridad máxima)
+                    if (aVencida && !bVencida) return -1;
+                    if (!aVencida && bVencida) return 1;
+
+                    // 2. Luego Por Vencer (prioridad media)
+                    if (aPorVencer && !bPorVencer) return -1;
+                    if (!aPorVencer && bPorVencer) return 1;
+
+                    // 3. Para el resto, ordenar por fecha de creación descendente (más recientes primero)
+                    const dateA = new Date(a.created_at || a.fecha_factura || 0);
+                    const dateB = new Date(b.created_at || b.fecha_factura || 0);
+                    return dateB.getTime() - dateA.getTime();
+                  }
+                  return 0; // No aplicar ordenamiento personalizado para otros filtros
+                })
+                .map((factura) => (
                 <FacturaItem
                   key={factura.id}
                   factura={factura}
                   onChange={fetchFacturas}
+                  color_personalizado={color_personalizado}
+                  calcularDiasHastaVencimiento={calcularDiasHastaVencimiento}
                 />
               ))}
               

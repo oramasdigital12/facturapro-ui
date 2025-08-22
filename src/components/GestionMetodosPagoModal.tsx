@@ -16,9 +16,10 @@ interface MetodoPago {
 interface GestionMetodosPagoModalProps {
   open: boolean;
   onClose: () => void;
+  color_personalizado?: string;
 }
 
-export default function GestionMetodosPagoModal({ open, onClose }: GestionMetodosPagoModalProps) {
+export default function GestionMetodosPagoModal({ open, onClose, color_personalizado = '#2563eb' }: GestionMetodosPagoModalProps) {
   const [metodos, setMetodos] = useState<MetodoPago[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -169,11 +170,11 @@ export default function GestionMetodosPagoModal({ open, onClose }: GestionMetodo
       <div className="flex items-center justify-center min-h-screen px-2 pt-2 pb-16 text-center sm:block sm:p-0 sm:px-4">
         <div className="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75" onClick={onClose}></div>
 
-        <div className="relative inline-block w-full max-w-2xl p-4 my-4 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-2xl rounded-3xl sm:p-6 sm:my-8 flex flex-col max-h-[92vh] sm:max-h-[95vh] md:max-h-[98vh]">
+        <div className="relative mx-auto w-full max-w-2xl p-4 my-4 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-2xl rounded-3xl sm:p-6 sm:my-8 flex flex-col max-h-[92vh] sm:max-h-[95vh] md:max-h-[98vh]">
           {/* Header moderno */}
           <div className="flex items-center justify-between mb-4 sm:mb-6 flex-shrink-0">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${color_personalizado}, ${color_personalizado}dd)` }}>
                 <FiDollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               <div>
@@ -223,7 +224,8 @@ export default function GestionMetodosPagoModal({ open, onClose }: GestionMetodo
                       type="text"
                       value={formData.nombre}
                       onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                      className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none transition-colors text-sm"
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none transition-colors text-sm"
+                      style={{ borderColor: formData.nombre ? color_personalizado : undefined }}
                       placeholder="Ej: PayPal, ATH Móvil, Efectivo"
                     />
                   </div>
@@ -231,7 +233,7 @@ export default function GestionMetodosPagoModal({ open, onClose }: GestionMetodo
                   {/* Link */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Link de Pago <span className="text-orange-500">*</span>
+                      Link de Pago <span style={{ color: color_personalizado }}>*</span>
                     </label>
                     <div className="relative">
                       <FiLink className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -239,7 +241,8 @@ export default function GestionMetodosPagoModal({ open, onClose }: GestionMetodo
                         type="url"
                         value={formData.link}
                         onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                        className="w-full pl-10 pr-3 sm:pr-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none transition-colors text-sm"
+                        className="w-full pl-10 pr-3 sm:pr-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none transition-colors text-sm"
+                        style={{ borderColor: formData.link ? color_personalizado : undefined }}
                         placeholder="https://paypal.me/tuempresa"
                       />
                     </div>
@@ -251,13 +254,14 @@ export default function GestionMetodosPagoModal({ open, onClose }: GestionMetodo
                   {/* Descripción */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Descripción / Instrucciones <span className="text-orange-500">*</span>
+                      Descripción / Instrucciones <span style={{ color: color_personalizado }}>*</span>
                     </label>
                     <textarea
                       value={formData.descripcion}
                       onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
                       rows={3}
-                      className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none transition-colors resize-none text-sm"
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none transition-colors resize-none text-sm"
+                      style={{ borderColor: formData.descripcion ? color_personalizado : undefined }}
                       placeholder="Instrucciones paso a paso para pagar..."
                     />
                     <p className="text-xs text-gray-500 mt-1">
@@ -272,7 +276,8 @@ export default function GestionMetodosPagoModal({ open, onClose }: GestionMetodo
                       id="activo"
                       checked={formData.activo}
                       onChange={(e) => setFormData({ ...formData, activo: e.target.checked })}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      className="w-4 h-4 bg-gray-100 border-gray-300 rounded"
+                      style={{ color: color_personalizado, '--tw-ring-color': color_personalizado } as React.CSSProperties}
                     />
                     <label htmlFor="activo" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Método activo
@@ -280,12 +285,12 @@ export default function GestionMetodosPagoModal({ open, onClose }: GestionMetodo
                   </div>
 
                   {/* Nota de validación */}
-                  <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-3">
+                  <div className="rounded-xl p-3" style={{ backgroundColor: `${color_personalizado}10`, border: `1px solid ${color_personalizado}30` }}>
                     <div className="flex items-start gap-2">
-                      <div className="flex-shrink-0 w-4 h-4 rounded-full bg-orange-500 flex items-center justify-center mt-0.5">
+                      <div className="flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center mt-0.5" style={{ backgroundColor: color_personalizado }}>
                         <span className="text-white text-xs font-bold">!</span>
                       </div>
-                      <div className="text-xs text-orange-700 dark:text-orange-300">
+                      <div className="text-xs" style={{ color: color_personalizado }}>
                         <p className="font-medium mb-1">Campos obligatorios:</p>
                         <p>• <strong>Nombre:</strong> Siempre requerido</p>
                         <p>• <strong>Al menos uno:</strong> Link de Pago O Descripción/Instrucciones</p>
@@ -316,7 +321,8 @@ export default function GestionMetodosPagoModal({ open, onClose }: GestionMetodo
                     </p>
                     <button
                       onClick={handleCrear}
-                      className="flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-lg text-sm"
+                      className="flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2.5 sm:py-3 text-white rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg text-sm"
+                      style={{ background: `linear-gradient(90deg, ${color_personalizado}, ${color_personalizado}dd)` }}
                     >
                       <FiPlus className="h-4 w-4 sm:h-5 sm:w-5" />
                       Agregar Primer Método
@@ -328,7 +334,8 @@ export default function GestionMetodosPagoModal({ open, onClose }: GestionMetodo
                     {/* Botón agregar nuevo */}
                     <button
                       onClick={handleCrear}
-                      className="w-full flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-200 transform hover:scale-105 shadow-lg text-sm"
+                      className="w-full flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 text-white rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg text-sm"
+                      style={{ background: `linear-gradient(90deg, ${color_personalizado}, ${color_personalizado}dd)` }}
                     >
                       <FiPlus className="h-4 w-4" />
                       Agregar Nuevo Método

@@ -7,6 +7,7 @@ import { FiX, FiUpload, FiFileText, FiPhone, FiMapPin, FiHome, FiDroplet } from 
 interface InfoNegocioModalProps {
   open: boolean;
   onClose: () => void;
+  color_personalizado?: string;
 }
 
 function validarTelefono(telefono: string) {
@@ -17,7 +18,7 @@ function validarEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-export default function InfoNegocioModal({ open, onClose }: InfoNegocioModalProps) {
+export default function InfoNegocioModal({ open, onClose, color_personalizado = '#2563eb' }: InfoNegocioModalProps) {
   const [negocioForm, setNegocioForm] = useState<NegocioConfig>({
     nombre_negocio: '',
     tipo_negocio: '',
@@ -103,7 +104,7 @@ export default function InfoNegocioModal({ open, onClose }: InfoNegocioModalProp
     if (!negocioForm.telefono) {
       nuevosErrores.telefono = 'El teléfono es obligatorio.';
     } else if (!validarTelefono(negocioForm.telefono)) {
-      nuevosErrores.telefono = 'El teléfono debe tener exactamente 10 dígitos.';
+      nuevosErrores.telefono = 'El teléfono debe tener exactamente 10 dígitos sin espacios. Ejemplo: 9392283101';
     }
     if (!negocioForm.email) {
       nuevosErrores.email = 'El email es obligatorio.';
@@ -130,7 +131,6 @@ export default function InfoNegocioModal({ open, onClose }: InfoNegocioModalProp
       await updateNegocioConfig(negocioForm);
       toast.success('Configuración de negocio guardada');
       onClose();
-      window.location.reload();
     } catch (error) {
       toast.error('Error al guardar la configuración');
     } finally {
@@ -141,15 +141,15 @@ export default function InfoNegocioModal({ open, onClose }: InfoNegocioModalProp
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-[99999] overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-2 pt-2 pb-16 text-center sm:block sm:p-0 sm:px-4">
         <div className="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75" onClick={onClose}></div>
 
-        <div className="relative inline-block w-full max-w-2xl p-4 my-4 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-2xl rounded-3xl sm:p-6 sm:my-8 flex flex-col max-h-[92vh] sm:max-h-[95vh] md:max-h-[98vh]">
+        <div className="relative mx-auto w-full max-w-2xl p-4 my-4 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-2xl rounded-3xl sm:p-6 sm:my-8 flex flex-col max-h-[92vh] sm:max-h-[95vh] md:max-h-[98vh]">
           {/* Header moderno */}
           <div className="flex items-center justify-between mb-4 sm:mb-6 flex-shrink-0">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${color_personalizado}, ${color_personalizado}dd)` }}>
                 <FiHome className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               <div>
@@ -190,12 +190,14 @@ export default function InfoNegocioModal({ open, onClose }: InfoNegocioModalProp
                     )}
                   </div>
                   <div className="flex-1">
-                    <label className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-3 bg-blue-600 text-white rounded-xl cursor-pointer hover:bg-blue-700 transition-colors font-medium text-xs sm:text-sm">
+                    <label className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-3 text-white rounded-xl cursor-pointer transition-colors font-medium text-xs sm:text-sm"
+                      style={{ backgroundColor: color_personalizado }}
+                    >
                       <FiUpload className="h-3 w-3 sm:h-4 sm:w-4" />
                       {loadingLogo ? 'Subiendo...' : 'Subir logo'}
                       <input type="file" accept="image/png,image/jpeg,image/jpg" className="hidden" onChange={handleLogoChange} disabled={loadingLogo} />
                     </label>
-                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">PNG/JPG, máx 1MB</p>
+                    <p className="text-xs mt-2" style={{ color: color_personalizado }}>PNG/JPG, máx 1MB</p>
                   </div>
                 </div>
               </div>
@@ -221,11 +223,12 @@ export default function InfoNegocioModal({ open, onClose }: InfoNegocioModalProp
                       type="text" 
                       value={negocioForm.color_personalizado || ''} 
                       onChange={handleHexInput} 
-                      className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none transition-colors font-mono text-xs sm:text-sm" 
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none transition-colors font-mono text-xs sm:text-sm"
+                      style={{ borderColor: negocioForm.color_personalizado ? color_personalizado : undefined }} 
                       maxLength={7} 
                       placeholder="#2563eb"
                     />
-                    <p className="text-xs text-purple-600 dark:text-purple-400 mt-2">Ejemplo: #2563eb</p>
+                    <p className="text-xs mt-2" style={{ color: color_personalizado }}>Ejemplo: #2563eb</p>
                   </div>
                 </div>
               </div>
@@ -234,7 +237,7 @@ export default function InfoNegocioModal({ open, onClose }: InfoNegocioModalProp
               <div className="space-y-3 sm:space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <FiHome className="h-4 w-4 inline mr-2 text-blue-500" />
+                    <FiHome className="h-4 w-4 inline mr-2" style={{ color: color_personalizado }} />
                     Nombre del Negocio *
                   </label>
                   <input
@@ -370,7 +373,7 @@ export default function InfoNegocioModal({ open, onClose }: InfoNegocioModalProp
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     <FiFileText className="h-4 w-4 inline mr-2 text-orange-500" />
-                    Nota para Factura
+                    Nota para Factura (Opcional)
                   </label>
                   <textarea
                     name="nota_factura"
@@ -381,7 +384,7 @@ export default function InfoNegocioModal({ open, onClose }: InfoNegocioModalProp
                     onChange={handleChange}
                   />
                   <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
-                    Esta nota aparecerá en las facturas.
+                    Esta nota aparecerá en las facturas. Campo opcional.
                   </p>
                 </div>
 

@@ -25,9 +25,10 @@ interface Props {
   open: boolean;
   onClose: () => void;
   factura: any;
+  color_personalizado?: string;
 }
 
-export default function WhatsAppFacturaModal({ open, onClose, factura }: Props) {
+export default function WhatsAppFacturaModal({ open, onClose, factura, color_personalizado = '#2563eb' }: Props) {
   const [mensaje, setMensaje] = useState('');
   const [loading, setLoading] = useState(false);
   const [negocioConfig, setNegocioConfig] = useState<{ telefono: string } | null>(null);
@@ -238,7 +239,7 @@ export default function WhatsAppFacturaModal({ open, onClose, factura }: Props) 
         <div className="flex items-center justify-center min-h-screen px-1 sm:px-2 pt-2 sm:pt-4 pb-16 sm:pb-20 text-center sm:block sm:p-0 sm:px-4">
           <div className="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-75" onClick={onClose}></div>
 
-          <div className="relative inline-block w-full max-w-3xl p-3 sm:p-4 my-4 sm:my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-2xl rounded-3xl sm:p-6 flex flex-col max-h-[92vh] sm:max-h-[95vh] md:max-h-[98vh]">
+          <div className="relative mx-auto w-full max-w-3xl p-3 sm:p-4 my-4 sm:my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-2xl rounded-3xl sm:p-6 flex flex-col max-h-[92vh] sm:max-h-[95vh] md:max-h-[98vh]">
             {/* Header moderno */}
             <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6 flex-shrink-0">
               <div className="flex items-center gap-2 sm:gap-3">
@@ -292,7 +293,8 @@ export default function WhatsAppFacturaModal({ open, onClose, factura }: Props) 
                   <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base">Cliente</h4>
                   <button
                     onClick={() => setShowEditCliente(!showEditCliente)}
-                    className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 text-xs sm:text-sm bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
+                    className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-lg transition-colors"
+                    style={{ backgroundColor: `${color_personalizado}20`, color: color_personalizado }}
                   >
                     <FiEdit className="h-3 w-3" />
                     Editar
@@ -341,7 +343,8 @@ export default function WhatsAppFacturaModal({ open, onClose, factura }: Props) 
                     <div className="flex gap-2">
                       <button
                         onClick={handleGuardarCliente}
-                        className="flex-1 px-2 sm:px-3 py-1 sm:py-1 bg-blue-600 text-white rounded text-xs sm:text-sm hover:bg-blue-700 transition-colors"
+                        className="flex-1 px-2 sm:px-3 py-1 sm:py-1 text-white rounded text-xs sm:text-sm transition-colors"
+                        style={{ backgroundColor: color_personalizado }}
                       >
                         Guardar
                       </button>
@@ -420,7 +423,8 @@ export default function WhatsAppFacturaModal({ open, onClose, factura }: Props) 
                       </label>
                       <button
                         onClick={() => setShowGestionMensajes(true)}
-                        className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
+                        className="flex items-center gap-1 px-2 py-1 text-xs rounded-lg transition-colors"
+                        style={{ backgroundColor: `${color_personalizado}20`, color: color_personalizado }}
                       >
                         <FiSettings className="h-3 w-3" />
                         Gestionar
@@ -449,7 +453,8 @@ export default function WhatsAppFacturaModal({ open, onClose, factura }: Props) 
                   Cancelar
                 </button>
                 <button
-                  className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors disabled:opacity-50 text-xs sm:text-sm md:text-base"
+                                        className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 text-white rounded-xl font-medium transition-colors disabled:opacity-50 text-xs sm:text-sm md:text-base"
+                      style={{ backgroundColor: color_personalizado }}
                   onClick={handleEnviar}
                   disabled={loading}
                 >

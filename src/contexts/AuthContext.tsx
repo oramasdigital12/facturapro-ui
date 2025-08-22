@@ -14,6 +14,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (data: { email: string; password: string; fullName: string }) => Promise<void>;
   logout: () => void;
+  checkBusinessInfoComplete: () => Promise<{ complete: boolean; missingFields: string[] }>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -33,6 +34,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false);
     }
   }, []);
+
+  const checkBusinessInfoComplete = async (): Promise<{ complete: boolean; missingFields: string[] }> => {
+    try {
+      const res = await api.get('/api/negocio-config');
+      const negocioConfig = res.data;
+      
+      const requiredFields = [
+        { key: 'nombre_negocio', label: 'Nombre del Negocio' },
+        { key: 'tipo_negocio', label: 'Tipo de Negocio' },
+        { key: 'telefono', label: 'Teléfono' },
+        { key: 'email', label: 'Email' },
+        { key: 'direccion', label: 'Dirección' }
+      ];
+      
+      const missingFields: string[] = [];
+      
+      requiredFields.forEach(field => {
+        const value = negocioConfig[field.key];
+        if (!value || value.trim() === '') {
+          missingFields.push(field.label);
+        }
+      });
+      
+      // Validar formato del teléfono (10 dígitos sin espacios)
+      if (negocioConfig.telefono && !/^\d{10}$/.test(negocioConfig.telefono)) {
+        missingFields.push('Teléfono (formato incorrecto)');
+      }
+      
+      return {
+        complete: missingFields.length === 0,
+        missingFields
+      };
+    } catch (error) {
+      console.error('Error checking business info:', error);
+      return {
+        complete: false,
+        missingFields: ['Error al verificar información del negocio']
+      };
+    }
+  };
 
   const login = async (email: string, password: string) => {
     setLoading(true);
@@ -56,7 +97,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, checkBusinessInfoComplete }}>
       {children}
     </AuthContext.Provider>
   );

@@ -22,9 +22,11 @@ import { getNumeroFactura } from '../utils/facturaHelpers';
 
 type FacturaItemProps = {
   factura: any;
+  color_personalizado?: string;
+  calcularDiasHastaVencimiento?: (fechaVencimiento: string) => number | null;
 };
 
-export default function FacturaItem({ factura, onChange }: FacturaItemProps & { onChange?: () => void }) {
+export default function FacturaItem({ factura, onChange, color_personalizado = '#2563eb', calcularDiasHastaVencimiento }: FacturaItemProps & { onChange?: () => void }) {
   const navigate = useNavigate();
   const [showCompletarPagoModal, setShowCompletarPagoModal] = useState(false);
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
@@ -76,6 +78,40 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
   };
 
   const clienteInfo = getClienteInfo(factura);
+
+  // Función para obtener información de vencimiento
+  const getVencimientoInfo = () => {
+    if (factura.estado !== 'pendiente' || !factura.fecha_vencimiento || !calcularDiasHastaVencimiento) {
+      return null;
+    }
+
+    const dias = calcularDiasHastaVencimiento(factura.fecha_vencimiento);
+    if (dias === null) return null;
+
+    if (dias < 0) {
+      return {
+        tipo: 'vencida',
+        texto: 'VENCIDA',
+        dias: Math.abs(dias),
+        color: 'bg-red-500',
+        textColor: 'text-white',
+        icono: '🚨'
+      };
+    } else if (dias <= 3) {
+      return {
+        tipo: 'por_vencer',
+        texto: dias === 0 ? 'VENCE HOY' : `${dias} día${dias === 1 ? '' : 's'}`,
+        dias: dias,
+        color: dias === 0 ? 'bg-red-500' : 'bg-orange-500',
+        textColor: 'text-white',
+        icono: dias === 0 ? '🚨' : '⚠️'
+      };
+    }
+
+    return null;
+  };
+
+  const vencimientoInfo = getVencimientoInfo();
 
   // Función para restaurar cliente eliminado
   const handleRestaurarCliente = () => {
@@ -241,6 +277,16 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
   return (
     <>
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 relative hover:shadow-xl transition-all duration-300">
+        {/* Indicador de vencimiento - Posicionado absolutamente en la esquina superior derecha */}
+        {vencimientoInfo && (
+          <div className={`absolute -top-2 -right-2 ${vencimientoInfo.color} ${vencimientoInfo.textColor} rounded-full px-3 py-1 text-xs font-bold shadow-lg border-2 border-white dark:border-gray-800 z-10 animate-pulse`}>
+            <div className="flex items-center gap-1">
+              <span>{vencimientoInfo.icono}</span>
+              <span>{vencimientoInfo.texto}</span>
+            </div>
+          </div>
+        )}
+
         {/* Header de la factura */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-4">
@@ -532,6 +578,7 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
           open={showWhatsAppModal}
           onClose={() => setShowWhatsAppModal(false)}
           factura={factura}
+          color_personalizado={color_personalizado}
         />
       )}
 
@@ -541,6 +588,7 @@ export default function FacturaItem({ factura, onChange }: FacturaItemProps & { 
           open={showEmailModal}
           onClose={() => setShowEmailModal(false)}
           factura={factura}
+          color_personalizado={color_personalizado}
         />
       )}
 

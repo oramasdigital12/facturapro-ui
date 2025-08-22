@@ -20,6 +20,7 @@ interface Props {
   onClose: () => void;
   onCreated: () => void;
   cliente?: any | null;
+  color_personalizado?: string;
 }
 
 function validarNombre(nombre: string) {
@@ -34,7 +35,7 @@ function validarEmail(email: string) {
   return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
 }
 
-export default function ClienteModal({ open, onClose, onCreated, cliente }: Props) {
+export default function ClienteModal({ open, onClose, onCreated, cliente, color_personalizado = '#2563eb' }: Props) {
   const { user } = useAuth();
   const [form, setForm] = useState({
     nombre: '',
@@ -106,7 +107,7 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
     if (!form.telefono.trim()) {
       nuevosErrores.telefono = 'El teléfono es requerido';
     } else if (!validarTelefono(form.telefono.trim())) {
-      nuevosErrores.telefono = 'El teléfono debe tener 10 dígitos';
+      nuevosErrores.telefono = 'El teléfono debe tener exactamente 10 dígitos sin espacios. Ejemplo: 9392283101';
     }
 
     if (form.email.trim() && !validarEmail(form.email.trim())) {
@@ -198,7 +199,7 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
         <Dialog.Panel className="mx-auto w-full max-w-2xl bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden transform transition-all duration-300 ease-out">
           
           {/* Header moderno con gradiente */}
-          <div className="relative bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 px-6 py-6 sm:px-8 sm:py-8">
+          <div className="relative px-6 py-6 sm:px-8 sm:py-8" style={{ background: `linear-gradient(90deg, ${color_personalizado}, ${color_personalizado}dd)` }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="flex-shrink-0">
@@ -210,7 +211,7 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
                   <Dialog.Title className="text-xl sm:text-2xl font-bold text-white">
                     {cliente ? '✏️ Editar Cliente' : '🚀 Nuevo Cliente'}
                   </Dialog.Title>
-                  <p className="text-blue-100 text-sm sm:text-base mt-1">
+                  <p className="text-white text-sm sm:text-base mt-1">
                     {cliente ? 'Actualiza la información del cliente' : 'Completa los datos para crear un nuevo cliente'}
                   </p>
                 </div>
@@ -235,10 +236,10 @@ export default function ClienteModal({ open, onClose, onCreated, cliente }: Prop
               <div className="p-6 sm:p-8 space-y-6">
                 
                 {/* Selector de estado moderno */}
-                <div className="bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-700 dark:to-gray-600 rounded-2xl p-6 border border-gray-100 dark:border-gray-600">
+                <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 rounded-2xl p-6 border border-gray-100 dark:border-gray-600">
                   <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mr-3">
-                      <CheckIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center mr-3" style={{ backgroundColor: `${color_personalizado}20` }}>
+                      <CheckIcon className="w-4 h-4" style={{ color: color_personalizado }} />
                     </div>
                     Estado del Cliente
                   </h3>

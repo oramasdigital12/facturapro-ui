@@ -32,6 +32,7 @@ export default function Home() {
   const [totalPagadas, setTotalPagadas] = useState(0);
   const [totalFacturas, setTotalFacturas] = useState(0);
   const [aPuntoDeVencer, setAPuntoDeVencer] = useState(0);
+  const [vencidas, setVencidas] = useState(0);
 
   // Estado para facturas recientes
   const [facturas, setFacturas] = useState([]);
@@ -70,6 +71,17 @@ export default function Home() {
     }
   };
 
+  // Funciones para calcular estado de vencimiento (misma lógica que en Facturas.tsx)
+  const calcularDiasHastaVencimiento = (fechaVencimiento: string) => {
+    if (!fechaVencimiento) return null;
+    const hoy = new Date();
+    const vencimiento = new Date(fechaVencimiento);
+    hoy.setHours(0, 0, 0, 0);
+    vencimiento.setHours(0, 0, 0, 0);
+    const diferencia = Math.ceil((vencimiento.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+    return diferencia;
+  };
+
   const fetchMetricas = async () => {
     try {
       const params: any = {};
@@ -79,7 +91,7 @@ export default function Home() {
       const res = await api.get('/api/facturas', { params });
       const facturas = res.data.facturas || res.data || [];
       
-      let total = 0, pendiente = 0, pagadas = 0, aVencer = 0;
+      let total = 0, pendiente = 0, pagadas = 0, aVencer = 0, vencidas = 0;
       facturas.forEach((f: any) => {
         // Total facturado solo incluye las que se completaron el pago final
         if (f.estado === 'pagada') {
@@ -88,13 +100,16 @@ export default function Home() {
         }
         if (f.estado === 'pendiente') {
           pendiente += f.total || 0;
-          // Calcular facturas a punto de vencer (si tienen due_date)
-          if (f.due_date) {
-            const dueDate = new Date(f.due_date);
-            const hoy = new Date();
-            const diffDias = Math.ceil((dueDate.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
-            if (diffDias <= 7 && diffDias >= 0) {
-              aVencer++;
+          
+          // Calcular facturas por vencer y vencidas usando fecha_vencimiento
+          if (f.fecha_vencimiento) {
+            const dias = calcularDiasHastaVencimiento(f.fecha_vencimiento);
+            if (dias !== null) {
+              if (dias < 0) {
+                vencidas++;
+              } else if (dias >= 0 && dias <= 3) {
+                aVencer++;
+              }
             }
           }
         }
@@ -105,8 +120,7 @@ export default function Home() {
       setTotalPagadas(pagadas);
       setTotalFacturas(facturas.length);
       setAPuntoDeVencer(aVencer);
-      // Por ahora cotizaciones pendientes es 0, se implementará después
-      // setCotizacionesPendientes(0); // Eliminado
+      setVencidas(vencidas);
     } catch (error) {
       console.error('Error fetching métricas:', error);
     }
@@ -141,8 +155,12 @@ export default function Home() {
         // No hace nada, no tiene redirección
         break;
       case 'aPuntoDeVencer':
-        // Redirige a facturas con filtro "a punto de vencer"
-        navigate('/facturas?estado=aPuntoDeVencer');
+        // Redirige a facturas con filtro "por vencer"
+        navigate('/facturas?estado=por_vencer');
+        break;
+      case 'vencidas':
+        // Redirige a facturas con filtro "vencida"
+        navigate('/facturas?estado=vencida');
         break;
       default:
         break;
@@ -393,7 +411,7 @@ export default function Home() {
         </div>
 
       {/* Métricas Modernas */}
-      <div className="grid grid-cols-2 gap-3 mb-6 px-3 sm:px-4 md:grid-cols-4 md:gap-6 md:px-0 md:max-w-4xl md:mx-auto">
+      <div className="grid grid-cols-2 gap-3 mb-6 px-3 sm:px-4 md:grid-cols-5 md:gap-4 md:px-0 md:max-w-6xl md:mx-auto">
         {/* Total Facturado - Clickeable */}
         <div 
           className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-3 md:p-4 border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105"
@@ -460,7 +478,7 @@ export default function Home() {
           onClick={() => handleMetricaClick('aPuntoDeVencer')}
         >
           <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-red-400 to-red-600 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center">
               <span className="text-white text-lg">⚠️</span>
             </div>
             <div className="text-right">
@@ -470,8 +488,29 @@ export default function Home() {
           <div className="text-2xl font-bold text-gray-800 dark:text-gray-100">
             {aPuntoDeVencer}
           </div>
+          <div className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+            Próximos 3 días
+          </div>
+        </div>
+
+        {/* Vencidas - Clickeable */}
+        <div 
+          className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-3 md:p-4 border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:scale-105"
+          onClick={() => handleMetricaClick('vencidas')}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-700 rounded-xl flex items-center justify-center">
+              <span className="text-white text-lg">🚨</span>
+            </div>
+            <div className="text-right">
+              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Vencidas</span>
+            </div>
+          </div>
+          <div className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+            {vencidas}
+          </div>
           <div className="text-xs text-red-600 dark:text-red-400 mt-1">
-            Próximos 7 días
+            Requieren atención
           </div>
         </div>
       </div>
@@ -818,6 +857,7 @@ export default function Home() {
         onClose={handleCloseModal}
         cliente={clienteEditando}
         onCreated={fetchClientes}
+        color_personalizado={color_personalizado}
       />
 
       {/* Modal de WhatsApp */}
@@ -825,6 +865,7 @@ export default function Home() {
         open={showMensajeModal}
         onClose={() => setShowMensajeModal(false)}
         cliente={clienteParaMensaje}
+        color_personalizado={color_personalizado}
       />
 
       {/* Modal de WhatsApp Factura */}
@@ -833,6 +874,7 @@ export default function Home() {
           open={showWhatsAppFacturaModal}
           onClose={() => setShowWhatsAppFacturaModal(false)}
           factura={facturaSeleccionada}
+          color_personalizado={color_personalizado}
         />
       )}
 
@@ -842,6 +884,7 @@ export default function Home() {
           open={showEmailFacturaModal}
           onClose={() => setShowEmailFacturaModal(false)}
           factura={facturaSeleccionada}
+          color_personalizado={color_personalizado}
         />
       )}
 
