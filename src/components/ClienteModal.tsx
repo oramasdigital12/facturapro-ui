@@ -18,7 +18,7 @@ import Swal from 'sweetalert2';
 interface Props {
   open: boolean;
   onClose: () => void;
-  onCreated: () => void;
+  onCreated: (cliente?: any) => void;
   cliente?: any | null;
   color_personalizado?: string;
 }
@@ -163,14 +163,17 @@ export default function ClienteModal({ open, onClose, onCreated, cliente, color_
       
       if (cliente && cliente.id) {
         await api.put(`/api/clientes/${cliente.id}`, data);
+        toast.success('Cliente actualizado exitosamente');
+        onCreated();
       } else {
-        await api.post('/api/clientes', data);
+        const response = await api.post('/api/clientes', data);
+        const nuevoCliente = response.data;
+        toast.success('Cliente creado exitosamente');
+        onCreated(nuevoCliente);
       }
       
       // Cerrar loading y mostrar éxito
       toast.dismiss('clienteAction');
-      toast.success(cliente ? 'Cliente actualizado exitosamente' : 'Cliente creado exitosamente');
-      onCreated();
       onClose();
     } catch (err: any) {
       toast.dismiss('clienteAction');

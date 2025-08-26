@@ -1,6 +1,18 @@
 import axios from 'axios';
 import { NegocioConfig, CategoriaNegocio, ServicioNegocio } from '../types';
 
+// Función para validar UUID
+const isValidUUID = (uuid: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const isValid = uuidRegex.test(uuid);
+  
+  if (!isValid) {
+    console.warn('❌ UUID inválido detectado:', uuid);
+  }
+  
+  return isValid;
+};
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
   headers: {
@@ -64,6 +76,28 @@ export const getFacturaById = (id: string) => api.get(`/api/facturas/${id}`);
 export const createFactura = (data: any) => api.post('/api/facturas', data);
 export const updateFactura = (id: string, data: any) => api.put(`/api/facturas/${id}`, data);
 export const deleteFactura = (id: string) => api.delete(`/api/facturas/${id}`);
+export const softDeleteFactura = (id: string) => {
+  if (!isValidUUID(id)) {
+    return Promise.reject(new Error('ID de factura inválido'));
+  }
+  return api.post(`/api/facturas/${id}/soft-delete`);
+};
+
+export const restoreFactura = (id: string) => {
+  if (!isValidUUID(id)) {
+    return Promise.reject(new Error('ID de factura inválido'));
+  }
+  return api.post(`/api/facturas/${id}/restore`);
+};
+
+export const hardDeleteFactura = (id: string) => {
+  if (!isValidUUID(id)) {
+    return Promise.reject(new Error('ID de factura inválido'));
+  }
+  return api.delete(`/api/facturas/${id}/hard-delete`);
+};
+
+export const getFacturasEliminadas = (params?: any) => api.get('/api/facturas/eliminadas', { params });
 export const getUltimaFactura = () => api.get('/api/facturas?limit=1&order=numero_factura.desc');
 export const regenerateFacturaPDF = (id: string) => api.post(`/api/facturas/${id}/regenerate-pdf`);
 

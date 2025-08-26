@@ -1,7 +1,7 @@
 import api from '../services/api';
 
 // Tipos de mensajes predefinidos
-export type TipoMensaje = 'pendiente' | 'pagada' | 'vencida';
+export type TipoMensaje = 'pendiente' | 'pagada' | 'vencida' | 'por_vencer';
 export type CanalMensaje = 'whatsapp' | 'email';
 
 // Plantillas base para cada tipo de mensaje
@@ -20,7 +20,7 @@ Adjunto encontrará su factura pendiente de pago:
 Para realizar el pago del saldo pendiente:
 {instrucciones_pago}
 
-Agradecemos su preferencia.
+Agradecemos su preferencia y le recordamos que puede realizar el pago en cualquier momento.
 Saludos cordiales.`,
     email: `Estimado/a cliente,
 
@@ -35,7 +35,7 @@ Adjunto encontrará su factura pendiente de pago:
 Para realizar el pago del saldo pendiente:
 {instrucciones_pago}
 
-Agradecemos su preferencia.
+Agradecemos su preferencia y le recordamos que puede realizar el pago en cualquier momento.
 Saludos cordiales.`
   },
   pagada: {
@@ -64,38 +64,76 @@ Su factura ha sido pagada exitosamente:
 Gracias por su pago.
 Saludos cordiales.`
   },
-  vencida: {
+  por_vencer: {
     whatsapp: `Estimado/a cliente,
 
-Su factura se encuentra vencida:
+Su factura está próxima a vencer y requiere atención inmediata:
 
 📄 Factura #{numero}
 💰 Monto Total: {monto}
 ⚖️ Saldo Pendiente: {saldo}
-⚠️ Estado: Vencida
+⏰ Estado: Por vencer
 
 🔗 Acceso a la factura: {link_factura}
 
 Para realizar el pago del saldo pendiente:
 {instrucciones_pago}
 
-Le agradecemos ponerse al día con su pago.
+⚠️ IMPORTANTE: Esta factura vence pronto. Le recomendamos realizar el pago antes de la fecha de vencimiento para evitar cargos adicionales.
+
 Saludos cordiales.`,
     email: `Estimado/a cliente,
 
-Su factura se encuentra vencida:
+Su factura está próxima a vencer y requiere atención inmediata:
 
 📄 Factura #{numero}
 💰 Monto Total: {monto}
 ⚖️ Saldo Pendiente: {saldo}
-⚠️ Estado: Vencida
+⏰ Estado: Por vencer
 
 🔗 Acceso a la factura: {link_factura}
 
 Para realizar el pago del saldo pendiente:
 {instrucciones_pago}
 
-Le agradecemos ponerse al día con su pago.
+⚠️ IMPORTANTE: Esta factura vence pronto. Le recomendamos realizar el pago antes de la fecha de vencimiento para evitar cargos adicionales.
+
+Saludos cordiales.`
+  },
+  vencida: {
+    whatsapp: `Estimado/a cliente,
+
+Su factura se encuentra VENCIDA y requiere atención URGENTE:
+
+📄 Factura #{numero}
+💰 Monto Total: {monto}
+⚖️ Saldo Pendiente: {saldo}
+🚨 Estado: VENCIDA
+
+🔗 Acceso a la factura: {link_factura}
+
+Para realizar el pago del saldo pendiente:
+{instrucciones_pago}
+
+🚨 URGENTE: Esta factura está vencida. Le solicitamos ponerse al día con su pago lo antes posible para evitar interrupciones en el servicio.
+
+Saludos cordiales.`,
+    email: `Estimado/a cliente,
+
+Su factura se encuentra VENCIDA y requiere atención URGENTE:
+
+📄 Factura #{numero}
+💰 Monto Total: {monto}
+⚖️ Saldo Pendiente: {saldo}
+🚨 Estado: VENCIDA
+
+🔗 Acceso a la factura: {link_factura}
+
+Para realizar el pago del saldo pendiente:
+{instrucciones_pago}
+
+🚨 URGENTE: Esta factura está vencida. Le solicitamos ponerse al día con su pago lo antes posible para evitar interrupciones en el servicio.
+
 Saludos cordiales.`
   }
 };
@@ -178,7 +216,8 @@ export const crearMensajePredefinido = async (
     };
 
     const response = await api.post('/api/mensajes', {
-      texto: JSON.stringify(mensajeData)
+      texto: JSON.stringify(mensajeData),
+      modulo: 'facturas'
     });
 
     return response.data;
@@ -194,7 +233,7 @@ export const obtenerMensajePredefinido = async (
   canal: CanalMensaje
 ): Promise<any> => {
   try {
-    const response = await api.get('/api/mensajes');
+    const response = await api.get('/api/mensajes/modulo/facturas');
     const mensajes = response.data;
     
     // Buscar mensaje que coincida con el tipo y canal
@@ -235,6 +274,31 @@ export const actualizarMensajePredefinido = async (
     return response.data;
   } catch (error) {
     console.error('Error actualizando mensaje predefinido:', error);
+    throw error;
+  }
+};
+
+// Función para obtener mensajes por módulo
+export const obtenerMensajesPorModulo = async (modulo: string): Promise<any[]> => {
+  try {
+    const response = await api.get(`/api/mensajes/modulo/${modulo}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error obteniendo mensajes del módulo ${modulo}:`, error);
+    return [];
+  }
+};
+
+// Función para crear mensaje simple (para clientes)
+export const crearMensajeSimple = async (texto: string, modulo: string): Promise<any> => {
+  try {
+    const response = await api.post('/api/mensajes', {
+      texto: texto,
+      modulo: modulo
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error creando mensaje simple:', error);
     throw error;
   }
 };

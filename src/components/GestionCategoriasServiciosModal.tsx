@@ -19,9 +19,10 @@ import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautif
 interface Props {
   open: boolean;
   onClose: () => void;
+  onServicioCreated?: (servicio?: any) => void;
 }
 
-export default function GestionCategoriasServiciosModal({ open, onClose }: Props) {
+export default function GestionCategoriasServiciosModal({ open, onClose, onServicioCreated }: Props) {
   const outletContext = useOutletContext() as { color_personalizado?: string } | null;
   const color_personalizado = outletContext?.color_personalizado || '#2563eb';
 
@@ -189,12 +190,18 @@ export default function GestionCategoriasServiciosModal({ open, onClose }: Props
         });
         toast.success('Servicio actualizado correctamente');
       } else {
-        await createServicioNegocio({
+        const response = await createServicioNegocio({
           nombre: formServicio.nombre.trim(),
           precio: Number(formServicio.precio),
           categoria_id: categoriaSeleccionada!.id,
         });
+        const nuevoServicio = response.data;
         toast.success('Servicio creado correctamente');
+        
+        // Llamar al callback si existe
+        if (onServicioCreated) {
+          onServicioCreated(nuevoServicio);
+        }
       }
       
       // Limpiar formulario y cerrar modal

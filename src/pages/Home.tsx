@@ -17,14 +17,18 @@ export default function Home() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [clientes, setClientes] = useState([]);
-  const [negocio, setNegocio] = useState({ nombre_negocio: '', email: '', logo_url: '' });
+  // La configuración del negocio se maneja desde el Layout
   const [clienteEditando, setClienteEditando] = useState<any>(null);
   const [showClienteModal, setShowClienteModal] = useState(false);
   const [showMensajeModal, setShowMensajeModal] = useState(false);
   const [clienteParaMensaje, setClienteParaMensaje] = useState<any>(null);
   const { } = useDarkMode();
-  const outletContext = useOutletContext() as { color_personalizado?: string } | null;
+  const outletContext = useOutletContext() as { 
+    color_personalizado?: string;
+    nombre_negocio?: string;
+  } | null;
   const color_personalizado = outletContext?.color_personalizado || '#2563eb';
+  const nombre_negocio = outletContext?.nombre_negocio || '';
   
   // Métricas de facturas
   const [totalFacturado, setTotalFacturado] = useState(0);
@@ -46,12 +50,14 @@ export default function Home() {
   const [fechaHasta, setFechaHasta] = useState('');
   const [showFiltrosFecha, setShowFiltrosFecha] = useState(false);
 
+  // Cargar datos iniciales
   useEffect(() => {
     fetchClientes();
-    fetchNegocio();
     fetchMetricas();
     fetchFacturasRecientes();
   }, [fechaDesde, fechaHasta]);
+
+  // La configuración del negocio se maneja desde el Layout, no necesitamos cargarla aquí
 
   const fetchClientes = async () => {
     try {
@@ -62,14 +68,7 @@ export default function Home() {
     }
   };
 
-  const fetchNegocio = async () => {
-    try {
-      const res = await api.get('/api/negocio-config');
-      setNegocio(res.data);
-    } catch (error) {
-      console.error('Error fetching negocio:', error);
-    }
-  };
+  // La configuración del negocio se obtiene desde el Layout, no necesitamos esta función
 
   // Funciones para calcular estado de vencimiento (misma lógica que en Facturas.tsx)
   const calcularDiasHastaVencimiento = (fechaVencimiento: string) => {
@@ -402,7 +401,7 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col md:items-center md:justify-center md:max-w-6xl md:mx-auto md:px-8 md:pl-28">
       <div className="text-center mb-8 mt-8">
           <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-          ¡Hola, {negocio.nombre_negocio || user?.email?.split('@')[0] || 'Usuario'}!
+          ¡Hola, {nombre_negocio || user?.email?.split('@')[0] || 'Usuario'}!
           </h1>
         <p className="text-gray-600 dark:text-gray-400 mb-4">
           Bienvenido a tu panel de control

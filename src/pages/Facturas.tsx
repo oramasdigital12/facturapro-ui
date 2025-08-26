@@ -4,6 +4,7 @@ import { getFacturas } from '../services/api';
 import { FiSearch, FiFileText, FiCalendar, FiX } from 'react-icons/fi';
 import FacturaItem from '../components/FacturaItem';
 import BotonCrear from '../components/BotonCrear';
+import GestionFacturasEliminadasModal from '../components/GestionFacturasEliminadasModal';
 
 const PAGE_SIZE = 10;
 
@@ -19,6 +20,7 @@ const estados = [
 export default function Facturas() {
   const [loading, setLoading] = useState(false);
   const [facturas, setFacturas] = useState<any[]>([]);
+  const [todasLasFacturas, setTodasLasFacturas] = useState<any[]>([]); // Estado para todas las facturas sin filtrar
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const [estado, setEstado] = useState('');
@@ -28,6 +30,7 @@ export default function Facturas() {
   const [totalPages, setTotalPages] = useState(1);
   const [, setTotalFacturas] = useState(0);
   const [mostrarFiltrosFecha, setMostrarFiltrosFecha] = useState(false);
+  const [showPapeleraModal, setShowPapeleraModal] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -43,17 +46,43 @@ export default function Facturas() {
     }
   }, [location.search]);
 
+  // Efecto para cargar todas las facturas para los contadores
   useEffect(() => {
-    fetchFacturas();
+    fetchTodasLasFacturas();
+  }, []);
+
+  // Efecto para manejar la primera carga cuando se obtienen todas las facturas
+  useEffect(() => {
+    if (todasLasFacturas.length > 0 && facturas.length === 0 && !busqueda && !estado && !fechaDesde && !fechaHasta) {
+      setFacturas(todasLasFacturas);
+    }
+  }, [todasLasFacturas, facturas.length, busqueda, estado, fechaDesde, fechaHasta]);
+
+  useEffect(() => {
+    // Solo hacer fetch si hay filtros aplicados o si es la primera carga
+    if (busqueda || estado || fechaDesde || fechaHasta || page > 1) {
+      fetchFacturas();
+    }
     // eslint-disable-next-line
   }, [busqueda, estado, fechaDesde, fechaHasta, page]);
 
-  const fetchFacturas = async () => {
+  // Función para cargar todas las facturas para los contadores
+  const fetchTodasLasFacturas = async () => {
+    try {
+      const res = await getFacturas({});
+      const facturasData = res.data.facturas || res.data || [];
+      setTodasLasFacturas(facturasData);
+    } catch (err: any) {
+      console.error('Error al cargar todas las facturas para contadores:', err);
+    }
+  };
+
+  const fetchFacturas = async (forceRefresh = false) => {
     setLoading(true);
     setError(null);
     try {
-      // Para filtros especiales o "Todas", cargar todas las facturas sin paginación
-      const needAllData = estado === '' || ['por_vencer', 'vencida'].includes(estado);
+      // Si es un refresh forzado o no hay filtros, cargar todas las facturas
+      const needAllData = forceRefresh || estado === '' || ['por_vencer', 'vencida'].includes(estado);
       
       const params: any = needAllData ? {} : { page, limit: PAGE_SIZE };
       if (busqueda) params.q = busqueda;
@@ -162,14 +191,23 @@ export default function Facturas() {
     return filtered;
   };
 
-  // Calcular contadores basados en todas las facturas disponibles
+  // Calcular contadores basados en todas las facturas disponibles (sin filtrar)
   const contadores = {
-    '': facturas.length,
-    'pagada': facturas.filter(f => f.estado === 'pagada').length,
-    'pendiente': facturas.filter(f => f.estado === 'pendiente').length,
-    'por_vencer': facturas.filter(f => esFacturaPorVencer(f)).length,
-    'vencida': facturas.filter(f => esFacturaVencida(f)).length,
-    'borrador': facturas.filter(f => f.estado === 'borrador').length,
+    '': todasLasFacturas.length,
+    'pagada': todasLasFacturas.filter(f => f.estado === 'pagada').length,
+    'pendiente': todasLasFacturas.filter(f => f.estado === 'pendiente').length,
+    'por_vencer': todasLasFacturas.filter(f => esFacturaPorVencer(f)).length,
+    'vencida': todasLasFacturas.filter(f => esFacturaVencida(f)).length,
+    'borrador': todasLasFacturas.filter(f => f.estado === 'borrador').length,
+  };
+
+  // Función para actualizar contadores cuando cambian las facturas
+  const actualizarContadores = async () => {
+    try {
+      await fetchTodasLasFacturas();
+    } catch (error) {
+      console.error('Error al actualizar contadores:', error);
+    }
   };
 
   // Función para limpiar filtros de fecha
@@ -259,25 +297,35 @@ export default function Facturas() {
             ))}
           </div>
 
-          {/* Botón para mostrar/ocultar filtros de fecha */}
-          <div className="flex justify-center">
-            <button
-              onClick={() => setMostrarFiltrosFecha(!mostrarFiltrosFecha)}
-              className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 rounded-xl font-semibold shadow-lg transition-all duration-300 text-sm md:text-base ${
-                mostrarFiltrosFecha 
-                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                  : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-              }`}
-            >
-              <FiCalendar className="w-4 h-4" />
-              {mostrarFiltrosFecha ? 'Ocultar Filtros de Fecha' : 'Mostrar Filtros de Fecha'}
-              {getRangoFechasTexto() && (
-                <span className="ml-2 px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full text-xs">
-                  {getRangoFechasTexto()}
-                </span>
-              )}
-            </button>
-          </div>
+                     {/* Botones para mostrar/ocultar filtros de fecha y papelera (móvil) */}
+           <div className="flex justify-center gap-3">
+             <button
+               onClick={() => setMostrarFiltrosFecha(!mostrarFiltrosFecha)}
+               className={`flex items-center gap-2 px-4 md:px-6 py-2 md:py-3 rounded-xl font-semibold shadow-lg transition-all duration-300 text-sm md:text-base ${
+                 mostrarFiltrosFecha 
+                   ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                   : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+               }`}
+             >
+               <FiCalendar className="w-4 h-4" />
+               {mostrarFiltrosFecha ? 'Ocultar Filtros de Fecha' : 'Mostrar Filtros de Fecha'}
+               {getRangoFechasTexto() && (
+                 <span className="ml-2 px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full text-xs">
+                   {getRangoFechasTexto()}
+                 </span>
+               )}
+             </button>
+             
+             {/* Botón de papelera para móvil */}
+             <button
+               onClick={() => setShowPapeleraModal(true)}
+               className="md:hidden flex items-center gap-2 px-4 py-2 md:py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-semibold shadow-lg transition-all duration-300 text-sm md:text-base transform hover:scale-105"
+               title="Papelera"
+             >
+               <span className="text-lg">🗑️</span>
+               <span className="hidden sm:inline">Papelera</span>
+             </button>
+           </div>
 
           {/* Filtros de fecha - Diseño moderno */}
           {mostrarFiltrosFecha && (
@@ -356,14 +404,21 @@ export default function Facturas() {
           )}
         </div>
 
-        {/* Botón Nueva Factura para Desktop */}
-        <div className="hidden md:flex justify-center mb-6">
+        {/* Botones de acción para Desktop */}
+        <div className="hidden md:flex justify-center gap-4 mb-6">
           <BotonCrear 
             onClick={() => navigate('/facturas/nueva')} 
             label="Nueva Factura"
             color_personalizado={color_personalizado}
             className="px-8 py-4 text-lg"
           />
+          <button
+            onClick={() => setShowPapeleraModal(true)}
+            className="px-6 py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+          >
+            <span className="text-xl">🗑️</span>
+            Papelera
+          </button>
         </div>
 
         {/* Lista de facturas */}
@@ -428,7 +483,12 @@ export default function Facturas() {
                 <FacturaItem
                   key={factura.id}
                   factura={factura}
-                  onChange={fetchFacturas}
+                  onChange={() => {
+                    // Siempre recargar todas las facturas y contadores
+                    fetchTodasLasFacturas();
+                    fetchFacturas(true); // Forzar refresh
+                    actualizarContadores();
+                  }}
                   color_personalizado={color_personalizado}
                   calcularDiasHastaVencimiento={calcularDiasHastaVencimiento}
                 />
@@ -461,14 +521,24 @@ export default function Facturas() {
         </div>
       </div>
 
-      {/* Botón flotante para crear factura */}
-      <div className="fixed bottom-28 right-4 z-50">
-        <BotonCrear 
-          onClick={() => navigate('/facturas/nueva')} 
-          size="fab"
-          color_personalizado={color_personalizado}
-        />
-      </div>
+             {/* Botón flotante para crear factura */}
+       <div className="fixed bottom-28 right-4 z-50">
+         <BotonCrear 
+           onClick={() => navigate('/facturas/nueva')} 
+           size="fab"
+           color_personalizado={color_personalizado}
+         />
+       </div>
+
+      {/* Modal de Gestión de Facturas Eliminadas */}
+      <GestionFacturasEliminadasModal
+        open={showPapeleraModal}
+        onClose={() => setShowPapeleraModal(false)}
+        onFacturaRestaurada={() => {
+          fetchFacturas();
+          actualizarContadores();
+        }}
+      />
     </div>
   );
 } 

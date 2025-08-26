@@ -47,12 +47,19 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ logo_url, nombre_negocio, class
       {/* Logo y nombre dinámicos */}
       <div className="mb-10 flex flex-col items-center">
         <img
-          src={logo_url && logo_url.trim() !== '' ? logo_url : "/crm-icon.svg"}
+          src={logo_url || "/crm-icon.svg"}
           alt="Logo"
           className="w-16 h-16 rounded-xl bg-white dark:bg-slate-700 p-2 shadow-md mb-2 object-contain"
+          onError={(e) => {
+            // Si falla la carga del logo personalizado, usar el logo por defecto
+            const target = e.target as HTMLImageElement;
+            if (target.src !== "/crm-icon.svg") {
+              target.src = "/crm-icon.svg";
+            }
+          }}
         />
         <span className="text-lg font-bold text-slate-700 dark:text-slate-200 tracking-tight text-center w-full truncate max-w-[12rem]">
-          {nombre_negocio && nombre_negocio.trim() !== '' ? nombre_negocio : 'FacturaPro'}
+          {nombre_negocio || 'FacturaPro'}
         </span>
       </div>
       {/* Navegación */}

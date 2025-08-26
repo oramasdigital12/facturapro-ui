@@ -339,6 +339,15 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
              margin-top: 20px;
            }
            
+           /* En móvil: totales primero, términos después */
+           .bottom-section .totals-section {
+             order: 1;
+           }
+           
+           .bottom-section .terms-section {
+             order: 2;
+           }
+           
            @media (min-width: 768px) {
              .bottom-section {
                flex-direction: row;
@@ -346,6 +355,15 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
                align-items: flex-start;
                gap: 40px;
                margin-top: 30px;
+             }
+             
+             /* En desktop: términos primero, totales después */
+             .bottom-section .totals-section {
+               order: 2;
+             }
+             
+             .bottom-section .terms-section {
+               order: 1;
              }
            }
           
@@ -711,24 +729,7 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
         
         {/* Bottom Section */}
         <div className="bottom-section">
-                      {(tieneTerminos || tieneNota) && (
-              <div className="terms-section">
-                {tieneTerminos && (
-                  <>
-                    <div className="section-title">TERMS</div>
-                    <div className="terms-content">{terminos}</div>
-                  </>
-                )}
-                
-                {tieneNota && (
-                  <>
-                    <div className="section-title" style={{ marginTop: tieneTerminos ? '20px' : '0' }}>CONDITIONS/INSTRUCTIONS</div>
-                    <div className="terms-content">{nota}</div>
-                  </>
-                )}
-              </div>
-            )}
-          
+          {/* Totals Section - Siempre visible primero en móvil */}
           <div className="totals-section">
             <div className="total-row">
               <span className="total-label">Subtotal:</span>
@@ -756,6 +757,25 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
               <div className="status-badge">{estado}</div>
             )}
           </div>
+
+          {/* Terms Section - Después de totales en móvil */}
+          {(tieneTerminos || tieneNota) && (
+            <div className="terms-section">
+              {tieneTerminos && (
+                <>
+                  <div className="section-title">TERMS</div>
+                  <div className="terms-content">{terminos}</div>
+                </>
+              )}
+              
+              {tieneNota && (
+                <>
+                  <div className="section-title" style={{ marginTop: tieneTerminos ? '20px' : '0' }}>CONDITIONS/INSTRUCTIONS</div>
+                  <div className="terms-content">{nota}</div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
       

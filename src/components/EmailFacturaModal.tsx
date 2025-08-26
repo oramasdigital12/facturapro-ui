@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import Swal from 'sweetalert2';
 import { FiEdit, FiCheck, FiX, FiMail, FiSmartphone, FiSettings } from 'react-icons/fi';
 import MetodosPagoModal from './MetodosPagoModal';
 import { buildPublicFacturaUrl } from '../utils/urls';
-import GestionMensajesPredefinidosModal from './GestionMensajesPredefinidosModal';
+import GestionMensajesPredefinidosFacturaModal from './GestionMensajesPredefinidosFacturaModal';
 import { 
   obtenerMensajePredefinido, 
   generarMensajeConDatosActuales,
@@ -34,6 +35,7 @@ export default function EmailFacturaModal({ open, onClose, factura, color_person
   const [metodoSeleccionado, setMetodoSeleccionado] = useState<MetodoPago | null>(null);
   const [showEditCliente, setShowEditCliente] = useState(false);
   const [showGestionMensajes, setShowGestionMensajes] = useState(false);
+  const [tipoMensajeSeleccionado, setTipoMensajeSeleccionado] = useState<'pendiente' | 'vencida' | 'por_vencer' | null>(null);
   const [clienteEditado, setClienteEditado] = useState({
     nombre: factura?.cliente?.nombre || '',
     telefono: factura?.cliente?.telefono || '',
@@ -49,17 +51,43 @@ export default function EmailFacturaModal({ open, onClose, factura, color_person
         email: factura?.cliente?.email || ''
       });
       
-      // Cargar mensaje predefinido al abrir el modal
-      if (factura) {
-        cargarMensajePredefinido();
-      }
+             // Cargar mensaje predefinido al abrir el modal solo si no hay mensaje
+       if (factura) {
+         cargarMensajePredefinido(true); // Forzar carga solo la primera vez
+       }
     }
   }, [open, factura]);
 
+  // Función para determinar el estado real de la factura
+  const determinarEstadoFactura = (factura: any) => {
+    if (factura.estado === 'pagada') return 'pagada';
+    
+    // Si la factura tiene fecha de vencimiento
+    if (factura.fecha_vencimiento) {
+      const fechaVencimiento = new Date(factura.fecha_vencimiento);
+      const hoy = new Date();
+      const diasParaVencer = Math.ceil((fechaVencimiento.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (diasParaVencer < 0) {
+        return 'vencida'; // Ya venció
+      } else if (diasParaVencer <= 7) {
+        return 'por_vencer'; // Por vencer (7 días o menos)
+      }
+    }
+    
+    return 'pendiente'; // Pendiente normal
+  };
+
   // Función para cargar mensaje predefinido
-  const cargarMensajePredefinido = async () => {
+  const cargarMensajePredefinido = async (forzarCarga = false) => {
+    // Solo cargar si no hay mensaje o si se fuerza la carga
+    if (!forzarCarga && (titulo.trim() || descripcion.trim())) {
+      return;
+    }
+
     try {
-      const tipo: TipoMensaje = factura.estado === 'pagada' ? 'pagada' : 'pendiente';
+      const estadoReal = determinarEstadoFactura(factura);
+      const tipo: TipoMensaje = estadoReal === 'pagada' ? 'pagada' : (tipoMensajeSeleccionado || estadoReal);
       const mensajePredefinido = await obtenerMensajePredefinido(tipo, 'email');
       
       if (mensajePredefinido) {
@@ -151,7 +179,8 @@ export default function EmailFacturaModal({ open, onClose, factura, color_person
 
   const actualizarMensajeConMetodo = async (metodo: MetodoPago) => {
     try {
-      const tipo: TipoMensaje = factura.estado === 'pagada' ? 'pagada' : 'pendiente';
+      const estadoReal = determinarEstadoFactura(factura);
+      const tipo: TipoMensaje = estadoReal === 'pagada' ? 'pagada' : (tipoMensajeSeleccionado || estadoReal);
       const mensajePredefinido = await obtenerMensajePredefinido(tipo, 'email');
       
       if (mensajePredefinido) {
@@ -182,6 +211,14 @@ export default function EmailFacturaModal({ open, onClose, factura, color_person
   };
 
   const handleEnviar = () => {
+    const estadoReal = determinarEstadoFactura(factura);
+    
+    // Si la factura está vencida o por vencer, mostrar alerta para seleccionar tipo de mensaje
+    if ((estadoReal === 'vencida' || estadoReal === 'por_vencer') && !tipoMensajeSeleccionado) {
+      mostrarAlertaSeleccionTipoMensaje(estadoReal);
+      return;
+    }
+    
     // Si hay factura pendiente y no se ha seleccionado método de pago, mostrar modal
     if (factura && factura.estado === 'pendiente' && !metodoSeleccionado) {
       setShowMetodosPago(true);
@@ -218,6 +255,42 @@ export default function EmailFacturaModal({ open, onClose, factura, color_person
       setLoading(false);
       onClose();
     }, 1000);
+  };
+
+  const mostrarAlertaSeleccionTipoMensaje = async (estadoReal: string) => {
+    const titulo = estadoReal === 'vencida' 
+      ? 'Factura Vencida - Seleccionar Tipo de Mensaje'
+      : 'Factura Por Vencer - Seleccionar Tipo de Mensaje';
+    
+    const descripcion = estadoReal === 'vencida'
+      ? 'Esta factura está vencida. ¿Qué tipo de mensaje deseas enviar?'
+      : 'Esta factura está por vencer. ¿Qué tipo de mensaje deseas enviar?';
+    
+    const result = await Swal.fire({
+      title: titulo,
+      text: descripcion,
+      icon: 'question',
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: estadoReal === 'vencida' ? 'Mensaje de Factura Vencida' : 'Mensaje de Factura Por Vencer',
+      denyButtonText: 'Mensaje de Pago Pendiente',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: estadoReal === 'vencida' ? '#dc2626' : '#ea580c', // Rojo para vencida, naranja para por vencer
+      denyButtonColor: '#2563eb', // Azul para pendiente
+      cancelButtonColor: '#6b7280',
+      reverseButtons: true
+    });
+
+    if (result.isConfirmed) {
+      // Usar el mensaje específico del estado (vencida o por vencer)
+      setTipoMensajeSeleccionado(estadoReal as 'vencida' | 'por_vencer');
+      setShowMetodosPago(true);
+    } else if (result.isDenied) {
+      // Usar mensaje de pago pendiente
+      setTipoMensajeSeleccionado('pendiente');
+      setShowMetodosPago(true);
+    }
+    // Si es cancelado, no hacer nada
   };
 
   const handleGuardarCliente = () => {
@@ -276,13 +349,32 @@ export default function EmailFacturaModal({ open, onClose, factura, color_person
                   <h4 className="font-semibold text-blue-900 dark:text-blue-100 text-sm sm:text-base">
                     Factura #{factura?.numero_factura}
                   </h4>
-                  <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${
-                    factura?.estado === 'pendiente' 
-                      ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
-                      : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                  }`}>
-                    {factura?.estado}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${
+                      factura?.estado === 'pagada' 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+                    }`}>
+                      Pendiente a Pagar
+                    </span>
+                    {(() => {
+                      const estadoReal = determinarEstadoFactura(factura);
+                      if (estadoReal === 'vencida') {
+                        return (
+                          <span className="px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                            VENCIDA
+                          </span>
+                        );
+                      } else if (estadoReal === 'por_vencer') {
+                        return (
+                          <span className="px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                            POR VENCER
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
                 </div>
                 <div className="space-y-1 text-xs sm:text-sm text-blue-800 dark:text-blue-200">
                   <p><strong>Total:</strong> ${factura?.total?.toFixed(2)}</p>
@@ -406,7 +498,19 @@ export default function EmailFacturaModal({ open, onClose, factura, color_person
                       ⚠️ Para facturas pendientes, primero debes seleccionar un método de pago haciendo clic en "Seleccionar Método de Pago".
                     </p>
                   </div>
-                ) : (
+                ) : (() => {
+                  const estadoReal = determinarEstadoFactura(factura);
+                  if ((estadoReal === 'vencida' || estadoReal === 'por_vencer') && !tipoMensajeSeleccionado) {
+                    return (
+                      <div className="p-3 sm:p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-2xl">
+                        <p className="text-xs sm:text-sm text-orange-700 dark:text-orange-300">
+                          ⚠️ Esta factura está {estadoReal === 'vencida' ? 'vencida' : 'por vencer'}. Haz clic en "Seleccionar Método de Pago" para elegir el tipo de mensaje a enviar.
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                })() || (
                   <>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -458,12 +562,21 @@ export default function EmailFacturaModal({ open, onClose, factura, color_person
                   Cancelar
                 </button>
                 <button
-                                        className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 text-white rounded-xl font-medium transition-colors disabled:opacity-50 text-xs sm:text-sm md:text-base"
-                      style={{ backgroundColor: color_personalizado }}
+                  className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 text-white rounded-xl font-medium transition-colors disabled:opacity-50 text-xs sm:text-sm md:text-base"
+                  style={{ backgroundColor: color_personalizado }}
                   onClick={handleEnviar}
                   disabled={loading}
                 >
-                  {factura.estado === 'pendiente' && !metodoSeleccionado ? 'Seleccionar Método de Pago' : 'Enviar Email'}
+                  {(() => {
+                    const estadoReal = determinarEstadoFactura(factura);
+                    if (factura.estado === 'pendiente' && !metodoSeleccionado) {
+                      return 'Seleccionar Método de Pago';
+                    }
+                    if ((estadoReal === 'vencida' || estadoReal === 'por_vencer') && !tipoMensajeSeleccionado) {
+                      return 'Seleccionar Método de Pago';
+                    }
+                    return 'Enviar Email';
+                  })()}
                 </button>
               </div>
             </div>
@@ -484,22 +597,30 @@ export default function EmailFacturaModal({ open, onClose, factura, color_person
 
       {/* Modal de gestión de mensajes predefinidos */}
       {showGestionMensajes && factura && (
-        <GestionMensajesPredefinidosModal
-          isOpen={showGestionMensajes}
+        <GestionMensajesPredefinidosFacturaModal
+          open={showGestionMensajes}
           onClose={() => setShowGestionMensajes(false)}
-          factura={factura}
-          tipo={factura.estado === 'pagada' ? 'pagada' : 'pendiente'}
-          canal="email"
-          metodoSeleccionado={metodoSeleccionado}
-          onMensajeActualizado={(mensajeActualizado) => {
-            // Separar título y descripción del mensaje actualizado
-            const lineas = mensajeActualizado.split('\n');
-            const titulo = lineas[0] || `Factura #${factura.numero_factura}`;
-            const descripcion = lineas.slice(1).join('\n');
-            
-            setTitulo(titulo);
-            setDescripcion(descripcion);
-            setShowGestionMensajes(false);
+
+          statusInicial={(() => {
+            const estadoReal = determinarEstadoFactura(factura);
+            return estadoReal === 'pagada' ? 'pagada' : (tipoMensajeSeleccionado || estadoReal);
+          })()}
+          onMensajeActualizado={(_status, canal, mensajeActualizado) => {
+            // Recargar el mensaje en el textarea cuando se actualiza
+            if (canal === 'email') {
+              const linkFactura = buildPublicFacturaUrl(factura.id, factura);
+              const linkPago = metodoSeleccionado?.link;
+              const descripcionPago = metodoSeleccionado?.descripcion;
+              const mensajeGenerado = generarMensajeConDatosActuales(mensajeActualizado, factura, linkFactura, linkPago, descripcionPago);
+              
+              // Separar título y descripción del mensaje
+              const lineas = mensajeGenerado.split('\n');
+              const titulo = lineas[0] || `Factura #${factura.numero_factura}`;
+              const descripcion = lineas.slice(1).join('\n');
+              
+              setTitulo(titulo);
+              setDescripcion(descripcion);
+            }
           }}
         />
       )}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import MensajeWhatsappModal from './MensajeWhatsappModal';
 import EnviarEmailModal from './EnviarEmailModal';
 import CompletarPagoModal from './CompletarPagoModal';
+import GestionMensajeFacturaModal from './GestionMensajeFacturaModal';
 import { getClientes } from '../services/api';
 
 type FacturaAccionesProps = {
@@ -14,6 +15,7 @@ export default function FacturaAcciones({ factura, linkPublico, onPagoCompletado
   const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
   const [showCompletarPago, setShowCompletarPago] = useState(false);
+  const [showGestionMensaje, setShowGestionMensaje] = useState(false);
   const [clientes, setClientes] = useState<any[]>([]);
 
   // Cargar clientes para el modal de email
@@ -63,6 +65,11 @@ export default function FacturaAcciones({ factura, linkPublico, onPagoCompletado
     console.log('Editar cliente:', cliente, 'IDs seleccionados:', ids);
   };
 
+  // Gestionar mensaje predefinido
+  const handleGestionarMensaje = () => {
+    setShowGestionMensaje(true);
+  };
+
   return (
     <>
       <div className="flex flex-wrap gap-2 justify-end mt-2">
@@ -81,6 +88,12 @@ export default function FacturaAcciones({ factura, linkPublico, onPagoCompletado
           onClick={handleEmail}
         >
           📧 Email
+        </button>
+        <button 
+          className="px-3 py-2 rounded-xl bg-purple-100 text-purple-700 text-xs" 
+          onClick={handleGestionarMensaje}
+        >
+          ⚙️ Gestionar
         </button>
         {factura?.estado === 'pendiente' && (
           <button 
@@ -125,6 +138,15 @@ export default function FacturaAcciones({ factura, linkPublico, onPagoCompletado
             }
             setShowCompletarPago(false);
           }}
+        />
+      )}
+
+      {/* Modal de Gestión de Mensaje Predefinido */}
+      {showGestionMensaje && factura && (
+        <GestionMensajeFacturaModal
+          open={showGestionMensaje}
+          onClose={() => setShowGestionMensaje(false)}
+          factura={factura}
         />
       )}
     </>

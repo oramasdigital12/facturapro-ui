@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FiSettings, FiLayers, FiDollarSign } from 'react-icons/fi';
+import { FiSettings, FiLayers, FiDollarSign, FiMessageSquare } from 'react-icons/fi';
 import InfoNegocioModal from '../components/InfoNegocioModal';
 import GestionCategoriasServiciosModal from '../components/GestionCategoriasServiciosModal';
 import GestionMetodosPagoModal from '../components/GestionMetodosPagoModal';
+import GestionMensajesPredefinidosFacturaModal from '../components/GestionMensajesPredefinidosFacturaModal';
 import { useOutletContext } from 'react-router-dom';
 import { useDarkMode } from '../contexts/AuthContext';
 
@@ -11,6 +12,7 @@ const Configuracion: React.FC = () => {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showGestionModal, setShowGestionModal] = useState(false);
   const [showMetodosPagoModal, setShowMetodosPagoModal] = useState(false);
+  const [showMensajesPredefinidosModal, setShowMensajesPredefinidosModal] = useState(false);
   const outletContext = useOutletContext() as { color_personalizado?: string } | null;
   const color_personalizado = outletContext?.color_personalizado || '#2563eb';
 
@@ -52,7 +54,7 @@ const Configuracion: React.FC = () => {
             <span className="text-xs sm:text-sm" style={{ color: color_personalizado }}>Gestionar categorías y servicios</span>
           </button>
 
-          {/* Segunda fila: Métodos de Pago y espacio para futura sección */}
+          {/* Segunda fila: Métodos de Pago y Mensajes Predefinidos */}
           <button
             onClick={() => setShowMetodosPagoModal(true)}
             className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-center p-4 h-32 sm:h-36 md:h-40 text-center border border-gray-200 dark:border-gray-700 group hover:scale-105"
@@ -62,20 +64,21 @@ const Configuracion: React.FC = () => {
             <span className="text-xs sm:text-sm" style={{ color: color_personalizado }}>Gestionar formas de pago</span>
           </button>
 
-          {/* Espacio reservado para futura sección */}
-          <div className="bg-gray-100 dark:bg-gray-700 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center p-4 h-32 sm:h-36 md:h-40 text-center opacity-60">
-            <div className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 bg-gray-300 dark:bg-gray-600 rounded-full mb-3 flex items-center justify-center">
-              <span className="text-gray-500 dark:text-gray-400 text-lg font-bold">+</span>
-            </div>
-            <span className="text-sm sm:text-base md:text-lg font-semibold text-gray-500 dark:text-gray-400 mb-1">Nueva Sección</span>
-            <span className="text-xs sm:text-sm text-gray-400 dark:text-gray-500">Próximamente</span>
-          </div>
+          <button
+            onClick={() => setShowMensajesPredefinidosModal(true)}
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-center p-4 h-32 sm:h-36 md:h-40 text-center border border-gray-200 dark:border-gray-700 group hover:scale-105"
+          >
+            <FiMessageSquare className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-gray-500 dark:text-gray-400 mb-3 group-hover:text-purple-500 transition-colors duration-300" />
+            <span className="text-sm sm:text-base md:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-1">Mensajes Predefinidos</span>
+            <span className="text-xs sm:text-sm" style={{ color: color_personalizado }}>Gestionar mensajes de factura</span>
+          </button>
         </div>
       </div>
 
       <InfoNegocioModal open={showInfoModal} onClose={() => setShowInfoModal(false)} color_personalizado={color_personalizado} />
       <GestionCategoriasServiciosModal open={showGestionModal} onClose={() => setShowGestionModal(false)} />
       <GestionMetodosPagoModal open={showMetodosPagoModal} onClose={() => setShowMetodosPagoModal(false)} color_personalizado={color_personalizado} />
+      <GestionMensajesPredefinidosFacturaModal open={showMensajesPredefinidosModal} onClose={() => setShowMensajesPredefinidosModal(false)} />
     </div>
   );
 };

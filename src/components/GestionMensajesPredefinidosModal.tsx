@@ -243,10 +243,11 @@ export default function GestionMensajesPredefinidosModal({
   };
 
   const getTipoDisplay = () => {
-    const tipos = {
+    const tipos: Record<TipoMensaje, string> = {
       pendiente: 'Pendiente de Pago',
       pagada: 'Pagada',
-      vencida: 'Vencida'
+      vencida: 'Vencida',
+      por_vencer: 'Por Vencer'
     };
     return tipos[tipo] || tipo;
   };

@@ -5,6 +5,7 @@ import { FiTrash2, FiMessageCircle, FiSmartphone, FiSend, FiSave, FiX, FiAlertTr
 import MetodosPagoModal from './MetodosPagoModal';
 import { buildPublicFacturaUrl } from '../utils/urls';
 import { openWhatsApp } from '../utils/urls';
+import { obtenerMensajesPorModulo, crearMensajeSimple } from '../utils/mensajeHelpers';
 
 interface Mensaje {
   id: string;
@@ -64,8 +65,9 @@ export default function MensajeWhatsappModal({ open, onClose, cliente, factura, 
 
   const fetchMensajes = async () => {
     try {
-      const res = await api.get('/api/mensajes');
-      setMensajes(res.data);
+      // Obtener solo mensajes del módulo de clientes
+      const mensajesClientes = await obtenerMensajesPorModulo('clientes');
+      setMensajes(mensajesClientes);
     } catch {
       setMensajes([]);
     }
@@ -75,10 +77,26 @@ export default function MensajeWhatsappModal({ open, onClose, cliente, factura, 
     return /^\d{10}$/.test(telefono);
   };
 
+  // Función para formatear el texto del mensaje
+  const formatearMensaje = (texto: string) => {
+    try {
+      // Intentar parsear como JSON
+      const data = JSON.parse(texto);
+      if (data.tipo === 'factura') {
+        // Es un mensaje de factura, mostrar el contenido
+        return data.contenido || data.plantilla || texto;
+      }
+    } catch {
+      // No es JSON, devolver el texto tal como está
+    }
+    return texto;
+  };
+
   // Filtrar mensajes basado en la búsqueda
-  const mensajesFiltrados = mensajes.filter(m => 
-    m.texto.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  const mensajesFiltrados = mensajes.filter(m => {
+    const textoFormateado = formatearMensaje(m.texto);
+    return textoFormateado.toLowerCase().includes(busqueda.toLowerCase());
+  });
 
   // Generar mensaje automático basado en el estado de la factura
   const generarMensajeAutomatico = (factura: any, metodo?: MetodoPago | null) => {
@@ -165,7 +183,7 @@ export default function MensajeWhatsappModal({ open, onClose, cliente, factura, 
     if (!nuevoMensaje.trim()) return;
     setLoading(true);
     try {
-      await api.post('/api/mensajes', { texto: nuevoMensaje });
+      await crearMensajeSimple(nuevoMensaje, 'clientes');
       toast.success('Mensaje guardado');
       setNuevoMensaje('');
       setShowCrearModal(false);
@@ -380,7 +398,7 @@ export default function MensajeWhatsappModal({ open, onClose, cliente, factura, 
                             ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                             : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-green-300 dark:hover:border-green-600'
                         }`}
-                        onClick={() => setMensaje(m.texto)}
+                        onClick={() => setMensaje(formatearMensaje(m.texto))}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <p className={`text-sm flex-1 ${
@@ -388,7 +406,10 @@ export default function MensajeWhatsappModal({ open, onClose, cliente, factura, 
                               ? 'text-green-900 dark:text-green-100'
                               : 'text-gray-700 dark:text-gray-300'
                           }`}>
-                            {m.texto.length > 100 ? `${m.texto.substring(0, 100)}...` : m.texto}
+                            {(() => {
+                              const textoFormateado = formatearMensaje(m.texto);
+                              return textoFormateado.length > 100 ? `${textoFormateado.substring(0, 100)}...` : textoFormateado;
+                            })()}
                           </p>
                           <div className="flex items-center gap-2">
                             {mensaje === m.texto && (

@@ -8,6 +8,8 @@ import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
 import { crearMensajePredefinido, obtenerMensajePredefinido } from '../utils/mensajeHelpers';
 import { buildPublicFacturaUrl } from '../utils/urls';
+import ClienteModal from '../components/ClienteModal';
+import GestionCategoriasServiciosModal from '../components/GestionCategoriasServiciosModal';
 
 export default function FacturaForm() {
   const { id } = useParams();
@@ -40,6 +42,10 @@ export default function FacturaForm() {
   const [showClienteSuggestions, setShowClienteSuggestions] = useState(false);
   const [servicioSearch, setServicioSearch] = useState('');
   const [showServicioSuggestions, setShowServicioSuggestions] = useState(false);
+
+  // Estados para modales de creación rápida
+  const [showClienteModal, setShowClienteModal] = useState(false);
+  const [showServiciosModal, setShowServiciosModal] = useState(false);
 
   // Totales
   const subtotal = items.reduce((acc, item) => acc + (item.precio_unitario * item.cantidad), 0);
@@ -99,6 +105,66 @@ export default function FacturaForm() {
     }
   };
 
+  // Funciones para creación rápida de clientes y servicios
+  const handleClienteCreated = async (nuevoCliente?: any) => {
+    await fetchClientes();
+    setShowClienteModal(false);
+    
+    // Si se pasó un cliente específico, autoseleccionarlo
+    if (nuevoCliente && nuevoCliente.id) {
+      setClienteId(nuevoCliente.id);
+      setFormErrors({ ...formErrors, cliente: '' });
+      toast.success(`Cliente "${nuevoCliente.nombre}" creado y seleccionado automáticamente.`);
+    } else {
+      toast.success('Cliente actualizado exitosamente.');
+    }
+  };
+
+  const handleServicioCreated = async (nuevoServicio?: any) => {
+    // Cerrar el modal primero
+    setShowServiciosModal(false);
+    
+    // Recargar todos los servicios
+    await fetchServicios();
+    
+    // Si se pasó un servicio específico, autoseleccionarlo
+    if (nuevoServicio && nuevoServicio.id) {
+      // Agregar el servicio automáticamente a la factura inmediatamente
+      const servicioEncontrado = servicios.find((s: any) => s.id === nuevoServicio.id);
+      if (servicioEncontrado) {
+        handleAddServicio(nuevoServicio.id);
+        setServicioSearch('');
+        setShowServicioSuggestions(false);
+        toast.success(`Servicio "${nuevoServicio.nombre}" creado y agregado automáticamente.`);
+      } else {
+        // Si no se encuentra en el estado actual, usar los datos del nuevo servicio
+        const nuevoItem = {
+          categoria: nuevoServicio.categoria?.nombre || '',
+          descripcion: nuevoServicio.nombre,
+          precio_unitario: nuevoServicio.precio,
+          cantidad: 1,
+          total: nuevoServicio.precio * 1
+        };
+        setItems([...items, nuevoItem]);
+        setServicioSearch('');
+        setShowServicioSuggestions(false);
+        toast.success(`Servicio "${nuevoServicio.nombre}" creado y agregado automáticamente.`);
+      }
+    } else {
+      toast.success('Servicio creado exitosamente. Ahora puedes agregarlo a la factura.');
+    }
+  };
+
+  const handleCrearCliente = () => {
+    setShowClienteSuggestions(false);
+    setShowClienteModal(true);
+  };
+
+  const handleCrearServicio = () => {
+    setShowServicioSuggestions(false);
+    setShowServiciosModal(true);
+  };
+
   const fetchNumeroSiguiente = async () => {
     try {
       const res = await getUltimaFactura();
@@ -152,6 +218,23 @@ export default function FacturaForm() {
       };
       setItems([...items, nuevoItem]);
     }
+  };
+
+  // Actualizar cantidad de un item
+  const handleUpdateCantidad = (index: number, nuevaCantidad: number) => {
+    if (nuevaCantidad <= 0) return;
+    
+    const itemsActualizados = items.map((item, i) => {
+      if (i === index) {
+        return {
+          ...item,
+          cantidad: nuevaCantidad,
+          total: item.precio_unitario * nuevaCantidad
+        };
+      }
+      return item;
+    });
+    setItems(itemsActualizados);
   };
 
   // Eliminar item
@@ -526,22 +609,32 @@ export default function FacturaForm() {
         {/* Cliente */}
         <div className="mb-4 relative cliente-dropdown">
           <label className="block text-sm font-semibold mb-2 text-gray-700">Cliente *</label>
-          <div
-            className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base bg-white cursor-pointer ${formErrors.cliente ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-blue-300'}`}
-            onClick={() => {
-              setShowClienteSuggestions(!showClienteSuggestions);
-              if (!showClienteSuggestions) {
-                setClienteSearch('');
-              }
-              setTimeout(() => {
-                const inputElement = document.getElementById('cliente-search-input');
-                if (inputElement) inputElement.focus();
-              }, 100);
-            }}
-          >
-            {clienteId
-              ? clientes.find(c => c.id === clienteId)?.nombre || 'Selecciona un cliente'
-              : 'Selecciona un cliente'}
+          <div className="relative">
+            <div
+              className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base bg-white cursor-pointer pr-20 ${formErrors.cliente ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-blue-300'}`}
+              onClick={() => {
+                setShowClienteSuggestions(!showClienteSuggestions);
+                if (!showClienteSuggestions) {
+                  setClienteSearch('');
+                }
+                setTimeout(() => {
+                  const inputElement = document.getElementById('cliente-search-input');
+                  if (inputElement) inputElement.focus();
+                }, 100);
+              }}
+            >
+              {clienteId
+                ? clientes.find(c => c.id === clienteId)?.nombre || 'Selecciona un cliente'
+                : 'Selecciona un cliente'}
+            </div>
+            {/* Botón Crear Cliente - Siempre visible */}
+            <button
+              type="button"
+              onClick={handleCrearCliente}
+              className="absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition-colors font-medium"
+            >
+              + Crear
+            </button>
           </div>
           {showClienteSuggestions && (
             <div className="absolute z-20 bg-white border rounded-2xl shadow max-h-52 overflow-y-auto w-full mt-1">
@@ -556,7 +649,9 @@ export default function FacturaForm() {
                 autoComplete="off"
               />
               {clientesFiltrados.length === 0 ? (
-                <div className="px-4 py-3 text-gray-500 text-base">No hay clientes</div>
+                <div className="px-4 py-3 text-gray-500 text-base">
+                  {clienteSearch ? 'No se encontraron clientes' : 'No hay clientes'}
+                </div>
               ) : (
                 clientesFiltrados.map(c => (
                   <div
@@ -582,19 +677,29 @@ export default function FacturaForm() {
         <div className="mb-6 relative servicio-dropdown">
           <label className="block text-sm font-semibold mb-3 text-gray-700">Servicios / Items *</label>
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-2xl border-2 border-blue-100 mb-4">
-            <input
-              type="text"
-              className="w-full px-4 py-3 rounded-xl bg-white border-2 border-blue-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-base transition-all duration-200"
-              placeholder="🔍 Buscar y agregar servicio..."
-              value={servicioSearch}
-              onChange={e => {
-                setServicioSearch(e.target.value);
-                setShowServicioSuggestions(true);
-              }}
-              onFocus={() => setShowServicioSuggestions(true)}
-              disabled={!isEditable}
-              autoComplete="off"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                className="w-full px-4 py-3 rounded-xl bg-white border-2 border-blue-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-base transition-all duration-200 pr-20"
+                placeholder="🔍 Buscar y agregar servicio..."
+                value={servicioSearch}
+                onChange={e => {
+                  setServicioSearch(e.target.value);
+                  setShowServicioSuggestions(true);
+                }}
+                onFocus={() => setShowServicioSuggestions(true)}
+                disabled={!isEditable}
+                autoComplete="off"
+              />
+              {/* Botón Crear Servicio - Siempre visible */}
+              <button
+                type="button"
+                onClick={handleCrearServicio}
+                className="absolute right-3 top-1/2 -translate-y-1/2 px-3 py-1 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition-colors font-medium"
+              >
+                + Crear
+              </button>
+            </div>
             {showServicioSuggestions && serviciosFiltrados.length > 0 && (
               <div className="absolute z-20 bg-white border-2 border-blue-200 rounded-2xl shadow-xl max-h-52 overflow-y-auto w-full mt-2 left-0 right-0">
                 {serviciosFiltrados.map(s => (
@@ -613,8 +718,16 @@ export default function FacturaForm() {
                 ))}
               </div>
             )}
+            {showServicioSuggestions && serviciosFiltrados.length === 0 && (
+              <div className="absolute z-20 bg-white border-2 border-blue-200 rounded-2xl shadow-xl w-full mt-2 left-0 right-0">
+                <div className="px-4 py-3 text-gray-500 text-base">
+                  {servicioSearch ? 'No se encontraron servicios' : 'No hay servicios'}
+                </div>
+              </div>
+            )}
           </div>
-          
+        </div>
+
           {/* Items/servicios agregados - Modernizado */}
           <div className="mb-4">
             <div className="flex items-center justify-between mb-4">
@@ -624,46 +737,77 @@ export default function FacturaForm() {
               </div>
             </div>
             
-            {/* Vista de tarjetas modernas en móvil */}
-            <div className="flex flex-col gap-4 md:hidden">
-              {items.length === 0 && (
-                <div className="text-center py-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300">
-                  <div className="text-gray-400 text-base mb-2">📋 No hay servicios agregados</div>
-                  <div className="text-sm text-gray-500">Busca y agrega servicios arriba</div>
-                </div>
-              )}
-              {items.map((item, idx) => (
-                <div key={idx} className="bg-white rounded-2xl shadow-lg border-2 border-gray-100 p-4 relative hover:shadow-xl transition-shadow duration-200">
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteItem(idx)}
-                    className="absolute top-3 right-3 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md transition-all duration-200 hover:scale-110"
-                  >
-                    ×
-                  </button>
-                  <div className="pr-12">
-                    <div className="font-bold text-gray-800 text-base mb-2">{item.descripcion}</div>
-                    <div className="text-sm text-gray-600 mb-1">📁 {item.categoria}</div>
-                    <div className="flex justify-between items-center mt-3">
-                      <div className="text-sm">
-                        <span className="text-gray-500">Cantidad:</span> 
-                        <span className="font-semibold ml-1">{item.cantidad}</span>
-                      </div>
-                      <div className="text-sm">
-                        <span className="text-gray-500">Precio:</span> 
-                        <span className="font-semibold ml-1">${item.precio_unitario}</span>
-                      </div>
-                    </div>
-                    <div className="mt-2 pt-2 border-t border-gray-200">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-700 font-medium">Total:</span>
-                        <span className="text-blue-700 font-bold text-lg">${item.total}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                         {/* Vista de tarjetas modernas en móvil */}
+             <div className="flex flex-col gap-4 md:hidden">
+               {items.length === 0 && (
+                 <div className="text-center py-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300">
+                   <div className="text-gray-400 text-base mb-2">📋 No hay servicios agregados</div>
+                   <div className="text-sm text-gray-500">Busca y agrega servicios arriba</div>
+                 </div>
+               )}
+               {items.map((item, idx) => (
+                 <div key={idx} className="bg-white rounded-2xl shadow-lg border-2 border-gray-100 p-4 relative hover:shadow-xl transition-shadow duration-200">
+                   <button
+                     type="button"
+                     onClick={() => handleDeleteItem(idx)}
+                     className="absolute top-3 right-3 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md transition-all duration-200 hover:scale-110"
+                   >
+                     ×
+                   </button>
+                   <div className="pr-12">
+                     <div className="font-bold text-gray-800 text-base mb-2">{item.descripcion}</div>
+                     <div className="text-sm text-gray-600 mb-1">📁 {item.categoria}</div>
+                     
+                     {/* Controles de cantidad en móvil */}
+                     <div className="flex items-center justify-between mt-3 mb-2">
+                       <span className="text-sm text-gray-600">Cantidad:</span>
+                       <div className="flex items-center bg-gray-100 rounded-lg">
+                         <button
+                           type="button"
+                           onClick={() => handleUpdateCantidad(idx, Math.max(1, item.cantidad - 1))}
+                           className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-200 rounded-l-lg transition-colors"
+                           disabled={!isEditable}
+                         >
+                           -
+                         </button>
+                         <input
+                           type="number"
+                           min="1"
+                           value={item.cantidad}
+                           onChange={(e) => {
+                             const value = parseInt(e.target.value) || 1;
+                             handleUpdateCantidad(idx, Math.max(1, value));
+                           }}
+                           className="w-12 h-8 text-center bg-white border-0 focus:outline-none text-sm font-semibold"
+                           disabled={!isEditable}
+                         />
+                         <button
+                           type="button"
+                           onClick={() => handleUpdateCantidad(idx, item.cantidad + 1)}
+                           className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-200 rounded-r-lg transition-colors"
+                           disabled={!isEditable}
+                         >
+                           +
+                         </button>
+                       </div>
+                     </div>
+                     
+                     <div className="flex justify-between items-center mb-2">
+                       <div className="text-sm">
+                         <span className="text-gray-500">Precio unitario:</span> 
+                         <span className="font-semibold ml-1">${item.precio_unitario}</span>
+                       </div>
+                     </div>
+                     <div className="pt-2 border-t border-gray-200">
+                       <div className="flex justify-between items-center">
+                         <span className="text-gray-700 font-medium">Total:</span>
+                         <span className="text-blue-700 font-bold text-lg">${(item.precio_unitario * item.cantidad).toFixed(2)}</span>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               ))}
+             </div>
             
             {/* Tabla moderna para desktop/tablet */}
             <div className="hidden md:block">
@@ -675,36 +819,66 @@ export default function FacturaForm() {
               ) : (
                 <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-100 overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
-                      <tr>
-                        <th className="px-4 py-3 text-left font-bold text-gray-700">📁 Categoría</th>
-                        <th className="px-4 py-3 text-left font-bold text-gray-700">📝 Descripción</th>
-                        <th className="px-4 py-3 text-left font-bold text-gray-700">💰 Precio Unit.</th>
-                        <th className="px-4 py-3 text-left font-bold text-gray-700">📊 Cantidad</th>
-                        <th className="px-4 py-3 text-left font-bold text-gray-700">💳 Total</th>
-                        <th className="px-4 py-3 text-center font-bold text-gray-700">🗑️ Acción</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {items.map((item, idx) => (
-                        <tr key={idx} className="border-t border-gray-200 hover:bg-gray-50 transition-colors">
-                          <td className="px-4 py-3 text-gray-600">{item.categoria}</td>
-                          <td className="px-4 py-3 font-medium text-gray-800">{item.descripcion}</td>
-                          <td className="px-4 py-3 font-semibold text-gray-700">${item.precio_unitario}</td>
-                          <td className="px-4 py-3 font-semibold text-gray-700">{item.cantidad}</td>
-                          <td className="px-4 py-3 font-bold text-blue-700">${item.total}</td>
-                          <td className="px-4 py-3 text-center">
-                            <button 
-                              type="button" 
-                              onClick={() => handleDeleteItem(idx)} 
-                              className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md transition-all duration-200 hover:scale-110 mx-auto"
-                            >
-                              ×
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
+                                         <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                       <tr>
+                         <th className="px-4 py-3 text-left font-bold text-gray-700">📁 Categoría</th>
+                         <th className="px-4 py-3 text-left font-bold text-gray-700">📝 Descripción</th>
+                         <th className="px-4 py-3 text-left font-bold text-gray-700">💰 Precio Unit.</th>
+                         <th className="px-4 py-3 text-left font-bold text-gray-700">📊 Cantidad</th>
+                         <th className="px-4 py-3 text-left font-bold text-gray-700">💳 Total</th>
+                         <th className="px-4 py-3 text-center font-bold text-gray-700">🗑️ Acción</th>
+                       </tr>
+                     </thead>
+                     <tbody>
+                       {items.map((item, idx) => (
+                         <tr key={idx} className="border-t border-gray-200 hover:bg-gray-50 transition-colors">
+                           <td className="px-4 py-3 text-gray-600">{item.categoria}</td>
+                           <td className="px-4 py-3 font-medium text-gray-800">{item.descripcion}</td>
+                           <td className="px-4 py-3 font-semibold text-gray-700">${item.precio_unitario}</td>
+                           <td className="px-4 py-3">
+                             <div className="flex items-center bg-gray-100 rounded-lg w-24">
+                               <button
+                                 type="button"
+                                 onClick={() => handleUpdateCantidad(idx, Math.max(1, item.cantidad - 1))}
+                                 className="w-6 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-200 rounded-l-lg transition-colors text-sm"
+                                 disabled={!isEditable}
+                               >
+                                 -
+                               </button>
+                               <input
+                                 type="number"
+                                 min="1"
+                                 value={item.cantidad}
+                                 onChange={(e) => {
+                                   const value = parseInt(e.target.value) || 1;
+                                   handleUpdateCantidad(idx, Math.max(1, value));
+                                 }}
+                                 className="w-12 h-8 text-center bg-white border-0 focus:outline-none text-sm font-semibold"
+                                 disabled={!isEditable}
+                               />
+                               <button
+                                 type="button"
+                                 onClick={() => handleUpdateCantidad(idx, item.cantidad + 1)}
+                                 className="w-6 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-200 rounded-r-lg transition-colors text-sm"
+                                 disabled={!isEditable}
+                               >
+                                 +
+                               </button>
+                             </div>
+                           </td>
+                           <td className="px-4 py-3 font-bold text-blue-700">${(item.precio_unitario * item.cantidad).toFixed(2)}</td>
+                           <td className="px-4 py-3 text-center">
+                             <button 
+                               type="button" 
+                               onClick={() => handleDeleteItem(idx)} 
+                               className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold shadow-md transition-all duration-200 hover:scale-110 mx-auto"
+                             >
+                               ×
+                             </button>
+                           </td>
+                         </tr>
+                       ))}
+                     </tbody>
                   </table>
                 </div>
               )}
@@ -712,7 +886,6 @@ export default function FacturaForm() {
           </div>
           {formErrors.items && <div className="text-xs text-red-500 mt-1">{formErrors.items}</div>}
           {formErrors.itemsDetalle && <div className="text-xs text-red-500 mt-1">{formErrors.itemsDetalle}</div>}
-        </div>
 
         {/* Layout moderno optimizado - flujo vertical eficiente */}
         <div className="space-y-6">
@@ -743,20 +916,20 @@ export default function FacturaForm() {
               />
               {formErrors.fecha && <div className="text-xs text-red-500 mt-1">{formErrors.fecha}</div>}
             </div>
-                         <div>
-               <label className="block text-sm font-semibold mb-2 text-gray-700">Fecha de Vencimiento</label>
-               <input 
-                 type="date" 
-                 className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base ${formErrors.fecha_vencimiento ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
-                 value={fechaVencimiento} 
-                 onChange={e => {
-                   setFechaVencimiento(e.target.value);
-                   if (formErrors.fecha_vencimiento) setFormErrors({...formErrors, fecha_vencimiento: ''});
-                 }} 
-               />
-               {formErrors.fecha_vencimiento && <div className="text-xs text-red-500 mt-1">{formErrors.fecha_vencimiento}</div>}
-               <p className="text-xs text-gray-500 mt-1">Opcional</p>
-             </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">Fecha de Vencimiento</label>
+              <input 
+                type="date" 
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base ${formErrors.fecha_vencimiento ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
+                value={fechaVencimiento} 
+                onChange={e => {
+                  setFechaVencimiento(e.target.value);
+                  if (formErrors.fecha_vencimiento) setFormErrors({...formErrors, fecha_vencimiento: ''});
+                }} 
+              />
+              {formErrors.fecha_vencimiento && <div className="text-xs text-red-500 mt-1">{formErrors.fecha_vencimiento}</div>}
+              <p className="text-xs text-gray-500 mt-1">Opcional</p>
+            </div>
           </div>
 
           {/* Subtotal y Total en una fila */}
@@ -983,6 +1156,7 @@ export default function FacturaForm() {
                     telefono: negocioConfig?.telefono,
                     logo_url: negocioConfig?.logo_url,
                     nota: negocioConfig?.nota_factura,
+                    color_personalizado: color_personalizado, // Agregar el color personalizado
                   },
                   numero_factura: numeroFactura,
                   nota: nota && nota.trim() !== '' ? nota : undefined,
@@ -1006,6 +1180,21 @@ export default function FacturaForm() {
           </div>
         </div>
       )}
+
+      {/* Modal de Cliente */}
+      <ClienteModal
+        open={showClienteModal}
+        onClose={() => setShowClienteModal(false)}
+        onCreated={handleClienteCreated}
+        color_personalizado={color_personalizado}
+      />
+
+      {/* Modal de Gestión de Categorías y Servicios */}
+      <GestionCategoriasServiciosModal
+        open={showServiciosModal}
+        onClose={() => setShowServiciosModal(false)}
+        onServicioCreated={handleServicioCreated}
+      />
     </div>
   );
 }

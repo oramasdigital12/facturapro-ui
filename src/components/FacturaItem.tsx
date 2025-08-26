@@ -9,8 +9,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { deleteFactura, updateFactura, regenerateFacturaPDF } from '../services/api';
-import { showDeleteConfirmation } from '../utils/alerts';
+import { updateFactura, regenerateFacturaPDF } from '../services/api';
 import { buildPDFUrl, clearFacturaCache } from '../utils/urls';
 import Swal from 'sweetalert2';
 import { FiDollarSign, FiCalendar, FiUser } from 'react-icons/fi';
@@ -18,6 +17,7 @@ import CompletarPagoModal from './CompletarPagoModal';
 import WhatsAppFacturaModal from './WhatsAppFacturaModal';
 import EmailFacturaModal from './EmailFacturaModal';
 import RestaurarClienteModal from './RestaurarClienteModal';
+import EliminarFacturaModal from './EliminarFacturaModal';
 import { getNumeroFactura } from '../utils/facturaHelpers';
 
 type FacturaItemProps = {
@@ -32,6 +32,7 @@ export default function FacturaItem({ factura, onChange, color_personalizado = '
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showRestaurarClienteModal, setShowRestaurarClienteModal] = useState(false);
+  const [showEliminarModal, setShowEliminarModal] = useState(false);
 
   // Validación de UUID
   const esUUID = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(id);
@@ -139,6 +140,55 @@ export default function FacturaItem({ factura, onChange, color_personalizado = '
     }
   };
 
+  // Función para convertir borrador en factura
+  const handleConvertirEnFactura = async () => {
+    // Validar que la factura tenga un ID válido
+    if (!idValido) {
+      toast.error('ID de factura inválido');
+      return;
+    }
+
+    try {
+      const result = await Swal.fire({
+        title: '¿Convertir en Factura?',
+        text: '¿Estás seguro de que deseas convertir este borrador en una factura pendiente? Esta acción no se puede deshacer.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, convertir',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#6b7280',
+        reverseButtons: true
+      });
+
+      if (result.isConfirmed) {
+        toast.loading('Convirtiendo borrador en factura...', { id: 'convertirBorrador' });
+        
+        // Solo enviar el campo estado para la actualización
+        const datosActualizacion = {
+          estado: 'pendiente'
+        };
+        
+        console.log('Enviando datos de actualización:', datosActualizacion);
+        console.log('ID de factura:', factura.id);
+        
+        await updateFactura(factura.id, datosActualizacion);
+        
+        toast.dismiss('convertirBorrador');
+        toast.success('Borrador convertido en factura exitosamente');
+        if (onChange) onChange();
+      }
+    } catch (error: any) {
+      toast.dismiss('convertirBorrador');
+      console.error('Error convirtiendo borrador:', error);
+      console.error('Respuesta del servidor:', error.response?.data);
+      
+      // Mostrar mensaje de error más específico
+      const mensajeError = error.response?.data?.message || error.message || 'Error al convertir el borrador en factura';
+      toast.error(mensajeError);
+    }
+  };
+
 
   // Función para obtener el icono del estado
   const getEstadoIcon = (estado: string) => {
@@ -211,28 +261,16 @@ export default function FacturaItem({ factura, onChange, color_personalizado = '
     }
   };
 
-  const handleEliminar = async () => {
+  const handleEliminar = () => {
     if (!idValido) {
       toast.error('ID de factura inválido');
       return;
     }
+    setShowEliminarModal(true);
+  };
 
-    const result = await showDeleteConfirmation('¿Seguro que deseas eliminar esta factura?');
-    if (result.isConfirmed) {
-      try {
-        toast.loading('Eliminando factura...', { id: 'eliminarFactura' });
-        
-        await deleteFactura(factura.id);
-        
-        toast.dismiss('eliminarFactura');
-        toast.success('Factura eliminada');
-        
-        onChange && onChange();
-      } catch (err: any) {
-        toast.dismiss('eliminarFactura');
-        toast.error(err.message || 'Error al eliminar');
-      }
-    }
+  const handleEliminacionCompletada = () => {
+    onChange && onChange();
   };
 
   const handleLlamar = () => {
@@ -414,9 +452,22 @@ export default function FacturaItem({ factura, onChange, color_personalizado = '
 
           {/* Información adicional */}
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Detalles
-            </h4>
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                Detalles
+              </h4>
+              {/* Botón para convertir borrador en factura */}
+              {factura.estado === 'borrador' && (
+                <button
+                  onClick={handleConvertirEnFactura}
+                  className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
+                  title="Convertir en Factura"
+                >
+                  <span className="text-sm">📄</span>
+                  Convertir en Factura
+                </button>
+              )}
+            </div>
             <div className="space-y-2">
               {/* Fechas en una fila */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -598,6 +649,14 @@ export default function FacturaItem({ factura, onChange, color_personalizado = '
         onClose={() => setShowRestaurarClienteModal(false)}
         clienteData={factura.cliente}
         onClienteRestaurado={handleClienteRestaurado}
+      />
+
+      {/* Modal de Eliminación */}
+      <EliminarFacturaModal
+        open={showEliminarModal}
+        onClose={() => setShowEliminarModal(false)}
+        factura={factura}
+        onEliminada={handleEliminacionCompletada}
       />
     </>
   );

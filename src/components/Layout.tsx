@@ -14,13 +14,18 @@ export default function Layout() {
   const { checkBusinessInfoComplete } = useAuth();
   const [, setClientes] = useState([]);
   const [negocio, setNegocio] = useState({ nombre_negocio: '', email: '', logo_url: '', color_personalizado: '#2563eb' });
+  const [configLoaded, setConfigLoaded] = useState(false);
   const { dark, setDark } = useDarkMode();
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [businessInfoComplete, setBusinessInfoComplete] = useState(true);
+  // Estados de carga ya no son necesarios
 
   useEffect(() => {
     api.get('/api/clientes').then(res => setClientes(res.data));
-    api.get('/api/negocio-config').then(res => setNegocio(res.data));
+    api.get('/api/negocio-config').then(res => {
+      setNegocio(res.data);
+      setConfigLoaded(true);
+    });
     
     // Verificar información del negocio al cargar
     checkBusinessInfo();
@@ -29,10 +34,24 @@ export default function Layout() {
   // Escuchar cambios en el color personalizado (cuando se vuelve de /configuracion)
   const location = useLocation();
   useEffect(() => {
-    api.get('/api/negocio-config').then(res => setNegocio(res.data));
+    // Solo recargar la configuración si venimos de la página de configuración y ya se cargó inicialmente
+    if (location.pathname === '/configuracion' && configLoaded) {
+      api.get('/api/negocio-config').then(res => setNegocio(res.data));
+    }
     // Verificar nuevamente la información del negocio al cambiar de página
     checkBusinessInfo();
-  }, [location.pathname]);
+  }, [location.pathname, configLoaded]);
+
+  // Función para recargar configuración del negocio
+  const reloadNegocioConfig = async () => {
+    try {
+      const res = await api.get('/api/negocio-config');
+      setNegocio(res.data);
+      setConfigLoaded(true);
+    } catch (error) {
+      console.error('Error reloading negocio config:', error);
+    }
+  };
 
   const checkBusinessInfo = async () => {
     try {
@@ -50,7 +69,7 @@ export default function Layout() {
     setBusinessInfoComplete(true);
     setShowBusinessModal(false);
     // Recargar la configuración del negocio después de completar
-    api.get('/api/negocio-config').then(res => setNegocio(res.data));
+    reloadNegocioConfig();
   };
 
   const handleLogout = async () => {
@@ -69,15 +88,24 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 md:flex md:flex-row">
+      {/* Loading state mientras se carga la configuración */}
+      {!configLoaded && (
+        <div className="flex items-center justify-center min-h-screen w-full">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      )}
+      
       {/* Interfaz principal - solo visible si la información del negocio está completa */}
-      {businessInfoComplete && (
+      {businessInfoComplete && configLoaded && (
         <>
-          <SidebarNav
-            className="hidden md:flex"
-            logo_url={negocio.logo_url}
-            nombre_negocio={negocio.nombre_negocio}
-            color_personalizado={negocio.color_personalizado}
-          />
+          {configLoaded && (
+            <SidebarNav
+              className="hidden md:flex"
+              logo_url={negocio.logo_url}
+              nombre_negocio={negocio.nombre_negocio}
+              color_personalizado={negocio.color_personalizado}
+            />
+          )}
           <div className="hidden md:flex fixed top-4 right-4 gap-2 z-50">
             <button
               type="button"
@@ -110,8 +138,8 @@ export default function Layout() {
               <ArrowRightOnRectangleIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-500" />
             </button>
           </div>
-          <main className="pb-16 flex flex-col items-center justify-center min-h-screen w-full px-0 md:pl-64 md:pr-4 flex-1 overflow-y-auto">
-            <MobileHeader logo_url={negocio.logo_url} color_personalizado={negocio.color_personalizado}>
+          <main className={`pb-16 flex flex-col items-center justify-center min-h-screen w-full px-0 ${configLoaded ? 'md:pl-64' : ''} md:pr-4 flex-1 overflow-y-auto`}>
+            <MobileHeader logo_url={configLoaded ? negocio.logo_url : undefined} color_personalizado={negocio.color_personalizado}>
               <button
                 type="button"
                 onClick={handlePreguntasWhatsApp}
@@ -143,7 +171,10 @@ export default function Layout() {
                 <ArrowRightOnRectangleIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-500" />
               </button>
             </MobileHeader>
-            <Outlet context={{ color_personalizado: negocio.color_personalizado }} />
+            <Outlet context={{ 
+              color_personalizado: negocio.color_personalizado,
+              nombre_negocio: configLoaded ? negocio.nombre_negocio : ''
+            }} />
           </main>
           <div className="md:hidden">
             <BottomNav color_personalizado={negocio.color_personalizado} />
