@@ -8,6 +8,8 @@ import GestionMensajesPredefinidosFacturaModal from './GestionMensajesPredefinid
 import { 
   obtenerMensajePredefinido, 
   generarMensajeConDatosActuales,
+  generarMensajeFactura,
+  PLANTILLAS_BASE,
   TipoMensaje
 } from '../utils/mensajeHelpers';
 
@@ -105,17 +107,39 @@ export default function EmailFacturaModal({ open, onClose, factura, color_person
         setTitulo(titulo);
         setDescripcion(descripcion);
       } else {
-        // Fallback al mensaje automático si no hay predefinido
-        const mensajeAutomatico = generarMensajeAutomatico(factura, metodoSeleccionado || undefined);
-        setTitulo(mensajeAutomatico.titulo);
-        setDescripcion(mensajeAutomatico.descripcion);
+        // Fallback a la plantilla base si no hay predefinido
+        const linkFactura = buildPublicFacturaUrl(factura.id, factura);
+        const linkPago = metodoSeleccionado?.link;
+        const descripcionPago = metodoSeleccionado?.descripcion;
+        const plantillaBase = PLANTILLAS_BASE[tipo]['email'];
+        const mensajeGenerado = generarMensajeFactura(plantillaBase, factura, linkFactura, linkPago, descripcionPago);
+        
+        // Separar título y descripción del mensaje
+        const lineas = mensajeGenerado.split('\n');
+        const titulo = lineas[0] || `Factura #${factura.numero_factura}`;
+        const descripcion = lineas.slice(1).join('\n');
+        
+        setTitulo(titulo);
+        setDescripcion(descripcion);
       }
     } catch (error) {
       console.error('Error cargando mensaje predefinido:', error);
-      // Fallback al mensaje automático
-      const mensajeAutomatico = generarMensajeAutomatico(factura, metodoSeleccionado || undefined);
-      setTitulo(mensajeAutomatico.titulo);
-      setDescripcion(mensajeAutomatico.descripcion);
+      // Fallback a la plantilla base
+      const linkFactura = buildPublicFacturaUrl(factura.id, factura);
+      const linkPago = metodoSeleccionado?.link;
+      const descripcionPago = metodoSeleccionado?.descripcion;
+      const estadoReal = determinarEstadoFactura(factura);
+      const tipo: TipoMensaje = estadoReal === 'pagada' ? 'pagada' : (tipoMensajeSeleccionado || estadoReal);
+      const plantillaBase = PLANTILLAS_BASE[tipo]['email'];
+      const mensajeGenerado = generarMensajeFactura(plantillaBase, factura, linkFactura, linkPago, descripcionPago);
+      
+      // Separar título y descripción del mensaje
+      const lineas = mensajeGenerado.split('\n');
+      const titulo = lineas[0] || `Factura #${factura.numero_factura}`;
+      const descripcion = lineas.slice(1).join('\n');
+      
+      setTitulo(titulo);
+      setDescripcion(descripcion);
     }
   };
 
@@ -605,21 +629,11 @@ export default function EmailFacturaModal({ open, onClose, factura, color_person
             const estadoReal = determinarEstadoFactura(factura);
             return estadoReal === 'pagada' ? 'pagada' : (tipoMensajeSeleccionado || estadoReal);
           })()}
-          onMensajeActualizado={(_status, canal, mensajeActualizado) => {
+          onMensajeActualizado={async (_status, canal) => {
             // Recargar el mensaje en el textarea cuando se actualiza
             if (canal === 'email') {
-              const linkFactura = buildPublicFacturaUrl(factura.id, factura);
-              const linkPago = metodoSeleccionado?.link;
-              const descripcionPago = metodoSeleccionado?.descripcion;
-              const mensajeGenerado = generarMensajeConDatosActuales(mensajeActualizado, factura, linkFactura, linkPago, descripcionPago);
-              
-              // Separar título y descripción del mensaje
-              const lineas = mensajeGenerado.split('\n');
-              const titulo = lineas[0] || `Factura #${factura.numero_factura}`;
-              const descripcion = lineas.slice(1).join('\n');
-              
-              setTitulo(titulo);
-              setDescripcion(descripcion);
+              // Recargar el mensaje predefinido desde la base de datos
+              await cargarMensajePredefinido(true);
             }
           }}
         />

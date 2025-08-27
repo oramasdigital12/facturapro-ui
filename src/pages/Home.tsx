@@ -8,6 +8,8 @@ import MensajeWhatsappModal from '../components/MensajeWhatsappModal';
 import WhatsAppFacturaModal from '../components/WhatsAppFacturaModal';
 import EmailFacturaModal from '../components/EmailFacturaModal';
 import CompletarPagoModal from '../components/CompletarPagoModal';
+import DateRangePicker from '../components/DateRangePicker';
+import ReporteGeneralModal from '../components/ReporteGeneralModal';
 import { buildPDFUrl } from '../utils/urls';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -44,6 +46,7 @@ export default function Home() {
   const [showEmailFacturaModal, setShowEmailFacturaModal] = useState(false);
   const [showCompletarPagoModal, setShowCompletarPagoModal] = useState(false);
   const [facturaSeleccionada, setFacturaSeleccionada] = useState<any>(null);
+  const [showReporteGeneralModal, setShowReporteGeneralModal] = useState(false);
 
   // Filtros de fecha para métricas
   const [fechaDesde, setFechaDesde] = useState('');
@@ -538,40 +541,37 @@ export default function Home() {
             </button>
           </div>
           
-          {showFiltrosFecha && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Fecha Desde
-                </label>
-                <input
-                  type="date"
-                  value={fechaDesde}
-                  onChange={(e) => setFechaDesde(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                />
+                                           {showFiltrosFecha && (
+              <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                <div className="flex flex-col md:flex-row items-center justify-center gap-4">
+                  <div className="max-w-md w-full">
+                    <DateRangePicker
+                      startDate={fechaDesde}
+                      endDate={fechaHasta}
+                      onDateChange={(start, end) => {
+                        setFechaDesde(start);
+                        setFechaHasta(end);
+                      }}
+                      placeholder="Seleccionar rango de fechas"
+                      className="w-full"
+                    />
+                  </div>
+                  
+                  {/* Botón Reporte General */}
+                  {(fechaDesde || fechaHasta) && (
+                    <button
+                      onClick={() => setShowReporteGeneralModal(true)}
+                      className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-xl font-semibold shadow-lg transition-all duration-200 flex items-center gap-2 transform hover:scale-105"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                      Reporte General
+                    </button>
+                  )}
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Fecha Hasta
-                </label>
-                <input
-                  type="date"
-                  value={fechaHasta}
-                  onChange={(e) => setFechaHasta(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                />
-              </div>
-              <div className="flex items-end">
-                <button
-                  onClick={() => { setFechaDesde(''); setFechaHasta(''); }}
-                  className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                >
-                  Limpiar Filtros
-                </button>
-              </div>
-            </div>
-          )}
+            )}
         </div>
       </div>
 
@@ -887,15 +887,24 @@ export default function Home() {
         />
       )}
 
-      {/* Modal de Completar Pago */}
-      {showCompletarPagoModal && facturaSeleccionada && (
-        <CompletarPagoModal
-          open={showCompletarPagoModal}
-          onClose={() => setShowCompletarPagoModal(false)}
-          factura={facturaSeleccionada}
-          onPagoCompletado={handlePagoCompletado}
-        />
-      )}
-    </div>
-  );
+             {/* Modal de Completar Pago */}
+       {showCompletarPagoModal && facturaSeleccionada && (
+         <CompletarPagoModal
+           open={showCompletarPagoModal}
+           onClose={() => setShowCompletarPagoModal(false)}
+           factura={facturaSeleccionada}
+           onPagoCompletado={handlePagoCompletado}
+         />
+       )}
+
+       {/* Modal de Reporte General */}
+       <ReporteGeneralModal
+         open={showReporteGeneralModal}
+         onClose={() => setShowReporteGeneralModal(false)}
+         fechaDesde={fechaDesde}
+         fechaHasta={fechaHasta}
+         color_personalizado={color_personalizado}
+       />
+     </div>
+   );
 } 

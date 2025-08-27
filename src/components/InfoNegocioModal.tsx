@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { getNegocioConfig, updateNegocioConfig, uploadNegocioLogo } from '../services/api';
 import { NegocioConfig } from '../types';
 import { FiX, FiUpload, FiFileText, FiPhone, FiMapPin, FiHome, FiDroplet } from 'react-icons/fi';
+import ExpandableTextarea from './ExpandableTextarea';
 
 interface InfoNegocioModalProps {
   open: boolean;
@@ -368,43 +369,35 @@ export default function InfoNegocioModal({ open, onClose, color_personalizado = 
                 </div>
               </div>
 
-              {/* Notas y términos */}
-              <div className="space-y-3 sm:space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <FiFileText className="h-4 w-4 inline mr-2 text-orange-500" />
-                    Nota para Factura (Opcional)
-                  </label>
-                  <textarea
-                    name="nota_factura"
-                    placeholder="Ej: Gracias por su compra, esperamos verlo pronto..."
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-orange-500 focus:outline-none transition-colors resize-none text-sm"
-                    rows={2}
-                    value={negocioForm.nota_factura || ''}
-                    onChange={handleChange}
-                  />
-                  <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
-                    Esta nota aparecerá en las facturas. Campo opcional.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <FiFileText className="h-4 w-4 inline mr-2 text-purple-500" />
-                    Términos y Condiciones
-                  </label>
-                  <textarea
-                    name="terminos_condiciones"
-                    placeholder="Términos y condiciones del negocio (opcional)"
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none transition-colors resize-none text-sm"
-                    rows={3}
-                    value={negocioForm.terminos_condiciones || ''}
-                    onChange={handleChange}
-                  />
-                  <p className="text-xs text-purple-600 dark:text-purple-400 mt-2">
-                    Opcional. Puedes dejarlo vacío.
-                  </p>
-                </div>
+              {/* Notas y términos expandibles */}
+              <div className="space-y-4 sm:space-y-6">
+                <ExpandableTextarea
+                  label="Nota para Factura (Opcional)"
+                  value={negocioForm.nota_factura || ''}
+                  onChange={(value) => {
+                    setNegocioForm({ ...negocioForm, nota_factura: value });
+                    setErrores({ ...errores, nota_factura: '' });
+                  }}
+                  placeholder="Ej: Gracias por su compra, esperamos verlo pronto..."
+                  icon={<FiFileText className="w-4 h-4 text-orange-500" />}
+                  minHeight="min-h-[80px]"
+                  maxHeight="max-h-[200px]"
+                  expandedHeight="min-h-[300px]"
+                />
+                
+                <ExpandableTextarea
+                  label="Términos y Condiciones"
+                  value={negocioForm.terminos_condiciones || ''}
+                  onChange={(value) => {
+                    setNegocioForm({ ...negocioForm, terminos_condiciones: value });
+                    setErrores({ ...errores, terminos_condiciones: '' });
+                  }}
+                  placeholder="Términos y condiciones del negocio (opcional)"
+                  icon={<FiFileText className="w-4 h-4 text-purple-500" />}
+                  minHeight="min-h-[100px]"
+                  maxHeight="max-h-[250px]"
+                  expandedHeight="min-h-[400px]"
+                />
               </div>
             </form>
           </div>

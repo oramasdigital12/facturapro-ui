@@ -41,6 +41,7 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
 
   // Totales
   const subtotal = factura?.subtotal || 0;
+  const descuento = factura?.descuento || 0;
   const impuesto = factura?.impuesto || 0;
   const total = factura?.total || 0;
   const deposito = factura?.deposito || 0;
@@ -699,7 +700,7 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
         <table className="items-table">
           <thead>
             <tr>
-              <th>ITEM/SERVICE</th>
+              <th>PRODUCT/SERVICE</th>
               <th>DESCRIPTION</th>
               <th>QTY/HRS</th>
               <th>RATE</th>
@@ -709,7 +710,7 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
           <tbody>
             {factura?.items && factura.items.length > 0 ? factura.items.map((item: any, idx: number) => (
               <tr key={idx}>
-                <td>{item.categoria || 'Service'}</td>
+                <td>{item.categoria || 'Product/Service'}</td>
                 <td>{item.descripcion || 'Description'}</td>
                 <td>{item.cantidad || '1'}</td>
                 <td>${Number(item.precio_unitario || 0).toFixed(2)}</td>
@@ -731,14 +732,20 @@ export default function FacturaPreview({ factura, mostrarStatus }: FacturaPrevie
         <div className="bottom-section">
           {/* Totals Section - Siempre visible primero en móvil */}
           <div className="totals-section">
-            <div className="total-row">
-              <span className="total-label">Subtotal:</span>
-              <span className="total-value">${Number(subtotal).toFixed(2)}</span>
-            </div>
-            <div className="total-row">
-              <span className="total-label">Tax:</span>
-              <span className="total-value">${Number(impuesto).toFixed(2)}</span>
-            </div>
+                    <div className="total-row">
+          <span className="total-label">Subtotal:</span>
+          <span className="total-value">${Number(subtotal).toFixed(2)}</span>
+        </div>
+        {descuento > 0 && (
+          <div className="total-row">
+            <span className="total-label">Descuento ({descuento}%):</span>
+            <span className="total-value" style={{ color: '#dc2626' }}>-${(Number(subtotal) * (descuento / 100)).toFixed(2)}</span>
+          </div>
+        )}
+        <div className="total-row">
+          <span className="total-label">Tax:</span>
+          <span className="total-value">${Number(impuesto).toFixed(2)}</span>
+        </div>
             <div className="total-row total">
               <span className="total-label">TOTAL:</span>
               <span className="total-value">${Number(total).toFixed(2)}</span>

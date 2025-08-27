@@ -1,6 +1,18 @@
 export interface Cliente {
   id: string;
   nombre: string;
+  telefono?: string;
+  email?: string;
+  identification_number?: string;
+  sexo?: string;
+  direccion?: string;
+  notas?: string;
+  proviene?: string;
+  categoria?: string;
+  fecha_inicio?: string;
+  fecha_vencimiento?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 

@@ -10,6 +10,8 @@ import { crearMensajePredefinido, obtenerMensajePredefinido } from '../utils/men
 import { buildPublicFacturaUrl } from '../utils/urls';
 import ClienteModal from '../components/ClienteModal';
 import GestionCategoriasServiciosModal from '../components/GestionCategoriasServiciosModal';
+import ExpandableTextarea from '../components/ExpandableTextarea';
+import { DocumentTextIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
 
 export default function FacturaForm() {
   const { id } = useParams();
@@ -20,7 +22,7 @@ export default function FacturaForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [formErrors, setFormErrors] = useState<{cliente?: string; items?: string; itemsDetalle?: string; fecha?: string; impuesto?: string; deposito?: string; nota?: string; terminos?: string; numero_factura?: string; fecha_vencimiento?: string; metodo_pago_id?: string}>({});
+  const [formErrors, setFormErrors] = useState<{cliente?: string; items?: string; itemsDetalle?: string; fecha?: string; impuesto?: string; descuento?: string; deposito?: string; nota?: string; terminos?: string; numero_factura?: string; fecha_vencimiento?: string; metodo_pago_id?: string}>({});
   const [facturaEstado, setFacturaEstado] = useState<string>('');
   const [editMode, setEditMode] = useState(false);
   const [negocioConfig, setNegocioConfig] = useState<any>(null);
@@ -35,6 +37,7 @@ export default function FacturaForm() {
   const [, setMetodosPago] = useState<any[]>([]);
   const [items, setItems] = useState<any[]>([]);
   const [impuesto, setImpuesto] = useState(0);
+  const [descuento, setDescuento] = useState(0);
   const [deposito, setDeposito] = useState(0);
   const [nota, setNota] = useState('');
   const [terminos, setTerminos] = useState('');
@@ -49,8 +52,10 @@ export default function FacturaForm() {
 
   // Totales
   const subtotal = items.reduce((acc, item) => acc + (item.precio_unitario * item.cantidad), 0);
-  const totalImpuesto = subtotal * (impuesto / 100);
-  const total = subtotal + totalImpuesto;
+  const totalDescuento = subtotal * (descuento / 100);
+  const subtotalConDescuento = subtotal - totalDescuento;
+  const totalImpuesto = subtotalConDescuento * (impuesto / 100);
+  const total = subtotalConDescuento + totalImpuesto;
   const balance = total - deposito;
 
   // Cargar clientes, servicios y factura si hay id
@@ -195,8 +200,10 @@ export default function FacturaForm() {
         cantidad: i.cantidad,
         total: i.total
       })));
-      setImpuesto(f.impuesto ? (f.impuesto / (f.subtotal || 1)) * 100 : 0);
-      setDeposito(f.deposito || 0);
+             setImpuesto(f.impuesto ? (f.impuesto / (f.subtotal || 1)) * 100 : 0);
+       // Convertir el monto del descuento a porcentaje para el frontend
+       setDescuento(f.descuento && f.subtotal ? (f.descuento / f.subtotal) * 100 : 0);
+       setDeposito(f.deposito || 0);
       setNota(f.nota || '');
       setTerminos(f.terminos || '');
       setFacturaEstado(f.estado);
@@ -244,7 +251,7 @@ export default function FacturaForm() {
 
   // Validación antes de enviar
   const validateForm = () => {
-    const errors: {cliente?: string; items?: string; itemsDetalle?: string; fecha?: string; impuesto?: string; deposito?: string; numero_factura?: string; fecha_vencimiento?: string} = {};
+    const errors: {cliente?: string; items?: string; itemsDetalle?: string; fecha?: string; impuesto?: string; descuento?: string; deposito?: string; numero_factura?: string; fecha_vencimiento?: string} = {};
     
     // Validar cliente
     if (!clienteId) errors.cliente = 'Selecciona un cliente.';
@@ -267,6 +274,10 @@ export default function FacturaForm() {
     
     // Validar impuesto
     if (impuesto === null || impuesto === undefined || impuesto < 0) errors.impuesto = 'El impuesto debe ser un número válido mayor o igual a 0.';
+    
+    // Validar descuento
+    if (descuento === null || descuento === undefined || descuento < 0) errors.descuento = 'El descuento debe ser un número válido mayor o igual a 0.';
+    if (descuento > 100) errors.descuento = 'El descuento no puede ser mayor al 100%.';
     
     // Validar depósito
     if (deposito === null || deposito === undefined || deposito < 0) errors.deposito = 'El depósito debe ser un número válido mayor o igual a 0.';
@@ -325,6 +336,7 @@ export default function FacturaForm() {
         total,
         deposito,
         balance_restante: balance,
+        descuento: descuento > 0 ? descuento : undefined,
         nota: nota && nota.trim() !== '' ? nota : undefined,
         terminos: terminos && terminos.trim() !== '' ? terminos : undefined,
         items: items.map(i => ({
@@ -355,6 +367,7 @@ export default function FacturaForm() {
         setClienteId('');
         setItems([]);
         setImpuesto(0);
+        setDescuento(0);
         setDeposito(0);
         setNota('');
         setTerminos('');
@@ -450,6 +463,7 @@ export default function FacturaForm() {
         total,
         deposito,
         balance_restante: balance,
+        descuento: descuento > 0 ? descuento : undefined,
         nota: nota && nota.trim() !== '' ? nota : undefined,
         terminos: terminos && terminos.trim() !== '' ? terminos : undefined,
         estado: 'borrador',
@@ -468,6 +482,7 @@ export default function FacturaForm() {
         setClienteId('');
         setItems([]);
         setImpuesto(0);
+        setDescuento(0);
         setDeposito(0);
         setNota('');
         setTerminos('');
@@ -491,7 +506,7 @@ export default function FacturaForm() {
   // Confirmar antes de cancelar
   const handleCancelar = async () => {
     // Verificar si hay cambios sin guardar
-    const hayCambios = clienteId || items.length > 0 || nota || terminos || impuesto > 0 || deposito > 0;
+    const hayCambios = clienteId || items.length > 0 || nota || terminos || impuesto > 0 || descuento > 0 || deposito > 0;
     
     if (hayCambios) {
       const result = await Swal.fire({
@@ -821,7 +836,7 @@ export default function FacturaForm() {
                   <table className="w-full text-sm">
                                          <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                        <tr>
-                         <th className="px-4 py-3 text-left font-bold text-gray-700">📁 Categoría</th>
+                         <th className="px-4 py-3 text-left font-bold text-gray-700">📁 Producto/Servicio</th>
                          <th className="px-4 py-3 text-left font-bold text-gray-700">📝 Descripción</th>
                          <th className="px-4 py-3 text-left font-bold text-gray-700">💰 Precio Unit.</th>
                          <th className="px-4 py-3 text-left font-bold text-gray-700">📊 Cantidad</th>
@@ -830,9 +845,9 @@ export default function FacturaForm() {
                        </tr>
                      </thead>
                      <tbody>
-                       {items.map((item, idx) => (
+                       {items.map((item, idx) => (   
                          <tr key={idx} className="border-t border-gray-200 hover:bg-gray-50 transition-colors">
-                           <td className="px-4 py-3 text-gray-600">{item.categoria}</td>
+                           <td className="px-4 py-3 text-gray-600">{item.categoria || 'Producto/Servicio'}</td>
                            <td className="px-4 py-3 font-medium text-gray-800">{item.descripcion}</td>
                            <td className="px-4 py-3 font-semibold text-gray-700">${item.precio_unitario}</td>
                            <td className="px-4 py-3">
@@ -932,8 +947,8 @@ export default function FacturaForm() {
             </div>
           </div>
 
-          {/* Subtotal y Total en una fila */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Subtotal, Descuento y Total en una fila */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-semibold mb-2 text-gray-700">Subtotal</label>
               <input 
@@ -946,17 +961,56 @@ export default function FacturaForm() {
               <p className="text-xs text-gray-500 mt-1">Calculado automáticamente</p>
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-700">Total</label>
+              <label className="block text-sm font-semibold mb-2 text-gray-700">Descuento (%)</label>
               <input 
-                type="text" 
-                className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 bg-blue-50 text-blue-700 text-base font-bold cursor-not-allowed" 
-                value={`$${total.toFixed(2)}`} 
-                readOnly 
-                disabled
+                type="number" 
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base ${formErrors.descuento ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
+                value={descuento} 
+                onChange={e => {
+                  const value = e.target.value === '' ? 0 : Number(e.target.value);
+                  setDescuento(value);
+                  if (formErrors.descuento) setFormErrors({...formErrors, descuento: ''});
+                }}
+                onFocus={(e) => {
+                  if (e.target.value === '0') {
+                    e.target.value = '';
+                  }
+                }}
+                min="0"
+                max="100"
+                step="0.01"
+                disabled={!isEditable}
               />
-              <p className="text-xs text-blue-600 mt-1">Total final con impuestos</p>
+              <p className="text-xs text-gray-500 mt-1">Porcentaje de descuento</p>
+              {formErrors.descuento && <div className="text-xs text-red-500 mt-1">{formErrors.descuento}</div>}
             </div>
+                         <div>
+               <label className="block text-sm font-semibold mb-2 text-gray-700">Total</label>
+               <input 
+                 type="text" 
+                 className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 bg-blue-50 text-blue-700 text-base font-bold cursor-not-allowed" 
+                 value={`$${balance.toFixed(2)}`} 
+                 readOnly 
+                 disabled
+               />
+               <p className="text-xs text-blue-600 mt-1">Total final a pagar (después del depósito)</p>
+             </div>
           </div>
+
+                                {/* Descuento aplicado */}
+            {descuento > 0 && (
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-gray-700">Descuento aplicado</label>
+                <input 
+                  type="text" 
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 bg-red-50 text-red-700 text-base font-medium cursor-not-allowed" 
+                  value={`$${totalDescuento.toFixed(2)}`} 
+                  readOnly 
+                  disabled
+                />
+                <p className="text-xs text-red-600 mt-1">Monto del descuento aplicado</p>
+              </div>
+            )}
 
           {/* Impuesto y depósito en una fila */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1017,32 +1071,37 @@ export default function FacturaForm() {
             <p className="text-xs text-green-600 mt-1">Monto pendiente por pagar</p>
           </div>
 
-          {/* Nota y términos en una fila */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-700">Nota</label>
-              <textarea 
-                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base min-h-[100px] resize-none ${formErrors.nota ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
-                value={nota} 
-                onChange={e => {
-                  setNota(e.target.value);
-                  if (formErrors.nota) setFormErrors({...formErrors, nota: ''});
-                }} 
-              />
-              {formErrors.nota && <div className="text-xs text-red-500 mt-1">{formErrors.nota}</div>}
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-700">Términos</label>
-              <textarea 
-                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 text-base min-h-[100px] resize-none ${formErrors.terminos ? 'border-red-400 bg-red-50' : 'border-gray-200 focus:border-blue-400 focus:bg-blue-50'}`} 
-                value={terminos} 
-                onChange={e => {
-                  setTerminos(e.target.value);
-                  if (formErrors.terminos) setFormErrors({...formErrors, terminos: ''});
-                }} 
-              />
-              {formErrors.terminos && <div className="text-xs text-red-500 mt-1">{formErrors.terminos}</div>}
-            </div>
+          {/* Nota y términos expandibles */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ExpandableTextarea
+              label="Nota"
+              value={nota}
+              onChange={(value) => {
+                setNota(value);
+                if (formErrors.nota) setFormErrors({...formErrors, nota: ''});
+              }}
+              placeholder="Agregar una nota personalizada a la factura..."
+              error={formErrors.nota}
+              icon={<DocumentTextIcon className="w-4 h-4" />}
+              minHeight="min-h-[120px]"
+              maxHeight="max-h-[300px]"
+              expandedHeight="min-h-[500px]"
+            />
+            
+            <ExpandableTextarea
+              label="Términos y Condiciones"
+              value={terminos}
+              onChange={(value) => {
+                setTerminos(value);
+                if (formErrors.terminos) setFormErrors({...formErrors, terminos: ''});
+              }}
+              placeholder="Términos y condiciones del servicio..."
+              error={formErrors.terminos}
+              icon={<ClipboardDocumentListIcon className="w-4 h-4" />}
+              minHeight="min-h-[120px]"
+              maxHeight="max-h-[300px]"
+              expandedHeight="min-h-[500px]"
+            />
           </div>
 
           {/* Botones finales modernos y profesionales */}
@@ -1167,6 +1226,7 @@ export default function FacturaForm() {
                     total: item.precio_unitario * item.cantidad // Asegurar que el total esté calculado correctamente
                   })),
                   subtotal,
+                  descuento: descuento > 0 ? descuento : undefined,
                   impuesto: totalImpuesto,
                   total,
                   deposito,

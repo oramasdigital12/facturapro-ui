@@ -11,8 +11,10 @@ import {
   MapPinIcon, 
   DocumentTextIcon,
   XMarkIcon,
-  CheckIcon
+  CheckIcon,
+  GlobeAltIcon
 } from '@heroicons/react/24/outline';
+import ExpandableTextarea from './ExpandableTextarea';
 import Swal from 'sweetalert2';
 
 interface Props {
@@ -45,10 +47,13 @@ export default function ClienteModal({ open, onClose, onCreated, cliente, color_
     sexo: '',
     direccion: '',
     notas: '',
+    proviene: '',
   });
+  const [provieneOtro, setProvieneOtro] = useState('');
   const [status, setStatus] = useState<'inactivo' | 'activo' | ''>('');
   const [loading, setLoading] = useState(false);
   const [errores, setErrores] = useState<{ [key: string]: string }>({});
+  const [showProvieneDropdown, setShowProvieneDropdown] = useState(false);
 
   // Debug: Monitorear cambios en open
   useEffect(() => {
@@ -62,6 +67,24 @@ export default function ClienteModal({ open, onClose, onCreated, cliente, color_
 
   useEffect(() => {
     if (cliente) {
+      // Definir las opciones predefinidas
+      const opcionesPredefinidas = ['Facebook', 'Instagram', 'WhatsApp', 'Messenger', 'Meta Ads', 'Google Ads', 'LinkedIn', 'Twitter', 'TikTok', 'YouTube', 'Recomendación', 'Búsqueda Orgánica', 'Email Marketing', 'Evento', 'Referido'];
+      
+      // Determinar el valor correcto para el campo proviene
+      let provieneValue = '';
+      let provieneOtroValue = '';
+      
+      if (cliente.proviene) {
+        if (opcionesPredefinidas.includes(cliente.proviene)) {
+          // Si el valor está en las opciones predefinidas, usarlo directamente
+          provieneValue = cliente.proviene;
+        } else {
+          // Si no está en las opciones predefinidas, usar 'otro' y guardar el valor en provieneOtro
+          provieneValue = 'otro';
+          provieneOtroValue = cliente.proviene;
+        }
+      }
+      
       setForm({
         nombre: cliente.nombre || '',
         telefono: cliente.telefono || '',
@@ -70,8 +93,10 @@ export default function ClienteModal({ open, onClose, onCreated, cliente, color_
         sexo: cliente.sexo || '',
         direccion: cliente.direccion || '',
         notas: cliente.notas || '',
+        proviene: provieneValue,
       });
       setStatus(cliente.categoria === 'inactivo' ? 'inactivo' : 'activo');
+      setProvieneOtro(provieneOtroValue);
     } else {
       setForm({
         nombre: '',
@@ -81,17 +106,36 @@ export default function ClienteModal({ open, onClose, onCreated, cliente, color_
         sexo: '',
         direccion: '',
         notas: '',
+        proviene: '',
       });
       setStatus('');
+      setProvieneOtro('');
     }
     setErrores({});
-  }, [cliente]);
+    setShowProvieneDropdown(false);
+  }, [cliente, open]); // Agregar 'open' como dependencia para que se ejecute cuando se abre/cierra el modal
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
     if (errores[name]) {
       setErrores(prev => ({ ...prev, [name]: '' }));
+    }
+    
+    // Limpiar campo provieneOtro si se cambia la selección del dropdown
+    if (name === 'proviene' && value !== 'otro') {
+      setProvieneOtro('');
+    }
+  };
+
+  const handleProvieneSelect = (value: string) => {
+    setForm(prev => ({ ...prev, proviene: value }));
+    if (value !== 'otro') {
+      setProvieneOtro('');
+    }
+    setShowProvieneDropdown(false);
+    if (errores.proviene) {
+      setErrores(prev => ({ ...prev, proviene: '' }));
     }
   };
 
@@ -116,6 +160,11 @@ export default function ClienteModal({ open, onClose, onCreated, cliente, color_
 
     if (!status) {
       nuevosErrores.status = 'Debes seleccionar un estado';
+    }
+
+    // Validar campo proviene cuando se selecciona "otro"
+    if (form.proviene === 'otro' && !provieneOtro.trim()) {
+      nuevosErrores.proviene = 'Debes especificar de dónde proviene el cliente';
     }
 
     setErrores(nuevosErrores);
@@ -161,6 +210,15 @@ export default function ClienteModal({ open, onClose, onCreated, cliente, color_
         data[campo] = valor === undefined || valor === null || valor === '' ? null : valor;
       });
       
+      // Manejar el campo proviene
+      if (form.proviene === 'otro' && provieneOtro.trim()) {
+        data.proviene = provieneOtro.trim();
+      } else if (form.proviene && form.proviene !== 'otro') {
+        data.proviene = form.proviene;
+      } else {
+        data.proviene = null;
+      }
+      
       if (cliente && cliente.id) {
         await api.put(`/api/clientes/${cliente.id}`, data);
         toast.success('Cliente actualizado exitosamente');
@@ -183,6 +241,27 @@ export default function ClienteModal({ open, onClose, onCreated, cliente, color_
     }
   };
 
+  // Opciones del dropdown proviene
+  const opcionesProviene = [
+    { value: "", label: "Seleccionar origen" },
+    { value: "Facebook", label: "Facebook" },
+    { value: "Instagram", label: "Instagram" },
+    { value: "WhatsApp", label: "WhatsApp" },
+    { value: "Messenger", label: "Messenger" },
+    { value: "Meta Ads", label: "Meta Ads" },
+    { value: "Google Ads", label: "Google Ads" },
+    { value: "LinkedIn", label: "LinkedIn" },
+    { value: "Twitter", label: "Twitter" },
+    { value: "TikTok", label: "TikTok" },
+    { value: "YouTube", label: "YouTube" },
+    { value: "Recomendación", label: "Recomendación" },
+    { value: "Búsqueda Orgánica", label: "Búsqueda Orgánica" },
+    { value: "Email Marketing", label: "Email Marketing" },
+    { value: "Evento", label: "Evento" },
+    { value: "Referido", label: "Referido" },
+    { value: "otro", label: "Otro" },
+  ];
+
   if (!open) return null;
 
   return (
@@ -197,9 +276,9 @@ export default function ClienteModal({ open, onClose, onCreated, cliente, color_
       {/* Backdrop con blur moderno */}
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
       
-      {/* Contenedor principal */}
-      <div className="fixed inset-0 flex items-center justify-center p-4 sm:p-6">
-        <Dialog.Panel className="mx-auto w-full max-w-2xl bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden transform transition-all duration-300 ease-out">
+             {/* Contenedor principal */}
+       <div className="fixed inset-0 flex items-center justify-center p-4 sm:p-6">
+         <Dialog.Panel className="mx-auto w-full max-w-2xl bg-white dark:bg-gray-800 rounded-3xl shadow-2xl overflow-hidden transform transition-all duration-300 ease-out max-h-[95vh] sm:max-h-[90vh]">
           
           {/* Header moderno con gradiente */}
           <div className="relative px-6 py-6 sm:px-8 sm:py-8" style={{ background: `linear-gradient(90deg, ${color_personalizado}, ${color_personalizado}dd)` }}>
@@ -233,9 +312,9 @@ export default function ClienteModal({ open, onClose, onCreated, cliente, color_
             </div>
           </div>
 
-          {/* Contenido del formulario */}
-          <form onSubmit={handleSubmit} className="flex flex-col">
-            <div className="flex-1 overflow-y-auto max-h-[70vh] sm:max-h-[75vh]">
+                     {/* Contenido del formulario */}
+           <form onSubmit={handleSubmit} className="flex flex-col h-full">
+             <div className="flex-1 overflow-y-auto max-h-[60vh] sm:max-h-[65vh]">
               <div className="p-6 sm:p-8 space-y-6">
                 
                 {/* Selector de estado moderno */}
@@ -500,22 +579,96 @@ export default function ClienteModal({ open, onClose, onCreated, cliente, color_
                     )}
                   </div>
 
-                  {/* Notas */}
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center">
-                      <DocumentTextIcon className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />
-                      Notas Adicionales
-                    </label>
-                    <div className="relative">
-                      <textarea
-                        name="notas"
-                        placeholder="Información adicional sobre el cliente..."
-                        className="w-full px-4 py-3 pl-12 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 focus:border-blue-500 transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none min-h-[100px]"
-                        value={form.notas}
-                        onChange={handleChange}
-                      />
-                      <DocumentTextIcon className="absolute left-4 top-4 w-5 h-5 text-gray-400" />
+                                     {/* Campo Proviene */}
+                   <div className="sm:col-span-2">
+                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                       <GlobeAltIcon className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />
+                       ¿De dónde proviene el cliente?
+                     </label>
+                     <div className="relative">
+                       <button
+                         type="button"
+                         onClick={() => setShowProvieneDropdown(!showProvieneDropdown)}
+                         className={`w-full px-4 py-3 pl-12 pr-12 border-2 rounded-xl focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 focus:border-blue-500 transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-left ${
+                           errores.proviene 
+                             ? 'border-red-500 focus:border-red-500 focus:ring-red-100 dark:focus:ring-red-900/30' 
+                             : 'border-gray-200 dark:border-gray-600'
+                         }`}
+                       >
+                         {form.proviene ? opcionesProviene.find(op => op.value === form.proviene)?.label : 'Seleccionar origen'}
+                       </button>
+                       <GlobeAltIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                       <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                         <svg className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${showProvieneDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                         </svg>
+                       </div>
+                       
+                       {/* Dropdown personalizado */}
+                       {showProvieneDropdown && (
+                         <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto">
+                           {opcionesProviene.map((opcion) => (
+                             <button
+                               key={opcion.value}
+                               type="button"
+                               onClick={() => handleProvieneSelect(opcion.value)}
+                               className={`w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200 ${
+                                 form.proviene === opcion.value 
+                                   ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' 
+                                   : 'text-gray-900 dark:text-white'
+                               } ${opcion.value === '' ? 'text-gray-500 dark:text-gray-400' : ''}`}
+                             >
+                               {opcion.label}
+                             </button>
+                           ))}
+                         </div>
+                       )}
+                     </div>
+                     {errores.proviene && (
+                       <div className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center">
+                         <div className="w-1 h-1 bg-red-500 rounded-full mr-2"></div>
+                         {errores.proviene}
+                       </div>
+                     )}
+                   </div>
+
+                  {/* Campo Otro (dinámico) */}
+                  {form.proviene === 'otro' && (
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                        <GlobeAltIcon className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />
+                        Especificar origen
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Escribe de dónde proviene el cliente..."
+                          className="w-full px-4 py-3 pl-12 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/30 focus:border-blue-500 transition-all duration-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                          value={provieneOtro}
+                          onChange={(e) => setProvieneOtro(e.target.value)}
+                        />
+                        <GlobeAltIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      </div>
                     </div>
+                  )}
+
+                  {/* Notas expandibles */}
+                  <div className="sm:col-span-2">
+                    <ExpandableTextarea
+                      label="Notas Adicionales"
+                      value={form.notas}
+                      onChange={(value) => {
+                        setForm(prev => ({ ...prev, notas: value }));
+                        if (errores.notas) {
+                          setErrores(prev => ({ ...prev, notas: '' }));
+                        }
+                      }}
+                      placeholder="Información adicional sobre el cliente..."
+                      icon={<DocumentTextIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
+                      minHeight="min-h-[100px]"
+                      maxHeight="max-h-[200px]"
+                      expandedHeight="min-h-[300px]"
+                    />
                   </div>
                 </div>
               </div>

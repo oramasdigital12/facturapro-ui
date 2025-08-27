@@ -5,6 +5,7 @@ import { FiSearch, FiFileText, FiCalendar, FiX } from 'react-icons/fi';
 import FacturaItem from '../components/FacturaItem';
 import BotonCrear from '../components/BotonCrear';
 import GestionFacturasEliminadasModal from '../components/GestionFacturasEliminadasModal';
+import DateRangePicker from '../components/DateRangePicker';
 
 const PAGE_SIZE = 10;
 
@@ -347,51 +348,21 @@ export default function Facturas() {
                   )}
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Fecha Desde
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={fechaDesde}
-                        onChange={e => { setFechaDesde(e.target.value); setPage(1); }}
-                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none transition-colors"
-                      />
-                      {fechaDesde && (
-                        <button
-                          onClick={() => { setFechaDesde(''); setPage(1); }}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                        >
-                          <FiX className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Fecha Hasta
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={fechaHasta}
-                        onChange={e => { setFechaHasta(e.target.value); setPage(1); }}
-                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:outline-none transition-colors"
-                      />
-                      {fechaHasta && (
-                        <button
-                          onClick={() => { setFechaHasta(''); setPage(1); }}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                        >
-                          <FiX className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                                 <div className="flex justify-center">
+                   <div className="max-w-md w-full">
+                     <DateRangePicker
+                       startDate={fechaDesde}
+                       endDate={fechaHasta}
+                       onDateChange={(start, end) => {
+                         setFechaDesde(start);
+                         setFechaHasta(end);
+                         setPage(1);
+                       }}
+                       placeholder="Seleccionar rango de fechas"
+                       className="w-full"
+                     />
+                   </div>
+                 </div>
 
                 {/* Información adicional */}
                 <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl">

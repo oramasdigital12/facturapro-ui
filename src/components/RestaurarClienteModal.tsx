@@ -24,7 +24,8 @@ export default function RestaurarClienteModal({
     direccion: clienteData?.direccion || '',
     identification_number: clienteData?.identification_number || '',
     sexo: clienteData?.sexo || '',
-    notas: clienteData?.notas || 'Cliente restaurado desde factura'
+    notas: clienteData?.notas || 'Cliente restaurado desde factura',
+    proviene: clienteData?.proviene || ''
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -51,6 +52,7 @@ export default function RestaurarClienteModal({
         identification_number: formData.identification_number.trim() || null,
         sexo: formData.sexo || null,
         notas: formData.notas.trim() || null,
+        proviene: formData.proviene.trim() || null,
         categoria: 'activo',
         fecha_inicio: '9999-12-31',
         fecha_vencimiento: '9999-12-31'

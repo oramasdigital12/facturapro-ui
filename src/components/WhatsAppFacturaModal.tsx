@@ -10,6 +10,8 @@ import GestionMensajesPredefinidosFacturaModal from './GestionMensajesPredefinid
 import { 
   obtenerMensajePredefinido, 
   generarMensajeConDatosActuales,
+  generarMensajeFactura,
+  PLANTILLAS_BASE,
   TipoMensaje
 } from '../utils/mensajeHelpers';
 
@@ -105,15 +107,25 @@ export default function WhatsAppFacturaModal({ open, onClose, factura, color_per
         const mensajeGenerado = generarMensajeConDatosActuales(mensajePredefinido, factura, linkFactura, linkPago, descripcionPago);
         setMensaje(mensajeGenerado);
       } else {
-        // Fallback al mensaje automático si no hay predefinido
-        const mensajeAutomatico = generarMensajeAutomatico(factura, metodoSeleccionado || undefined);
-        setMensaje(mensajeAutomatico);
+        // Fallback a la plantilla base si no hay predefinido
+        const linkFactura = buildPublicFacturaUrl(factura.id, factura);
+        const linkPago = metodoSeleccionado?.link;
+        const descripcionPago = metodoSeleccionado?.descripcion;
+        const plantillaBase = PLANTILLAS_BASE[tipo]['whatsapp'];
+        const mensajeGenerado = generarMensajeFactura(plantillaBase, factura, linkFactura, linkPago, descripcionPago);
+        setMensaje(mensajeGenerado);
       }
     } catch (error) {
       console.error('Error cargando mensaje predefinido:', error);
-      // Fallback al mensaje automático
-      const mensajeAutomatico = generarMensajeAutomatico(factura, metodoSeleccionado || undefined);
-      setMensaje(mensajeAutomatico);
+      // Fallback a la plantilla base
+      const linkFactura = buildPublicFacturaUrl(factura.id, factura);
+      const linkPago = metodoSeleccionado?.link;
+      const descripcionPago = metodoSeleccionado?.descripcion;
+      const estadoReal = determinarEstadoFactura(factura);
+      const tipo: TipoMensaje = estadoReal === 'pagada' ? 'pagada' : (tipoMensajeSeleccionado || estadoReal);
+      const plantillaBase = PLANTILLAS_BASE[tipo]['whatsapp'];
+      const mensajeGenerado = generarMensajeFactura(plantillaBase, factura, linkFactura, linkPago, descripcionPago);
+      setMensaje(mensajeGenerado);
     }
   };
 
@@ -600,14 +612,11 @@ export default function WhatsAppFacturaModal({ open, onClose, factura, color_per
             const estadoReal = determinarEstadoFactura(factura);
             return estadoReal === 'pagada' ? 'pagada' : (tipoMensajeSeleccionado || estadoReal);
           })()}
-          onMensajeActualizado={(_status, canal, mensajeActualizado) => {
+          onMensajeActualizado={async (_status, canal) => {
             // Recargar el mensaje en el textarea cuando se actualiza
             if (canal === 'whatsapp') {
-              const linkFactura = buildPublicFacturaUrl(factura.id, factura);
-              const linkPago = metodoSeleccionado?.link;
-              const descripcionPago = metodoSeleccionado?.descripcion;
-              const mensajeGenerado = generarMensajeConDatosActuales(mensajeActualizado, factura, linkFactura, linkPago, descripcionPago);
-              setMensaje(mensajeGenerado);
+              // Recargar el mensaje predefinido desde la base de datos
+              await cargarMensajePredefinido(true);
             }
           }}
         />
